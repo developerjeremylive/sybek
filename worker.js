@@ -76,7 +76,8 @@ const HTML = `<!DOCTYPE html>
     .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
     @media (max-width: 768px) { .grid-cols-3, .grid-cols-4 { grid-template-columns: 1fr; } .sidebar { display: none; } .main { margin-left: 0; } }
     /* Fix for settings and logs sections */
-    #section-settings, #section-logs { color: var(--text); }
+    #section-settings, #section-logs { color: var(--text); display: block !important; }
+    #section-settings.hidden, #section-logs.hidden { display: none !important; }
     .loading { display: flex; justify-content: center; padding: 40px; color: var(--text-muted); }
     .grid { display: grid; gap: 20px; }
     .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
@@ -247,20 +248,24 @@ const HTML = `<!DOCTYPE html>
       <div class="section-title"><i class="fas fa-cog" style="color: var(--accent);"></i> Configuración</div>
       <div class="card">
         <h3 style="margin-bottom: 20px;">☁️ Cloudflare</h3>
-        <div class="grid" style="gap: 16px;">
-          <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">API Token</label><input type="password" class="input" id="cfToken" placeholder="Tu Cloudflare API Token"></div>
-          <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">Account ID</label><input type="text" class="input" id="cfAccountId" placeholder="Tu Cloudflare Account ID"></div>
-          <button class="btn btn-primary" onclick="saveSettings()"><i class="fas fa-save"></i> Guardar</button>
-        </div>
+        <form onsubmit="event.preventDefault(); saveSettings();">
+          <div class="grid" style="gap: 16px;">
+            <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">API Token</label><input type="password" class="input" id="cfToken" placeholder="Tu Cloudflare API Token"></div>
+            <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">Account ID</label><input type="text" class="input" id="cfAccountId" placeholder="Tu Cloudflare Account ID"></div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>
+          </div>
+        </form>
       </div>
       <div class="card">
         <h3 style="margin-bottom: 20px;">🤖 OpenClaw Gateway</h3>
-        <div class="grid" style="gap: 16px;">
-          <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">Gateway URL</label><input type="text" class="input" id="openclawUrl" placeholder="https://claw.kilosessions.ai"></div>
-          <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">Gateway Token</label><input type="password" class="input" id="openclawKey" placeholder="Tu Gateway Token"></div>
-          <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">Session Key (opcional)</label><input type="text" class="input" id="openclawSession" placeholder="agent:main:main"></div>
-          <button class="btn btn-primary" onclick="testConnection()"><i class="fas fa-plug"></i> Probar Conexión</button>
-        </div>
+        <form onsubmit="event.preventDefault(); testConnection();">
+          <div class="grid" style="gap: 16px;">
+            <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">Gateway URL</label><input type="text" class="input" id="openclawUrl" placeholder="https://claw.kilosessions.ai"></div>
+            <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">Gateway Token</label><input type="password" class="input" id="openclawKey" placeholder="Tu Gateway Token"></div>
+            <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">Session Key (opcional)</label><input type="text" class="input" id="openclawSession" placeholder="agent:main:main"></div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-plug"></i> Probar Conexión</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
