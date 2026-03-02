@@ -249,7 +249,7 @@ const HTML = `<!DOCTYPE html>
     </div>
 
     <!-- Logs Section -->
-    <div id="section-logs" class="hidden">
+    <div id="section-logs" class="hidden" style="display: none; color: #e2e8f0;">
       <div class="section-title"><i class="fas fa-list" style="color: var(--accent);"></i> Logs de Actividad</div>
       <div class="card">
         <div style="display: flex; gap: 12px; margin-bottom: 20px;">
