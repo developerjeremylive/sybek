@@ -70,7 +70,7 @@ const HTML = `<!DOCTYPE html>
     .online-indicator { width: 10px; height: 10px; background: var(--success); border-radius: 50%; display: inline-block; margin-right: 8px; animation: pulse 2s infinite; }
     .offline-indicator { width: 10px; height: 10px; background: var(--danger); border-radius: 50%; display: inline-block; margin-right: 8px; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    .hidden { display: none !important; }
+    .hidden { display: none; }
     .grid { display: grid; gap: 20px; }
     .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
     .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
@@ -249,7 +249,7 @@ const HTML = `<!DOCTYPE html>
     </div>
 
     <!-- Logs Section -->
-    <div id="section-logs" class="hidden" style="display: none; color: #e2e8f0;">
+    <div id="section-logs" class="hidden">
       <div class="section-title"><i class="fas fa-list" style="color: var(--accent);"></i> Logs de Actividad</div>
       <div class="card">
         <div style="display: flex; gap: 12px; margin-bottom: 20px;">
@@ -261,7 +261,7 @@ const HTML = `<!DOCTYPE html>
     </div>
 
     <!-- Settings Section -->
-    <div id="section-settings" class="hidden" style="display: none; color: #e2e8f0;">
+    <div id="section-settings" class="hidden">
       <div class="section-title" style="color: #e2e8f0;"><i class="fas fa-cog" style="color: #6366f1;"></i> Configuración</div>
       <div class="card" style="background: #1a1a24; border: 1px solid #2d2d3a; color: #e2e8f0;">
       <div class="section-title"><i class="fas fa-cog" style="color: var(--accent);"></i> Configuración</div>
@@ -299,9 +299,20 @@ const HTML = `<!DOCTYPE html>
 
     function showSection(section) {
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-      event.target.closest('.nav-item').classList.add('active');
-      document.querySelectorAll('[id^="section-"]').forEach(el => el.classList.add('hidden'));
-      document.getElementById('section-' + section).classList.remove('hidden');
+      if (event && event.target) {
+        event.target.closest('.nav-item').classList.add('active');
+      }
+      // Hide all sections
+      document.querySelectorAll('[id^="section-"]').forEach(el => {
+        el.style.display = 'none';
+        el.classList.add('hidden');
+      });
+      // Show selected section
+      const selected = document.getElementById('section-' + section);
+      if (selected) {
+        selected.style.display = 'block';
+        selected.classList.remove('hidden');
+      }
       if (section === 'workers') loadWorkers();
       if (section === 'openclaw') connectOpenClaw();
       if (section === 'telegram') loadTelegramData();
