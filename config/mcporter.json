@@ -1,0 +1,164 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx -y @modelcontextprotocol/server-github"
+    },
+    "notion": {
+      "command": "npx -y @notionhq/notion-mcp-server"
+    },
+    "postgres": {
+      "command": "npx -y @modelcontextprotocol/server-postgres"
+    },
+    "sequentialthinking": {
+      "command": "npx -y @modelcontextprotocol/server-sequential-thinking"
+    },
+    "memory": {
+      "command": "npx -y @modelcontextprotocol/server-memory"
+    },
+    "fetch": {
+      "command": "npx -y @modelcontextprotocol/server-fetch"
+    },
+    "time": {
+      "command": "npx -y time-mcp-pypi"
+    },
+    "git": {
+      "command": "npx -y @modelcontextprotocol/server-git"
+    },
+    "sentry": {
+      "command": "npx -y @modelcontextprotocol/server-sentry"
+    },
+    "slack": {
+      "command": "npx -y @modelcontextprotocol/server-slack"
+    },
+    "sqlite": {
+      "command": "npx -y @modelcontextprotocol/server-sqlite"
+    },
+    "search": {
+      "command": "npx -y @modelcontextprotocol/server-search"
+    },
+    "aws": {
+      "command": "npx -y @modelcontextprotocol/server-aws-kb-retrieval-server"
+    },
+    "puppeteer": {
+      "command": "npx -y @modelcontextprotocol/server-puppeteer"
+    },
+    "brave-search": {
+      "command": "npx -y @modelcontextprotocol/server-brave-search"
+    },
+    "gmail": {
+      "command": "npx -y @modelcontextprotocol/server-gmail"
+    },
+    "google-drive": {
+      "command": "npx -y @modelcontextprotocol/server-gdrive"
+    },
+    "linear": {
+      "command": "npx -y @linear/mcp-server"
+    },
+    "confluence": {
+      "command": "npx -y @modelcontextprotocol/server-confluence"
+    },
+    "jira": {
+      "command": "npx -y @modelcontextprotocol/server-jira"
+    },
+    "todoist": {
+      "command": "npx -y @modelcontextprotocol/server-todoist"
+    },
+    "mongodb": {
+      "command": "npx -y @modelcontextprotocol/server-mongodb"
+    },
+    "redis": {
+      "command": "npx -y @modelcontextprotocol/server-redis"
+    },
+    "elasticsearch": {
+      "command": "npx -y @modelcontextprotocol/server-elasticsearch"
+    },
+    "supabase": {
+      "command": "npx -y @modelcontextprotocol/server-supabase"
+    },
+    "neon": {
+      "command": "npx -y @modelcontextprotocol/server-neon"
+    },
+    "upstash": {
+      "command": "npx -y @upstash/redis-mcp"
+    },
+    "chroma": {
+      "command": "npx -y @modelcontextprotocol/server-chroma"
+    },
+    "qdrant": {
+      "command": "npx -y @modelcontextprotocol/server-qdrant"
+    },
+    "evergreen": {
+      "command": "npx -y @modelcontextprotocol/server-evergreen"
+    },
+    "openapi": {
+      "command": "npx -y @modelcontextprotocol/server-openapi"
+    },
+    "graphql": {
+      "command": "npx -y @modelcontextprotocol/server-graphql"
+    },
+    "http": {
+      "command": "npx -y @modelcontextprotocol/server-http"
+    },
+    "everything": {
+      "command": "npx -y @modelcontextprotocol/server-everything"
+    },
+    "context7": {
+      "command": "npx -y @upstash/context7-mcp"
+    },
+    "firecrawl": {
+      "command": "npx -y @modelcontextprotocol/server-firecrawl"
+    },
+    "apify": {
+      "command": "npx -y @modelcontextprotocol/server-apify"
+    },
+    "tavily": {
+      "command": "npx -y @modelcontextprotocol/server-tavily"
+    },
+    "stripe": {
+      "command": "npx -y @modelcontextprotocol/server-stripe"
+    },
+    "mysql": {
+      "command": "npx -y @modelcontextprotocol/server-mysql"
+    },
+    "mariadb": {
+      "command": "npx -y @modelcontextprotocol/server-mariadb"
+    },
+    "sqlserver": {
+      "command": "npx -y @modelcontextprotocol/server-sqlserver"
+    },
+    "s3": {
+      "command": "npx -y @modelcontextprotocol/server-s3"
+    },
+    "google-calendar": {
+      "command": "npx -y @modelcontextprotocol/server-google-calendar"
+    },
+    "google-docs": {
+      "command": "npx -y @modelcontextprotocol/server-google-docs"
+    },
+    "dropbox": {
+      "command": "npx -y @modelcontextprotocol/server-dropbox"
+    },
+    "onedrive": {
+      "command": "npx -y @modelcontextprotocol/server-onedrive"
+    },
+    "intercom": {
+      "command": "npx -y @modelcontextprotocol/server-intercom"
+    },
+    "zendesk": {
+      "command": "npx -y @modelcontextprotocol/server-zendesk"
+    },
+    "salesforce": {
+      "command": "npx -y @modelcontextprotocol/server-salesforce"
+    },
+    "hubspot": {
+      "command": "npx -y @modelcontextprotocol/server-hubspot"
+    },
+    "twilio": {
+      "command": "npx -y @modelcontextprotocol/server-twilio"
+    },
+    "filesystem": {
+      "command": "npx -y @modelcontextprotocol/server-filesystem /root"
+    }
+  },
+  "imports": []
+}

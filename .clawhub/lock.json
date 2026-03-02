@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "firecrawl-search": {
+      "version": "1.0.0",
+      "installedAt": 1772257755193
+    },
+    "github": {
+      "version": "1.0.0",
+      "installedAt": 1772270258329
+    },
+    "netlify": {
+      "version": "1.0.0",
+      "installedAt": 1772272323516
+    }
+  }
+}
