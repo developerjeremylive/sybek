@@ -29,7 +29,6 @@ const HTML = `<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sybek Deploy - Cloudflare + OpenClaw Monitor</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -71,7 +70,13 @@ const HTML = `<!DOCTYPE html>
     .online-indicator { width: 10px; height: 10px; background: var(--success); border-radius: 50%; display: inline-block; margin-right: 8px; animation: pulse 2s infinite; }
     .offline-indicator { width: 10px; height: 10px; background: var(--danger); border-radius: 50%; display: inline-block; margin-right: 8px; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    .hidden { display: none; }
+    .hidden { display: none !important; }
+    .grid { display: grid; gap: 20px; }
+    .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 768px) { .grid-cols-3, .grid-cols-4 { grid-template-columns: 1fr; } .sidebar { display: none; } .main { margin-left: 0; } }
+    /* Fix for settings and logs sections */
+    #section-settings, #section-logs { color: var(--text); }
     .loading { display: flex; justify-content: center; padding: 40px; color: var(--text-muted); }
     .grid { display: grid; gap: 20px; }
     .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
