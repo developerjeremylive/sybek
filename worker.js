@@ -242,11 +242,15 @@ const HTML = '<!DOCTYPE html>' +
 '    } else {' +
 '      document.getElementById("tg-sessions-list").innerHTML = sessions.map(function(s) {' +
 '        var unreadBadge = s.unread ? " <span style=\\"background:red;padding:2px 6px;border-radius:10px;font-size:10px\\">" + s.unread + "</span>" : "";' +
-'        return "<div class=\\"channel\\" onclick=\\"loadChat(\\"" + s.id + "\\", \\"" + s.name + "\\")\\" style=\\"cursor:pointer\\">" +' +
+'        return "<div class=\\"channel session-item\\" data-id=\\"" + s.id + "\\" data-name=\\"" + s.name + "\\" style=\\"cursor:pointer\\">" +' +
 '          "<span style=\\"color:#229ED9\\">@</span> <strong>" + s.name + "</strong>" + unreadBadge + ' +
 '          "<span style=\\"margin-left:auto;color:#666\\">" + (s.lastMessage || "") + " - " + (s.time || "") + "</span></div>";' +
 '      }).join("");' +
 '    }' +
+'    // Add click handler' +
+'    document.querySelectorAll(".session-item").forEach(function(el) {' +
+'      el.onclick = function() { loadChat(el.dataset.id, el.dataset.name); };' +
+'    });' +
 '    log("Loaded " + sessions.length + " sessions", "success");' +
 '  })' +
 '  .catch(function(e) { log("Sessions error: " + e.message, "error"); });' +
