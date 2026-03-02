@@ -177,6 +177,7 @@ const HTML = [
 '    </div>',
 '  </div>',
 '  <script>',
+'    // v2 - Fixed URL normalization',
 '    var workers = [];',
 '    var logs = [];',
 '    var kiloUrl = "https://claw.kilosessions.ai";',
