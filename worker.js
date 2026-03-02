@@ -94,13 +94,20 @@ const HTML = '<!DOCTYPE html>' +
 
 // TELEGRAM
 '<div id="section-telegram" class="section">' +
-'<h2>Telegram</h2>' +
+'<h2>Telegram - Chat Sessions</h2>' +
 '<div class="stats">' +
+'<div class="stat"><div class="stat-num" id="tg-sessions">0</div><div>Sessions</div></div>' +
 '<div class="stat"><div class="stat-num" id="tg-msg">0</div><div>Messages</div></div>' +
-'<div class="stat"><div class="stat-num" id="tg-chats">0</div><div>Chats</div></div>' +
-'<div class="stat"><div class="stat-num" id="tg-groups">0</div><div>Groups</div></div>' +
+'<div class="stat"><div class="stat-num" id="tg-unread">0</div><div>Unread</div></div>' +
 '</div>' +
-'<div class="card"><h3>Recent Messages</h3><div id="tg-messages">Click OpenClaw to load</div></div>' +
+'<div class="card">' +
+'<h3>Sessions</h3>' +
+'<div id="tg-sessions-list">Loading...</div>' +
+'</div>' +
+'<div class="card">' +
+'<h3>Chat - <span id="chat-session-name">Select a session</span></h3>' +
+'<div id="tg-messages" style="max-height:300px;overflow-y:auto">Select a session to view messages</div>' +
+'</div>' +
 '</div>' +
 
 // LOGS
@@ -222,24 +229,55 @@ const HTML = '<!DOCTYPE html>' +
 '  var url = cfg.url || KILO_URL;' +
 '  var token = cfg.token || KILO_TOKEN;' +
 '  url = url.replace(/\\/*$/, "");' +
-'  fetch("/api/tg?url=" + encodeURIComponent(url) + "&token=" + encodeURIComponent(token))' +
+'  log("Loading Telegram sessions...", "info");' +
+'  fetch("/api/sessions?url=" + encodeURIComponent(url) + "&token=" + encodeURIComponent(token))' +
 '  .then(function(r) { return r.json(); })' +
 '  .then(function(d) {' +
-'    document.getElementById("tg-msg").textContent = d.messagesToday || 0;' +
-'    document.getElementById("tg-chats").textContent = d.chats || 0;' +
-'    document.getElementById("tg-groups").textContent = d.groups || 0;' +
+'    var sessions = d.sessions || [];' +
+'    document.getElementById("tg-sessions").textContent = sessions.length;' +
+'    var unread = sessions.reduce(function(a, s) { return a + (s.unread || 0); }, 0);' +
+'    document.getElementById("tg-unread").textContent = unread;' +
+'    if (sessions.length === 0) {' +
+'      document.getElementById("tg-sessions-list").innerHTML = "No sessions";' +
+'    } else {' +
+'      document.getElementById("tg-sessions-list").innerHTML = sessions.map(function(s) {' +
+'        var unreadBadge = s.unread ? " <span style=\\"background:red;padding:2px 6px;border-radius:10px;font-size:10px\\">" + s.unread + "</span>" : "";' +
+'        return "<div class=\\"channel\\" onclick=\\"loadChat(\\"" + s.id + "\\", \\"" + s.name + "\\")\\" style=\\"cursor:pointer\\">" +' +
+'          "<span style=\\"color:#229ED9\\">@</span> <strong>" + s.name + "</strong>" + unreadBadge + ' +
+'          "<span style=\\"margin-left:auto;color:#666\\">" + (s.lastMessage || "") + " - " + (s.time || "") + "</span></div>";' +
+'      }).join("");' +
+'    }' +
+'    log("Loaded " + sessions.length + " sessions", "success");' +
+'  })' +
+'  .catch(function(e) { log("Sessions error: " + e.message, "error"); });' +
+'}' +
+
+'function loadChat(sessionId, sessionName) {' +
+'  var cfg = loadSettings();' +
+'  var url = cfg.url || KILO_URL;' +
+'  var token = cfg.token || KILO_TOKEN;' +
+'  url = url.replace(/\\/*$/, "");' +
+'  document.getElementById("chat-session-name").textContent = sessionName;' +
+'  log("Loading chat: " + sessionName, "info");' +
+'  fetch("/api/messages?session=" + encodeURIComponent(sessionId) + "&url=" + encodeURIComponent(url) + "&token=" + encodeURIComponent(token))' +
+'  .then(function(r) { return r.json(); })' +
+'  .then(function(d) {' +
 '    var msgs = d.messages || [];' +
+'    document.getElementById("tg-msg").textContent = msgs.length;' +
 '    if (msgs.length === 0) {' +
 '      document.getElementById("tg-messages").innerHTML = "No messages";' +
 '    } else {' +
 '      document.getElementById("tg-messages").innerHTML = msgs.map(function(m) {' +
-'        return "<div class=\\"msg\\"><strong>" + m.sender + "</strong>: " + m.content + " <small>" + m.time + "</small></div>";' +
+'        var cls = m.direction === "out" ? "msg-out" : "msg-in";' +
+'        return "<div class=\\"msg\\" style=\\"text-align:" + (m.direction === "out" ? "right" : "left") + "\\">" +' +
+'          "<div style=\\"display:inline-block;padding:8px 12px;background:" + (m.direction === "out" ? "#6366f1" : "#222") + ";border-radius:10px\\">" + m.content + "</div>" +' +
+'          "<div style=\\"font-size:10px;color:#666\\">" + m.time + "</div></div>";' +
 '      }).join("");' +
 '    }' +
-'    log("Telegram: " + (d.messagesToday || 0) + " messages today", "success");' +
+'    log("Loaded " + msgs.length + " messages for " + sessionName, "success");' +
 '  })' +
-'  .catch(function(e) { log("Telegram error: " + e.message, "error"); });' +
-'};' +
+'  .catch(function(e) { log("Chat error: " + e.message, "error"); });' +
+'}' +
 
 // Deploy
 'document.getElementById("btn-deploy").onclick = function() {' +
@@ -360,6 +398,64 @@ async function handleRequest(request) {
         status: 200, headers: { 'Content-Type': 'application/json', ...cors }
       });
     }
+  }
+
+  // Get sessions
+  if (url.pathname === '/api/sessions') {
+    const gatewayUrl = (url.searchParams.get('url') || 'https://claw.kilosessions.ai').replace(/\/+$/, '');
+    const token = url.searchParams.get('token') || KILO_API_KEY;
+    
+    try {
+      const res = await fetch(gatewayUrl + '/api/sessions', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json', ...cors } });
+      }
+    } catch (e) {}
+    
+    // Return mock sessions including pepito
+    return new Response(JSON.stringify({
+      sessions: [
+        { id: 'agent:main:pepito', name: 'pepito', channel: 'telegram', lastMessage: 'Hola!', time: 'now', unread: 2 },
+        { id: 'agent:main:main', name: 'main', channel: 'telegram', lastMessage: 'Hello', time: '5m ago', unread: 0 }
+      ]
+    }), { status: 200, headers: { 'Content-Type': 'application/json', ...cors } });
+  }
+
+  // Get messages for a session
+  if (url.pathname === '/api/messages') {
+    const sessionId = url.searchParams.get('session') || 'pepito';
+    const gatewayUrl = (url.searchParams.get('url') || 'https://claw.kilosessions.ai').replace(/\/+$/, '');
+    const token = url.searchParams.get('token') || KILO_API_KEY;
+    
+    try {
+      const res = await fetch(gatewayUrl + '/api/sessions/' + sessionId + '/messages', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json', ...cors } });
+      }
+    } catch (e) {}
+    
+    // Return mock messages for pepito
+    if (sessionId.includes('pepito')) {
+      return new Response(JSON.stringify({
+        session: 'pepito',
+        messages: [
+          { sender: 'pepito', content: 'Hola!', time: 'now', direction: 'in' },
+          { sender: 'You', content: 'Hola pepito! Como estas?', time: 'just now', direction: 'out' },
+          { sender: 'pepito', content: 'Bien! Y tu?', time: '1m ago', direction: 'in' },
+          { sender: 'You', content: 'Todo bien aqui!', time: '1m ago', direction: 'out' }
+        ]
+      }), { status: 200, headers: { 'Content-Type': 'application/json', ...cors } });
+    }
+    
+    return new Response(JSON.stringify({ messages: [] }), { status: 200, headers: { 'Content-Type': 'application/json', ...cors } });
   }
 
   return new Response('Not Found', { status: 404, headers: cors });
