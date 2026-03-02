@@ -161,7 +161,7 @@ function testConnection() {
   var token = document.getElementById('cfg-token').value;
   API_URL = url;
   API_TOKEN = token;
-  localStorage.setItem('sybek_config', JSON.stringify({url: url, token: token}));
+  localStorage.setItem('sybek_config', JSON.stringify({url: url, token: token});
   
   var result = document.getElementById('test-result');
   result.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Testing...</div>';
@@ -290,7 +290,7 @@ function loadSessions() {
 }
 
 // Load saved config
-var saved = JSON.parse(localStorage.getItem('sybek_config') || '{}');
+var saved = JSON.parse(localStorage.getItem('sybek_config') || '{}';
 if (saved.url) {
   API_URL = saved.url;
   document.getElementById('cfg-url').value = saved.url;
