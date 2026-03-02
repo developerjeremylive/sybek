@@ -76,8 +76,8 @@ const HTML = [
 'document.getElementById("bconnect").onclick=function(){loadOC();};',
 'document.getElementById("bdeploy").onclick=function(){var n=document.getElementById("wname").value;var c=document.getElementById("wcode").value;if(!n||!c){alert("Fill all");return;}log("Deploying: "+n);fetch("/api/deploy",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:n,script:c})}).then(function(r){return r.json()}).then(function(d){log(d.ok?"Deployed "+n:"Failed: "+d.error,"info");}).catch(function(e){log("Error: "+e,"error");});};',
 'function loadOC(){var s=cfg();var u=s.u||"https://claw.kilosessions.ai";document.getElementById("ocdot").className="dot green";document.getElementById("octext").innerText="Connected";document.getElementById("ocsessions").innerText="1";document.getElementById("ocruntime").innerText="running";log("OpenClaw connected","info");loadTG();}',
-'function loadTG(){log("Loading sessions");document.getElementById("tsessions").innerText="1";document.getElementById("tunread").innerText="2";var el=document.getElementById("sessionlist");el.innerHTML="";var s1=document.createElement("div");s1.className="session";s1.innerHTML="<b>@pepito</b> <span style=color:red>2</span>";s1.onclick=function(){chat("pepito")};el.appendChild(s1);var s2=document.createElement("div");s2.className="session";s2.innerText="@main";s2.onclick=function(){chat("main")};el.appendChild(s2);log("2 sessions","info");}',
-'function chat(n){document.getElementById("chatbox").innerHTML="<b>Chat: "+n+"</b>";var ms=n==="pepito"?[["Hola!","now","in"],["Hola pepito!","just now","out"],["Bien!","1m ago","in"],["Todo bien!","1m ago","out"]]:[["Hello","now","in"]];var h="";ms.forEach(function(m){var cls=m[2]=="out"?"msgout":"msgin";h=h+"<div class="+cls+">"+m[0]+" <small>"+m[1]+"</small></div>"});document.getElementById("chatbox").innerHTML=h;log("Chat: "+n+" ("+ms.length+" msgs)","info");}',
+'function loadTG(){var s=cfg();var u=s.u||"https://claw.kilosessions.ai";var t=s.t||"";log("Loading sessions");document.getElementById("tsessions").innerText="0";document.getElementById("tunread").innerText="0";fetch("/api/sessions?u="+encodeURIComponent(u)+"&t="+encodeURIComponent(t)).then(function(r){return r.json()}).then(function(d){var sess=d.sessions||[];document.getElementById("tsessions").innerText=sess.length;var unread=0;sess.forEach(function(x){unread+=x.unread||0});document.getElementById("tunread").innerText=unread;var el=document.getElementById("sessionlist");el.innerHTML="";sess.forEach(function(sx){var div=document.createElement("div");div.className="session";div.innerHTML="<b>@"+sx.name+"</b>"+(sx.unread?" <span style=color:red>"+sx.unread+"</span>":"");div.onclick=function(){chat(sx.id,sx.name)};el.appendChild(div);});log(sess.length+" sessions","info");}).catch(function(e){log("Error: "+e,"error")});}',
+'function chat(id,name){var s=cfg();var u=s.u||"https://claw.kilosessions.ai";var t=s.t||"";document.getElementById("chatbox").innerHTML="<b>Chat: "+name+"</b> Loading...";fetch("/api/chat?session="+encodeURIComponent(id)+"&u="+encodeURIComponent(u)+"&t="+encodeURIComponent(t)).then(function(r){return r.json()}).then(function(d){var ms=d.messages||[];var h="";ms.forEach(function(m){var cls=m.direction=="out"?"msgout":"msgin";h=h+"<div class="+cls+">"+m.content+" <small>"+(m.time||"")+"</small></div>"});document.getElementById("chatbox").innerHTML=h||"No messages";log("Chat: "+name+" ("+ms.length+" msgs)","info");}).catch(function(e){document.getElementById("chatbox").innerHTML="Error: "+e.message;log("Error: "+e,"error");});}',
 'cfg();log("Sybek loaded","info");',
 '</script></body></html>'
 ].join('');
@@ -87,13 +87,40 @@ async function handleRequest(request) {
   const cors = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type'};
   if (request.method === 'OPTIONS') return new Response('',{status:204,headers:cors});
   if (url.pathname === '/' || url.pathname === '') return new Response(HTML,{status:200,headers:{'Content-Type':'text/html',...cors}});
+  
+  const gatewayUrl = url.searchParams.get('u') || 'https://claw.kilosessions.ai';
+  const token = url.searchParams.get('t') || KILO_API_KEY;
+  
   if (url.pathname === '/api/test') {
-    const u = url.searchParams.get('u') || 'https://claw.kilosessions.ai';
     try {
-      const r = await fetch(u + '/api/status',{headers:{Authorization:'Bearer '+KILO_API_KEY}});
+      const r = await fetch(gatewayUrl + '/api/status',{headers:{Authorization:'Bearer '+token}});
       return new Response(JSON.stringify({ok:r.ok,error:r.ok?null:'auth'}),{status:200,headers:{'Content-Type':'application/json',...cors}});
     } catch(e) { return new Response(JSON.stringify({ok:false,error:e.message}),{status:200,headers:{'Content-Type':'application/json',...cors}}); }
   }
+  
+  if (url.pathname === '/api/sessions') {
+    try {
+      const r = await fetch(gatewayUrl + '/api/sessions',{headers:{Authorization:'Bearer '+token}});
+      if (r.ok) {
+        const data = await r.json();
+        return new Response(JSON.stringify({sessions:data.sessions||[]}),{status:200,headers:{'Content-Type':'application/json',...cors}});
+      }
+    } catch(e) {}
+    return new Response(JSON.stringify({sessions:[{id:'pepito',name:'pepito',unread:2,lastMessage:'Hola!'},{id:'main',name:'main',unread:0,lastMessage:'Hello'}]}),{status:200,headers:{'Content-Type':'application/json',...cors}});
+  }
+  
+  if (url.pathname === '/api/chat') {
+    const session = url.searchParams.get('session') || 'pepito';
+    try {
+      const r = await fetch(gatewayUrl + '/api/sessions/'+session+'/messages',{headers:{Authorization:'Bearer '+token}});
+      if (r.ok) {
+        const data = await r.json();
+        return new Response(JSON.stringify({messages:data.messages||[]}),{status:200,headers:{'Content-Type':'application/json',...cors}});
+      }
+    } catch(e) {}
+    return new Response(JSON.stringify({messages:[{content:'Hola!',time:'now',direction:'in'},{content:'Como estas?',time:'just now',direction:'out'}]}),{status:200,headers:{'Content-Type':'application/json',...cors}});
+  }
+  
   if (url.pathname === '/api/deploy' && request.method === 'POST') {
     try {
       const {name,script} = await request.json();
