@@ -179,7 +179,7 @@ const HTML = [
 '  <script>',
 '    var workers = [];',
 '    var logs = [];',
-'    var kiloUrl = "https://claw.kilosessions.ai/";',
+'    var kiloUrl = "https://claw.kilosessions.ai";',
 '    var kiloToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsbFVzZXJJZCI6ImVjNGVlZjQ5LWUyM2MtNDhhNy05ODhjLTI3ZWIwOWNkYTFhMSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzI0MzExNzAsImV4cCI6MTkzMDExMTE3MH0.wfGWzGMdNYFR_SpVHbUWoDSSv5pCKck1PeCxNg6DlaM";',
 '    document.getElementById("btnDeploy").onclick = deployWorker;',
 '    document.getElementById("btnExample").onclick = loadExample;',
@@ -370,7 +370,7 @@ async function handleRequest(request) {
   }
 
   if (url.pathname === '/api/openclaw/status') {
-    const openclawUrl = url.searchParams.get('url') || 'https://claw.kilosessions.ai/';
+    let openclawUrl = (url.searchParams.get('url') || 'https://claw.kilosessions.ai/').replace(/\/+$/, '');
     const token = url.searchParams.get('token') || KILO_API_KEY;
     
     try {
@@ -399,7 +399,7 @@ async function handleRequest(request) {
   }
 
   if (url.pathname === '/api/openclaw/test') {
-    const openclawUrl = url.searchParams.get('url') || 'https://claw.kilosessions.ai/';
+    let openclawUrl = (url.searchParams.get('url') || 'https://claw.kilosessions.ai/').replace(/\/+$/, '');
     const token = url.searchParams.get('token') || KILO_API_KEY;
     
     try {
@@ -417,7 +417,7 @@ async function handleRequest(request) {
   }
 
   if (url.pathname === '/api/telegram/messages') {
-    const openclawUrl = url.searchParams.get('url') || 'https://claw.kilosessions.ai/';
+    let openclawUrl = (url.searchParams.get('url') || 'https://claw.kilosessions.ai/').replace(/\/+$/, '');
     const token = url.searchParams.get('token') || KILO_API_KEY;
     
     try {
