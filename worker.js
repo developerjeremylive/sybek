@@ -262,10 +262,15 @@ const HTML = '<!DOCTYPE html>' +
 '  var token = cfg.token || KILO_TOKEN;' +
 '  url = url.replace(/\\/*$/, "");' +
 '  document.getElementById("chat-session-name").textContent = sessionName;' +
+'  document.getElementById("tg-messages").innerHTML = "Loading...";' +
 '  log("Loading chat: " + sessionName, "info");' +
 '  fetch("/api/messages?session=" + encodeURIComponent(sessionId) + "&url=" + encodeURIComponent(url) + "&token=" + encodeURIComponent(token))' +
-'  .then(function(r) { return r.json(); })' +
-'  .then(function(d) {' +
+'  .then(function(r) {' +
+'    if (!r.ok) throw new Error("HTTP " + r.status);' +
+'    return r.text();' +
+'  })' +
+'  .then(function(txt) {' +
+'    try { var d = JSON.parse(txt); } catch(e) { throw new Error("Invalid JSON"); }' +
 '    var msgs = d.messages || [];' +
 '    document.getElementById("tg-msg").textContent = msgs.length;' +
 '    if (msgs.length === 0) {' +
