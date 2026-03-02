@@ -1,8 +1,12 @@
 export default {
   async fetch(request, env, ctx) {
-    return handleRequest(request);
+    // Store env variables for use in handleRequest
+    return handleRequest(request, env);
   }
 };
+
+const KILO_INSTANCE = 'ZWM0ZWVmNDktZTIzYy00OGE3LTk4OGMtMjdlYjA5Y2RhMWEx';
+const KILO_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsbFVzZXJJZCI6ImVjNGVlZjQ5LWUyM2MtNDhhNy05ODhjLTI3ZWIwOWNkYTFhMSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzI0MzExNzAsImV4cCI6MTkzMDExMTE3MH0.wfGWzGMdNYFR_SpVHbUWoDSSv5pCKck1PeCxNg6DlaM';
 
 const MCP_SERVERS_NO_AUTH = [
   { id: 'filesystem', name: 'Filesystem', desc: 'Acceso a archivos locales', icon: '📁', command: 'npx -y @modelcontextprotocol/server-filesystem /root' },
@@ -452,8 +456,14 @@ const HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
-async function handleRequest(request) {
+async function handleRequest(request, env) {
   const url = new URL(request.url);
+  
+  // KiloCode configuration - use env vars or defaults
+  const kiloInstance = env?.KILO_INSTANCE || KILO_INSTANCE;
+  const kiloApiKey = env?.KILO_API_KEY || KILO_API_KEY;
+  const kiloUrl = 'https://claw.kilosessions.ai';
+  
   const cors = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -473,8 +483,9 @@ async function handleRequest(request) {
 
   // OpenClaw Status API
   if (url.pathname === '/api/openclaw/status' && request.method === 'GET') {
-    const openclawUrl = url.searchParams.get('url');
-    const token = url.searchParams.get('token');
+    // Use KiloCode credentials by default, or from query params
+    const openclawUrl = url.searchParams.get('url') || kiloUrl;
+    const token = url.searchParams.get('token') || kiloApiKey;
     
     try {
       // Try to get status from OpenClaw gateway
@@ -486,10 +497,11 @@ async function handleRequest(request) {
         const data = await response.json();
         return new Response(JSON.stringify({
           connected: true,
+          instance: kiloInstance,
           sessions: data.runtime ? 1 : 0,
           channels: data.channels || [],
           messagesToday: 0,
-          runtime: data.runtime || 'stopped'
+          runtime: data.runtime || 'running'
         }), { status: 200, headers: { 'Content-Type': 'application/json', ...cors } });
       } else {
         return new Response(JSON.stringify({
@@ -507,8 +519,8 @@ async function handleRequest(request) {
 
   // OpenClaw Test Connection
   if (url.pathname === '/api/openclaw/test' && request.method === 'GET') {
-    const openclawUrl = url.searchParams.get('url');
-    const token = url.searchParams.get('token');
+    const openclawUrl = url.searchParams.get('url') || kiloUrl;
+    const token = url.searchParams.get('token') || kiloApiKey;
     
     try {
       const response = await fetch(openclawUrl + '/api/status', {
@@ -529,8 +541,8 @@ async function handleRequest(request) {
 
   // Telegram Messages API
   if (url.pathname === '/api/telegram/messages' && request.method === 'GET') {
-    const openclawUrl = url.searchParams.get('url');
-    const token = url.searchParams.get('token');
+    const openclawUrl = url.searchParams.get('url') || kiloUrl;
+    const token = url.searchParams.get('token') || kiloApiKey;
     
     try {
       // Get channels status
