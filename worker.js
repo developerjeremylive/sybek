@@ -289,10 +289,12 @@ async function handleRequest(request) {
   if (url.pathname === '/api/test') {
     const gatewayUrl = (url.searchParams.get('url') || 'https://claw.kilosessions.ai').replace(/\/+$/, '');
     const token = url.searchParams.get('token') || KILO_API_KEY;
+    console.log('TEST: url=' + gatewayUrl);
     
     try {
       const res = await fetch(gatewayUrl + '/api/status', {
-        headers: { 'Authorization': 'Bearer ' + token }
+        headers: { 'Authorization': 'Bearer ' + token },
+        redirect: 'follow'
       });
       
       if (res.ok) {
@@ -315,10 +317,12 @@ async function handleRequest(request) {
   if (url.pathname === '/api/oc') {
     const gatewayUrl = (url.searchParams.get('url') || 'https://claw.kilosessions.ai').replace(/\/+$/, '');
     const token = url.searchParams.get('token') || KILO_API_KEY;
+    console.log('OC: url=' + gatewayUrl);
     
     try {
       const res = await fetch(gatewayUrl + '/api/status', {
-        headers: { 'Authorization': 'Bearer ' + token }
+        headers: { 'Authorization': 'Bearer ' + token },
+        redirect: 'follow'
       });
       
       if (res.ok) {
