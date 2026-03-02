@@ -120,21 +120,27 @@ async function handleRequest(request) {
     try {
       // Try /api/agents
       let r = await fetch(gatewayUrl + '/api/agents',{
-        headers:{'Authorization':'Bearer '+passcode}
+        headers:{'Authorization':'Bearer '+passcode,'X-Access-Code':passcode}
       });
       if (r.ok) {
-        const data = await r.json();
+        const txt = await r.text();
+        console.log('AGENTS:', txt.substring(0,500));
+        const data = JSON.parse(txt);
         return new Response(JSON.stringify({sessions:data.agents||data.sessions||[]}),{status:200,headers:{'Content-Type':'application/json',...cors}});
       }
-      // Try /api/sessions
-      r = await fetch(gatewayUrl + '/api/sessions',{
-        headers:{'Authorization':'Bearer '+passcode}
+      // Try /chats
+      r = await fetch(gatewayUrl + '/api/chats',{
+        headers:{'Authorization':'Bearer '+passcode,'X-Access-Code':passcode}
       });
       if (r.ok) {
-        const data = await r.json();
-        return new Response(JSON.stringify({sessions:data.sessions||[]}),{status:200,headers:{'Content-Type':'application/json',...cors}});
+        const txt = await r.text();
+        console.log('CHATS:', txt.substring(0,500));
+        const data = JSON.parse(txt);
+        return new Response(JSON.stringify({sessions:data.chats||data.sessions||[]}),{status:200,headers:{'Content-Type':'application/json',...cors}});
       }
-    } catch(e) {}
+    } catch(e) {
+      console.log('SESSIONS ERROR:', e.message);
+    }
     // Mock
     return new Response(JSON.stringify({sessions:[{id:'agent:main:main',name:'main',unread:0},{id:'agent:main:pepito',name:'pepito',unread:2}]}),{status:200,headers:{'Content-Type':'application/json',...cors}});
   }
@@ -143,20 +149,29 @@ async function handleRequest(request) {
   if (url.pathname === '/api/messages') {
     const session = url.searchParams.get('session') || 'agent:main:main';
     try {
-      // Try different message endpoints
-      let r = await fetch(gatewayUrl + '/api/'+session+'/messages',{
-        headers:{'Authorization':'Bearer '+passcode}
+      // Try /api/chat/{session}
+      let r = await fetch(gatewayUrl + '/api/chat/' + encodeURIComponent(session),{
+        headers:{'Authorization':'Bearer '+passcode,'X-Access-Code':passcode}
       });
       if (r.ok) {
-        const data = await r.json();
-        return new Response(JSON.stringify({messages:data.messages||data.history||[]}),{status:200,headers:{'Content-Type':'application/json',...cors}});
+        const txt = await r.text();
+        console.log('CHAT:', txt.substring(0,500));
+        const data = JSON.parse(txt);
+        return new Response(JSON.stringify({messages:data.messages||data.history||data||[]}),{status:200,headers:{'Content-Type':'application/json',...cors}});
       }
-      r = await fetch(gatewayUrl + '/api/chats/'+session,{headers:{'Authorization':'Bearer '+passcode}});
+      // Try chat endpoint
+      r = await fetch(gatewayUrl + '/api/chat?id=' + encodeURIComponent(session),{
+        headers:{'Authorization':'Bearer '+passcode,'X-Access-Code':passcode}
+      });
       if (r.ok) {
-        const data = await r.json();
+        const txt = await r.text();
+        console.log('CHAT2:', txt.substring(0,500));
+        const data = JSON.parse(txt);
         return new Response(JSON.stringify({messages:data.messages||[]}),{status:200,headers:{'Content-Type':'application/json',...cors}});
       }
-    } catch(e) {}
+    } catch(e) {
+      console.log('MESSAGES ERROR:', e.message);
+    }
     // Mock
     return new Response(JSON.stringify({messages:[{content:'Hello!',time:'now',direction:'in'},{content:'Hi there!',time:'just now',direction:'out'}]}),{status:200,headers:{'Content-Type':'application/json',...cors}});
   }
