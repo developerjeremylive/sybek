@@ -75,9 +75,26 @@ const HTML = `<!DOCTYPE html>
     .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
     .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
     @media (max-width: 768px) { .grid-cols-3, .grid-cols-4 { grid-template-columns: 1fr; } .sidebar { display: none; } .main { margin-left: 0; } }
-    /* Fix for settings and logs sections */
-    #section-settings, #section-logs { color: var(--text); display: block !important; }
-    #section-settings.hidden, #section-logs.hidden { display: none !important; }
+    /* Fix for settings and logs sections - ensure they're visible */
+    #section-settings, #section-logs { 
+      color: var(--text); 
+      display: block !important; 
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    #section-settings.hidden, #section-logs.hidden { 
+      display: none !important; 
+      visibility: hidden !important;
+    }
+    /* Ensure all cards are visible */
+    .card { 
+      background: var(--bg-card); 
+      border: 1px solid var(--border); 
+      border-radius: 16px; 
+      padding: 24px; 
+      margin-bottom: 20px;
+      color: var(--text);
+    }
     .loading { display: flex; justify-content: center; padding: 40px; color: var(--text-muted); }
     .grid { display: grid; gap: 20px; }
     .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
