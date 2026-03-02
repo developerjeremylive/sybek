@@ -75,16 +75,12 @@ const HTML = `<!DOCTYPE html>
     .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
     .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
     @media (max-width: 768px) { .grid-cols-3, .grid-cols-4 { grid-template-columns: 1fr; } .sidebar { display: none; } .main { margin-left: 0; } }
-    /* Fix for settings and logs sections - ensure they're visible */
-    #section-settings, #section-logs { 
-      color: var(--text); 
-      display: block !important; 
-      visibility: visible !important;
-      opacity: 1 !important;
+    /* Simple section visibility */
+    #section-deploy, #section-workers, #section-openclaw, #section-telegram, #section-logs, #section-settings {
+      display: none;
     }
-    #section-settings.hidden, #section-logs.hidden { 
-      display: none !important; 
-      visibility: hidden !important;
+    #section-deploy.active, #section-workers.active, #section-openclaw.active, #section-telegram.active, #section-logs.active, #section-settings.active {
+      display: block;
     }
     /* Ensure all cards are visible */
     .card { 
@@ -125,7 +121,7 @@ const HTML = `<!DOCTYPE html>
 
   <div class="main">
     <!-- Deploy Section -->
-    <div id="section-deploy" class="hidden">
+    <div id="section-deploy">
       <div class="section-title"><i class="fas fa-rocket" style="color: var(--accent);"></i> Deploy a Cloudflare Worker</div>
       <div class="grid grid-cols-3" style="margin-bottom: 24px;">
         <div class="stat-card"><div class="stat-number" id="totalWorkers">0</div><div class="stat-label">Workers Activos</div></div>
@@ -150,7 +146,7 @@ const HTML = `<!DOCTYPE html>
     </div>
 
     <!-- Workers Section -->
-    <div id="section-workers" class="hidden">
+    <div id="section-workers">
       <div class="section-title"><i class="fas fa-server" style="color: var(--accent);"></i> Tus Workers</div>
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -225,7 +221,7 @@ const HTML = `<!DOCTYPE html>
     </div>
 
     <!-- Telegram Section -->
-    <div id="section-telegram" class="hidden">
+    <div id="section-telegram">
       <div class="section-title"><i class="fab fa-telegram" style="color: var(--telegram);"></i> Monitor de Telegram</div>
       <div class="card">
         <div style="display: flex; align-items: center; gap: 16px;">
@@ -249,7 +245,7 @@ const HTML = `<!DOCTYPE html>
     </div>
 
     <!-- Logs Section -->
-    <div id="section-logs" class="hidden">
+    <div id="section-logs">
       <div class="section-title"><i class="fas fa-list" style="color: var(--accent);"></i> Logs de Actividad</div>
       <div class="card">
         <div style="display: flex; gap: 12px; margin-bottom: 20px;">
@@ -261,7 +257,7 @@ const HTML = `<!DOCTYPE html>
     </div>
 
     <!-- Settings Section -->
-    <div id="section-settings" class="hidden">
+    <div id="section-settings">
       <div class="section-title" style="color: #e2e8f0;"><i class="fas fa-cog" style="color: #6366f1;"></i> Configuración</div>
       <div class="card" style="background: #1a1a24; border: 1px solid #2d2d3a; color: #e2e8f0;">
       <div class="section-title"><i class="fas fa-cog" style="color: var(--accent);"></i> Configuración</div>
@@ -304,14 +300,12 @@ const HTML = `<!DOCTYPE html>
       }
       // Hide all sections
       document.querySelectorAll('[id^="section-"]').forEach(el => {
-        el.style.display = 'none';
-        el.classList.add('hidden');
+        el.classList.remove('active');
       });
       // Show selected section
       const selected = document.getElementById('section-' + section);
       if (selected) {
-        selected.style.display = 'block';
-        selected.classList.remove('hidden');
+        selected.classList.add('active');
       }
       if (section === 'workers') loadWorkers();
       if (section === 'openclaw') connectOpenClaw();
