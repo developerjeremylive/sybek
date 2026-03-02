@@ -348,7 +348,7 @@ const HTML = `<!DOCTYPE html>
 
     function loadExample() {
       document.getElementById('workerName').value = 'hello-world';
-      document.getElementById('workerCode').value = "addEventListener('fetch', e => \\n  e.respondWith(new Response('Hello!')));";
+      document.getElementById('workerCode').value = "addEventListener('fetch', e => e.respondWith(new Response('Hello!')));";
     }
 
     function loadWorkers() {
