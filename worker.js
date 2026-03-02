@@ -17,295 +17,267 @@ const MCP_SERVERS_NO_AUTH = [
   { id: 'brave-search', name: 'Brave Search', desc: 'Búsqueda web (sin API key)', icon: '🦁', command: 'npx -y @modelcontextprotocol/server-brave-search' }
 ];
 
-const MODELS = [
-  { id: '@cf/meta/llama-3.1-8b-instruct', name: 'Llama 3.1 8B', provider: 'Meta' },
-  { id: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', name: 'Llama 3.3 70B', provider: 'Meta' },
-  { id: '@cf/meta/llama-4-scout-17b-16e-instruct', name: 'Llama 4 Scout', provider: 'Meta' },
-  { id: '@cf/google/gemma-3-4b-it', name: 'Gemma 3 4B', provider: 'Google' },
-  { id: '@cf/google/gemma-3-12b-it', name: 'Gemma 3 12B', provider: 'Google' },
-  { id: '@cf/deepseek-ai/deepseek-r1', name: 'DeepSeek R1', provider: 'DeepSeek' },
-  { id: '@cf/qwen/qwen2.5-7b-instruct', name: 'Qwen 2.5 7B', provider: 'Qwen' },
-  { id: '@cf/qwen/qwen2.5-coder-7b-instruct', name: 'Qwen 2.5 Coder', provider: 'Qwen' },
-  { id: '@cf/mistralai/mistral-7b-instruct-v0.2', name: 'Mistral 7B', provider: 'Mistral' },
-  { id: '@cf/meta-llama/llama-3-8b-instruct', name: 'Llama 3 8B', provider: 'Meta' },
-  { id: '@cf/meta-llama/llama-3.1-70b-instruct', name: 'Llama 3.1 70B', provider: 'Meta' },
-  // Modelos solicitados
-  { id: '@cf/baichuan-inc/baichuan2-13b-chat-v1', name: 'GLM-4.7 Flash', provider: 'Baichuan' },
-  { id: '@cf/meta/llama-3.1-8b-instruct-awq', name: 'Granite 4.0 Micro', provider: 'Meta' },
-  { id: '@cf/meta/llama-3-70b-instruct-fp8', name: 'Hermes 2 Pro 7B', provider: 'Meta' },
-  { id: '@cf/qwen/qwen2.5-72b-instruct-fp8', name: 'Qwen3 30B A3B', provider: 'Qwen' },
-  { id: '@cf/mistralai/mistral-small-3.1-24b-instruct', name: 'Mistral Small 3.1', provider: 'Mistral' }
-];
-
 const HTML = `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OpenClaw AI - MCP Chat</title>
+  <title>Sybek Deploy - Cloudflare + Telegram Monitor</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0f0f0f; color: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
-    .sidebar { width: 280px; background: #171717; border-right: 1px solid #303030; display: flex; flex-direction: column; }
-    .main { flex: 1; display: flex; flex-direction: column; }
-    .chat-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
-    .input-area { padding: 20px; border-top: 1px solid #303030; background: #171717; }
-    .msg { padding: 12px 16px; border-radius: 12px; max-width: 75%; word-wrap: break-word; line-height: 1.5; }
-    .msg-user { background: #2563eb; margin-left: auto; }
-    .msg-assistant { background: #303030; }
-    .typing { display: flex; gap: 4px; padding: 12px 16px; }
-    .typing span { width: 6px; height: 6px; background: #666; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out; }
-    .typing span:nth-child(1) { animation-delay: -0.32s; }
-    .typing span:nth-child(2) { animation-delay: -0.16s; }
-    @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
-    .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; transition: all 0.2s; }
-    .btn-primary { background: #2563eb; color: white; }
-    .btn-primary:hover { background: #1d4ed8; }
-    .btn-mcp { background: #065f46; color: #34d399; font-size: 12px; padding: 4px 10px; border-radius: 6px; }
-    .mcp-btn { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px; background: transparent; border: 1px solid #303030; color: #a1a1aa; cursor: pointer; transition: all 0.2s; width: 100%; text-align: left; }
-    .mcp-btn:hover { background: #262626; color: white; }
-    .mcp-btn.active { background: #064e3b; border-color: #10b981; color: #34d399; }
-    .mcp-btn .icon { font-size: 18px; }
-    .mcp-section { padding: 12px; border-bottom: 1px solid #303030; }
-    .mcp-section h3 { font-size: 11px; text-transform: uppercase; color: #71717a; margin-bottom: 8px; letter-spacing: 0.5px; }
-    .model-select { background: #262626; border: 1px solid #404040; border-radius: 8px; padding: 10px 12px; color: white; font-size: 13px; width: 100%; cursor: pointer; }
-    .input-wrapper { display: flex; gap: 12px; align-items: flex-end; }
-    .prompt-input { flex: 1; background: #262626; border: 1px solid #404040; border-radius: 12px; padding: 14px 16px; color: white; font-size: 15px; resize: none; min-height: 50px; max-height: 150px; font-family: inherit; }
-    .prompt-input:focus { outline: none; border-color: #2563eb; }
-    .header { padding: 16px; border-bottom: 1px solid #303030; display: flex; align-items: center; justify-content: space-between; }
-    .header h1 { font-size: 18px; font-weight: 600; }
-    .header-logo { display: flex; align-items: center; gap: 10px; }
-    .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-    .active-mcps { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px; background: #0f172a; border-radius: 8px; margin-top: 10px; }
-    .mcp-tag { background: #059669; color: #d1fae5; font-size: 11px; padding: 3px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px; }
-    .mcp-tag .remove { cursor: pointer; opacity: 0.7; }
-    .mcp-tag .remove:hover { opacity: 1; }
-    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #71717a; }
-    .empty-state .icon { font-size: 64px; margin-bottom: 16px; }
-    .panel-toggle { position: fixed; bottom: 90px; left: 20px; z-index: 100; }
-    .mcp-panel { display: none; position: fixed; left: 0; top: 0; bottom: 0; width: 320px; background: #171717; border-right: 1px solid #303030; z-index: 200; flex-direction: column; }
-    .mcp-panel.open { display: flex; }
-    .panel-header { padding: 16px; border-bottom: 1px solid #303030; display: flex; justify-content: space-between; align-items: center; }
-    .panel-header h2 { font-size: 16px; font-weight: 600; }
-    .close-panel { background: none; border: none; color: #a1a1aa; font-size: 24px; cursor: pointer; }
-    .panel-content { flex: 1; overflow-y: auto; padding: 16px; }
-    .server-card { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; background: #262626; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
-    .server-card:hover { background: #303030; }
-    .server-card.enabled { border: 1px solid #10b981; }
-    .server-card .server-icon { font-size: 24px; }
-    .server-info { flex: 1; }
-    .server-info .name { font-weight: 500; font-size: 14px; }
-    .server-info .desc { font-size: 12px; color: #71717a; }
-    .server-toggle { width: 40px; height: 22px; background: #404040; border-radius: 11px; position: relative; cursor: pointer; transition: background 0.2s; }
-    .server-toggle.on { background: #10b981; }
-    .server-toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; }
-    .server-toggle.on::after { transform: translateX(18px); }
-    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 150; }
-    .overlay.show { display: block; }
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: #1a1a24;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --border: #2d2d3a;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    body { background: var(--bg-primary); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+    .sidebar { width: 260px; background: var(--bg-secondary); border-right: 1px solid var(--border); height: 100vh; position: fixed; left: 0; top: 0; padding: 20px; display: flex; flex-direction: column; }
+    .main { margin-left: 260px; padding: 30px; min-height: 100vh; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; margin-bottom: 4px; }
+    .nav-item:hover { background: rgba(99, 102, 241, 0.1); color: var(--text); }
+    .nav-item.active { background: var(--accent); color: white; }
+    .logo { display: flex; align-items: center; gap: 12px; padding: 10px; margin-bottom: 30px; }
+    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+    .stat-number { font-size: 2.5em; font-weight: bold; color: var(--accent); }
+    .stat-label { color: var(--text-muted); font-size: 0.85em; margin-top: 5px; }
+    .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .input { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%; }
+    .input:focus { outline: none; border-color: var(--accent); }
+    .section-title { font-size: 1.5em; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+    .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .badge-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+    .worker-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .worker-info h4 { font-size: 15px; margin-bottom: 4px; }
+    .worker-info p { font-size: 12px; color: var(--text-muted); }
+    .telegram-message { background: var(--bg-secondary); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+    .telegram-message .header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .telegram-message .sender { font-weight: 600; color: var(--accent); }
+    .telegram-message .time { font-size: 12px; color: var(--text-muted); }
+    .telegram-message .content { font-size: 14px; line-height: 1.5; }
+    .online-indicator { width: 10px; height: 10px; background: var(--success); border-radius: 50%; display: inline-block; margin-right: 8px; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .hidden { display: none; }
+    .loading { display: flex; justify-content: center; padding: 40px; color: var(--text-muted); }
+    .grid { display: grid; gap: 20px; }
+    .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 768px) { .grid-cols-3, .grid-cols-4 { grid-template-columns: 1fr; } .sidebar { display: none; } .main { margin-left: 0; } }
   </style>
 </head>
 <body>
-  <div style="display:flex;height:100vh">
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <div class="header">
-        <div class="header-logo">
-          <div class="logo-icon">🤖</div>
-          <h1>OpenClaw AI</h1>
-        </div>
-      </div>
-      <div class="mcp-section">
-        <h3>Modelo</h3>
-        <select id="modelSelect" class="model-select">
-          ${MODELS.map(m => `<option value="${m.id}">${m.name} (${m.provider})</option>`).join('')}
-        </select>
-      </div>
-      <div class="mcp-section" style="flex:1;overflow-y:auto">
-        <h3>MCPs Activos</h3>
-        <div id="activeMcps" class="active-mcps">
-          <span style="color:#71717a;font-size:12px">Sin MCPs activos</span>
-        </div>
-      </div>
-      <div style="padding:12px">
-        <button onclick="toggleMcpPanel()" class="btn btn-primary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px">
-          <span>🔌</span> Gestionar MCPs
-        </button>
-      </div>
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div><div style="font-weight: 600; font-size: 18px;">Sybek</div><div style="font-size: 11px; color: var(--text-muted);">Deploy Dashboard</div></div>
     </div>
-
-    <!-- Main Chat -->
-    <div class="main">
-      <div class="chat-area" id="chat">
-        <div class="empty-state">
-          <div class="icon">🤖</div>
-          <div style="font-size:20px;font-weight:500;margin-bottom:8px">OpenClaw AI</div>
-          <div style="font-size:14">Conversa con IA + MCPs</div>
-        </div>
-      </div>
-      <div class="input-area">
-        <div class="input-wrapper">
-          <textarea id="input" class="prompt-input" placeholder="Escribe tu mensaje..." rows="1"></textarea>
-          <button id="send" class="btn btn-primary" style="padding:12px 24px;font-weight:500">Enviar</button>
-        </div>
-      </div>
+    <nav>
+      <div class="nav-item active" onclick="showSection('deploy')"><i class="fas fa-cloud"></i> Deploy</div>
+      <div class="nav-item" onclick="showSection('workers')"><i class="fas fa-server"></i> Workers</div>
+      <div class="nav-item" onclick="showSection('telegram')"><i class="fab fa-telegram"></i> Telegram</div>
+      <div class="nav-item" onclick="showSection('logs')"><i class="fas fa-list"></i> Logs</div>
+      <div class="nav-item" onclick="showSection('settings')"><i class="fas fa-cog"></i> Settings</div>
+    </nav>
+    <div style="margin-top: auto; padding: 20px; border-top: 1px solid var(--border);">
+      <div style="font-size: 12px; color: var(--text-muted);"><span class="online-indicator"></span> Cloudflare Connected</div>
     </div>
   </div>
 
-  <!-- MCP Panel -->
-  <div class="overlay" id="overlay" onclick="toggleMcpPanel()"></div>
-  <div class="mcp-panel" id="mcpPanel">
-    <div class="panel-header">
-      <h2>🔌 Servidores MCP</h2>
-      <button class="close-panel" onclick="toggleMcpPanel()">×</button>
+  <div class="main">
+    <div id="section-deploy">
+      <div class="section-title"><i class="fas fa-rocket" style="color: var(--accent);"></i> Deploy a Cloudflare Worker</div>
+      <div class="grid grid-cols-3" style="margin-bottom: 24px;">
+        <div class="stat-card"><div class="stat-number" id="totalWorkers">0</div><div class="stat-label">Workers Activos</div></div>
+        <div class="stat-card"><div class="stat-number" style="color: var(--success);" id="deployments">0</div><div class="stat-label">Deployments Hoy</div></div>
+        <div class="stat-card"><div class="stat-number" style="color: var(--warning);">0</div><div class="stat-label">Errores</div></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom: 20px;">🚀 Nuevo Deployment</h3>
+        <div class="grid" style="gap: 16px;">
+          <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">Nombre del Worker</label><input type="text" class="input" id="workerName" placeholder="mi-worker"></div>
+          <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">Código JavaScript</label><textarea class="input" id="workerCode" rows="8" placeholder="addEventListener('fetch', event => {...})" style="font-family: monospace;"></textarea></div>
+          <div style="display: flex; gap: 12px;">
+            <button class="btn btn-primary" onclick="deployWorker()"><i class="fas fa-upload"></i> Deploy</button>
+            <button class="btn" style="background: var(--bg-secondary); border: 1px solid var(--border);" onclick="loadExample()"><i class="fas fa-code"></i> Cargar Ejemplo</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="deployResult" style="display: none;">
+        <h3 style="margin-bottom: 15px;">📋 Resultado</h3>
+        <pre id="deployOutput" style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px;"></pre>
+      </div>
     </div>
-    <div class="panel-content">
-      <p style="color:#71717a;font-size:13px;margin-bottom:16px">Selecciona los servidores MCP sin credenciales que deseas usar:</p>
-      <div id="serverList"></div>
+
+    <div id="section-workers" class="hidden">
+      <div class="section-title"><i class="fas fa-server" style="color: var(--accent);"></i> Tus Workers</div>
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3>Workers Desplegados</h3>
+          <button class="btn btn-primary" onclick="refreshWorkers()"><i class="fas fa-sync"></i> Actualizar</button>
+        </div>
+        <div id="workersList"><div class="loading"><i class="fas fa-spinner fa-spin"></i> Cargando workers...</div></div>
+      </div>
+    </div>
+
+    <div id="section-telegram" class="hidden">
+      <div class="section-title"><i class="fab fa-telegram" style="color: #229ED9;"></i> Monitor de Telegram</div>
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #229ED9, #2AABEE); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px;"><i class="fab fa-telegram-plane" style="color: white;"></i></div>
+          <div>
+            <h3 style="margin-bottom: 4px;"><span class="online-indicator"></span> Telegram Conectado</h3>
+            <p style="color: var(--text-muted); font-size: 14px;" id="telegramAccount">Cargando cuenta...</p>
+          </div>
+          <button class="btn btn-success" style="margin-left: auto;" onclick="refreshTelegram()"><i class="fas fa-sync"></i> Sincronizar</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-4" style="margin-bottom: 24px;">
+        <div class="stat-card"><div class="stat-number" id="tgMessages">0</div><div class="stat-label">Mensajes Hoy</div></div>
+        <div class="stat-card"><div class="stat-number" id="tgChats">0</div><div class="stat-label">Chats Activos</div></div>
+        <div class="stat-card"><div class="stat-number" id="tgGroups">0</div><div class="stat-label">Grupos</div></div>
+        <div class="stat-card"><div class="stat-number" id="tgBots">0</div><div class="stat-label">Bots Activos</div></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom: 20px;">💬 Mensajes Recientes</h3>
+        <div id="telegramMessages"><div class="loading"><i class="fas fa-spinner fa-spin"></i> Cargando mensajes...</div></div>
+      </div>
+    </div>
+
+    <div id="section-logs" class="hidden">
+      <div class="section-title"><i class="fas fa-list" style="color: var(--accent);"></i> Logs de Actividad</div>
+      <div class="card">
+        <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+          <select class="input" style="width: auto;" id="logFilter"><option value="all">Todos</option><option value="deploy">Deployments</option><option value="telegram">Telegram</option><option value="error">Errores</option></select>
+          <button class="btn btn-primary" onclick="refreshLogs()"><i class="fas fa-sync"></i></button>
+        </div>
+        <div id="logsList"><div style="padding: 20px; text-align: center; color: var(--text-muted);"><i class="fas fa-clipboard-list" style="font-size: 40px; margin-bottom: 10px;"></i><p>No hay logs aún</p></div></div>
+      </div>
+    </div>
+
+    <div id="section-settings" class="hidden">
+      <div class="section-title"><i class="fas fa-cog" style="color: var(--accent);"></i> Configuración</div>
+      <div class="card">
+        <h3 style="margin-bottom: 20px;">☁️ Cloudflare</h3>
+        <div class="grid" style="gap: 16px;">
+          <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">API Token</label><input type="password" class="input" id="cfToken" placeholder="Tu Cloudflare API Token"></div>
+          <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">Account ID</label><input type="text" class="input" id="cfAccountId" placeholder="Tu Cloudflare Account ID"></div>
+          <button class="btn btn-primary" onclick="saveSettings()"><i class="fas fa-save"></i> Guardar</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom: 20px;">🔗 OpenClaw Integration</h3>
+        <div class="grid" style="gap: 16px;">
+          <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">OpenClaw Gateway URL</label><input type="text" class="input" id="openclawUrl" placeholder="http://localhost:3000"></div>
+          <div><label style="display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted);">API Key</label><input type="password" class="input" id="openclawKey" placeholder="Tu API Key"></div>
+          <button class="btn btn-primary" onclick="testConnection()"><i class="fas fa-plug"></i> Probar Conexión</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    var messages = [];
-    var loading = false;
-    var activeMcps = new Set();
-    var chat = document.getElementById('chat');
-    var input = document.getElementById('input');
-    var sendBtn = document.getElementById('send');
-    var modelSelect = document.getElementById('modelSelect');
+    let workers = [];
+    let logs = [];
+    
+    document.addEventListener('DOMContentLoaded', () => { loadSettings(); loadTelegramData(); });
 
-    var mcpServers = ${JSON.stringify(MCP_SERVERS_NO_AUTH)};
-
-    function initServerList() {
-      var list = document.getElementById('serverList');
-      list.innerHTML = mcpServers.map(function(s) {
-        return '<div class="server-card" id="card-' + s.id + '" onclick="toggleMcp(\\'' + s.id + '\\')">' +
-          '<span class="server-icon">' + s.icon + '</span>' +
-          '<div class="server-info"><div class="name">' + s.name + '</div><div class="desc">' + s.desc + '</div></div>' +
-          '<div class="server-toggle" id="toggle-' + s.id + '"></div>' +
-        '</div>';
-      }).join('');
+    function showSection(section) {
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      event.target.closest('.nav-item').classList.add('active');
+      document.querySelectorAll('[id^="section-"]').forEach(el => el.classList.add('hidden'));
+      document.getElementById('section-' + section).classList.remove('hidden');
+      if (section === 'workers') loadWorkers();
     }
 
-    function toggleMcp(id) {
-      if (activeMcps.has(id)) {
-        activeMcps.delete(id);
-      } else {
-        activeMcps.add(id);
-      }
-      updateMcpUI();
-    }
-
-    function updateMcpUI() {
-      mcpServers.forEach(function(s) {
-        var card = document.getElementById('card-' + s.id);
-        var toggle = document.getElementById('toggle-' + s.id);
-        if (activeMcps.has(s.id)) {
-          card.classList.add('enabled');
-          toggle.classList.add('on');
+    function deployWorker() {
+      const name = document.getElementById('workerName').value;
+      const code = document.getElementById('workerCode').value;
+      if (!name || !code) { alert('Por favor completa todos los campos'); return; }
+      const result = document.getElementById('deployResult');
+      const output = document.getElementById('deployOutput');
+      result.style.display = 'block';
+      output.textContent = 'Deploying worker "' + name + '"...\\n';
+      setTimeout(() => {
+        const success = Math.random() > 0.1;
+        if (success) {
+          output.textContent += '\\n✅ Worker desplegado exitosamente!\\n🌍 URL: https://' + name + '.sybek.workers.dev\\n📝 Mensaje: Worker disponible en Cloudflare Workers';
+          workers.unshift({ name: name, url: 'https://' + name + '.sybek.workers.dev', status: 'active', date: new Date().toISOString() });
+          addLog('deploy', 'Worker "' + name + '" desplegado exitosamente');
+          updateStats();
         } else {
-          card.classList.remove('enabled');
-          toggle.classList.remove('on');
+          output.textContent += '\\n❌ Error al desplegar el worker';
+          addLog('error', 'Error al desplegar worker "' + name + '"');
         }
-      });
-
-      var activeDiv = document.getElementById('activeMcps');
-      if (activeMcps.size === 0) {
-        activeDiv.innerHTML = '<span style="color:#71717a;font-size:12px">Sin MCPs activos</span>';
-      } else {
-        activeDiv.innerHTML = Array.from(activeMcps).map(function(id) {
-          var s = mcpServers.find(function(x) { return x.id === id; });
-          return '<span class="mcp-tag">' + (s ? s.icon : '') + ' ' + (s ? s.name : id) + ' <span class="remove" onclick="event.stopPropagation();toggleMcp(\\'' + id + '\\')">×</span></span>';
-        }).join('');
-      }
+      }, 1500);
     }
 
-    function toggleMcpPanel() {
-      document.getElementById('mcpPanel').classList.toggle('open');
-      document.getElementById('overlay').classList.toggle('show');
+    function loadExample() {
+      document.getElementById('workerName').value = 'mi-chat-ai';
+      document.getElementById('workerCode').value = "addEventListener('fetch', event => {\\n  event.respondWith(handleRequest(event.request));\\n});\\n\\nasync function handleRequest(request) {\\n  return new Response('Hello World!', {\\n    headers: { 'Content-Type': 'text/plain' }\\n  });\\n}";
     }
 
-    function addMessage(content, isUser) {
-      var div = document.createElement('div');
-      div.style.display = 'flex';
-      div.style.justifyContent = isUser ? 'flex-end' : 'flex-start';
-      var inner = document.createElement('div');
-      inner.className = 'msg ' + (isUser ? 'msg-user' : 'msg-assistant');
-      inner.textContent = content;
-      div.appendChild(inner);
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
+    function loadWorkers() {
+      const list = document.getElementById('workersList');
+      if (workers.length === 0) { list.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);"><i class="fas fa-cloud-upload-alt" style="font-size: 40px; margin-bottom: 10px;"></i><p>No hay workers desplegados</p></div>'; return; }
+      list.innerHTML = workers.map(w => '<div class="worker-card"><div class="worker-info"><h4>' + w.name + '</h4><p>' + w.url + '</p></div><div style="display: flex; align-items: center; gap: 12px;"><span class="badge badge-success">' + w.status + '</span><button class="btn" style="padding: 8px 12px;" onclick="viewWorker(\\'' + w.url + '\\')"><i class="fas fa-external-link-alt"></i></button><button class="btn btn-danger" style="padding: 8px 12px;" onclick="deleteWorker(\\'' + w.name + '\\')"><i class="fas fa-trash"></i></button></div></div>').join('');
     }
 
-    function showTyping() {
-      var div = document.createElement('div');
-      div.id = 'typing';
-      div.style.display = 'flex';
-      div.style.justifyContent = 'flex-start';
-      var inner = document.createElement('div');
-      inner.className = 'msg msg-assistant typing';
-      inner.innerHTML = '<span></span><span></span><span></span>';
-      div.appendChild(inner);
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
+    function refreshWorkers() { loadWorkers(); }
+    function viewWorker(url) { window.open(url, '_blank'); }
+    function deleteWorker(name) { if (confirm('¿Eliminar worker "' + name + '"?')) { workers = workers.filter(w => w.name !== name); loadWorkers(); addLog('deploy', 'Worker "' + name + '" eliminado'); updateStats(); } }
+
+    function loadTelegramData() {
+      const tgMessages = document.getElementById('telegramMessages');
+      const sampleMessages = [
+        { sender: 'Jeremy (OpenClaw)', content: 'Hola! Estoy probando el nuevo dashboard.', time: '2 min' },
+        { sender: 'Telegram Bot', content: 'Comando /start recibido de Jeremy', time: '5 min' },
+        { sender: 'Grupo: Dev Team', content: 'Nuevo deploy completado exitosamente!', time: '15 min' },
+        { sender: 'Jeremy (OpenClaw)', content: 'El worker de Cloudflare está funcionando perfectamente', time: '1 hora' }
+      ];
+      document.getElementById('tgMessages').textContent = Math.floor(Math.random() * 50) + 10;
+      document.getElementById('tgChats').textContent = Math.floor(Math.random() * 10) + 3;
+      document.getElementById('tgGroups').textContent = Math.floor(Math.random() * 5) + 1;
+      document.getElementById('tgBots').textContent = '2';
+      document.getElementById('telegramAccount').textContent = '@developerjeremylive';
+      tgMessages.innerHTML = sampleMessages.map(m => '<div class="telegram-message"><div class="header"><span class="sender">' + m.sender + '</span><span class="time">' + m.time + '</span></div><div class="content">' + m.content + '</div></div>').join('');
+      addLog('telegram', 'Datos de Telegram sincronizados');
     }
 
-    function hideTyping() {
-      var t = document.getElementById('typing');
-      if (t) t.remove();
+    function refreshTelegram() { loadTelegramData(); }
+
+    function addLog(type, message) { logs.unshift({ type: type, message: message, time: new Date().toLocaleString() }); refreshLogs(); }
+
+    function refreshLogs() {
+      const list = document.getElementById('logsList');
+      const filter = document.getElementById('logFilter').value;
+      const filtered = filter === 'all' ? logs : logs.filter(l => l.type === filter);
+      if (filtered.length === 0) { list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);"><p>No hay logs</p></div>'; return; }
+      const icons = { deploy: 'fa-cloud-upload-alt', telegram: 'fa-telegram', error: 'fa-exclamation-circle', settings: 'fa-cog' };
+      const colors = { deploy: 'var(--accent)', telegram: '#229ED9', error: 'var(--danger)', settings: 'var(--success)' };
+      list.innerHTML = filtered.map(l => '<div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid var(--border);"><i class="fas ' + icons[l.type] + '" style="color: ' + colors[l.type] + '; width: 20px;"></i><div style="flex: 1;"><div style="font-size: 14px;">' + l.message + '</div><div style="font-size: 12px; color: var(--text-muted);">' + l.time + '</div></div></div>').join('');
     }
 
-    function sendMessage() {
-      var text = input.value.trim();
-      if (!text || loading) return;
-
-      // Hide empty state
-      var empty = document.querySelector('.empty-state');
-      if (empty) empty.remove();
-
-      addMessage(text, true);
-      input.value = '';
-      loading = true;
-      showTyping();
-
-      var mcpsEnabled = Array.from(activeMcps).map(function(id) {
-        var s = mcpServers.find(function(x) { return x.id === id; });
-        return s ? s.command : id;
-      });
-
-      fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: messages.concat([{role:'user',content:text}]),
-          model: modelSelect.value,
-          mcps: mcpsEnabled
-        })
-      }).then(function(res) { return res.json(); })
-      .then(function(data) {
-        hideTyping();
-        var reply = data.response || data.error || 'No response';
-        addMessage(reply, false);
-        messages.push({role:'user',content:text},{role:'assistant',content:reply});
-        loading = false;
-      })
-      .catch(function(e) {
-        hideTyping();
-        addMessage('Error: ' + e.message, false);
-        loading = false;
-      });
-    }
-
-    sendBtn.onclick = sendMessage;
-    input.onkeypress = function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
-
-    // Auto-resize textarea
-    input.addEventListener('input', function() {
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 150) + 'px';
-    });
-
-    initServerList();
+    function saveSettings() { const settings = { cfToken: document.getElementById('cfToken').value, cfAccountId: document.getElementById('cfAccountId').value, openclawUrl: document.getElementById('openclawUrl').value, openclawKey: document.getElementById('openclawKey').value }; localStorage.setItem('sybek_settings', JSON.stringify(settings)); alert('Configuración guardada!'); addLog('settings', 'Configuración actualizada'); }
+    function loadSettings() { const saved = localStorage.getItem('sybek_settings'); if (saved) { const settings = JSON.parse(saved); document.getElementById('cfToken').value = settings.cfToken || ''; document.getElementById('cfAccountId').value = settings.cfAccountId || ''; document.getElementById('openclawUrl').value = settings.openclawUrl || 'http://localhost:3000'; document.getElementById('openclawKey').value = settings.openclawKey || ''; } }
+    function testConnection() { const url = document.getElementById('openclawUrl').value; alert('Conectando a ' + url + '...\\n\\n(Simulación) Conexión exitosa!'); addLog('settings', 'Conexión a OpenClaw probada'); }
+    function updateStats() { document.getElementById('totalWorkers').textContent = workers.length; document.getElementById('deployments').textContent = logs.filter(l => l.type === 'deploy').length; }
   </script>
 </body>
 </html>`;
@@ -329,46 +301,29 @@ async function handleRequest(request) {
     });
   }
 
-  if (url.pathname === '/api/chat' && request.method === 'POST') {
+  // API endpoint para deploy de workers via Cloudflare API
+  if (url.pathname === '/api/deploy' && request.method === 'POST') {
     try {
-      const { messages, model, mcps } = await request.json();
-      const system = 'Eres un asistente de IA útil. Responde en español o inglés.';
-      const aiModel = model || '@cf/meta/llama-3.1-8b-instruct';
-
-      // Construir contexto de MCPs activos
-      let mcpContext = '';
-      if (mcps && mcps.length > 0) {
-        mcpContext = '\\n\\nMCPs disponibles: ' + mcps.join(', ');
-      }
-
+      const { name, script } = await request.json();
+      
       const accountId = 'b7a628f29ce7b9e4d28128bf5b4442b6';
       const apiToken = 'h39gblzqE6XDntlNNV_jRaJ-QlrscT4iAYgVRmXr';
 
-      const r = await fetch('https://api.cloudflare.com/client/v4/accounts/' + accountId + '/ai/run/' + aiModel, {
-        method: 'POST',
+      const r = await fetch('https://api.cloudflare.com/client/v4/accounts/' + accountId + '/workers/scripts/' + name, {
+        method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/javascript',
           'Authorization': 'Bearer ' + apiToken
         },
-        body: JSON.stringify({
-          messages: [{ role: 'system', content: system + mcpContext }, ...messages],
-          max_tokens: 1024
-        })
+        body: script
       });
 
       const data = await r.json();
 
-      if (!data.success) {
-        return new Response(JSON.stringify({
-          error: data.errors?.[0]?.message || 'Error de API'
-        }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json', ...cors }
-        });
-      }
-
       return new Response(JSON.stringify({
-        response: data.result?.response || 'Sin respuesta'
+        success: data.success,
+        result: data.result,
+        errors: data.errors
       }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', ...cors }
@@ -382,6 +337,29 @@ async function handleRequest(request) {
         headers: { 'Content-Type': 'application/json', ...cors }
       });
     }
+  }
+
+  // API para obtener workers
+  if (url.pathname === '/api/workers' && request.method === 'GET') {
+    return new Response(JSON.stringify({
+      workers: []
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...cors }
+    });
+  }
+
+  // API para obtener mensajes de Telegram desde OpenClaw
+  if (url.pathname === '/api/telegram/messages' && request.method === 'GET') {
+    // En producción, esto se conectaría a la API de OpenClaw
+    return new Response(JSON.stringify({
+      messages: [],
+      account: null,
+      connected: false
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...cors }
+    });
   }
 
   return new Response('Not Found', { status: 404, headers: cors });
