@@ -5,7 +5,7 @@ export default {
 };
 
 const KILO_INSTANCE = 'ZWM0ZWVmNDktZTIzYy00OGE3LTk4OGMtMjdlYjA5Y2RhMWEx';
-const KILO_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsbFVzZXJJZCI6ImVjNGVlZjQ5LWUyM2MtNDhhNy05ODhjLTI3ZWIwOWNkYTFhMSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzI0MzExNzAsImV4cCI6MTkzMDExMTE3MH0.wfGWzGMdNYFR_SpVHbUWoDSSv5pCKck1PeCxNg6DlaM';
+const KILO_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6ImVjNGVlZjQ5LWUyM2MtNDhhNy05ODhjLTI3ZWIwOWNkYTFhMSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzI0MzU5NTQsImV4cCI6MTkzMDExNTk1NH0.JX7SWhwAKsMU5g7VOZR8ylrfLpqAR872C6t0shtsDVk';
 
 const HTML = [
 '<!DOCTYPE html>',
@@ -169,7 +169,7 @@ const HTML = [
 '        </div>',
 '        <div class="card">',
 '          <h2>🤖 OpenClaw</h2>',
-'          <div class="form-group"><label>Gateway URL</label><input type="text" id="openclawUrl" placeholder="https://claw.kilosessions.ai"></div>',
+'          <div class="form-group"><label>Gateway URL</label><input type="text" id="openclawUrl" placeholder="https://claw.kilosessions.ai/"></div>',
 '          <div class="form-group"><label>Gateway Token</label><input type="password" id="openclawToken" placeholder="Your Gateway Token"></div>',
 '          <button class="btn btn-primary" id="btnTestConnection"><i class="fas fa-plug"></i> Test</button>',
 '        </div>',
@@ -179,7 +179,7 @@ const HTML = [
 '  <script>',
 '    var workers = [];',
 '    var logs = [];',
-'    var kiloUrl = "https://claw.kilosessions.ai";',
+'    var kiloUrl = "https://claw.kilosessions.ai/";',
 '    var kiloToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsbFVzZXJJZCI6ImVjNGVlZjQ5LWUyM2MtNDhhNy05ODhjLTI3ZWIwOWNkYTFhMSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzI0MzExNzAsImV4cCI6MTkzMDExMTE3MH0.wfGWzGMdNYFR_SpVHbUWoDSSv5pCKck1PeCxNg6DlaM";',
 '    document.getElementById("btnDeploy").onclick = deployWorker;',
 '    document.getElementById("btnExample").onclick = loadExample;',
@@ -370,7 +370,7 @@ async function handleRequest(request) {
   }
 
   if (url.pathname === '/api/openclaw/status') {
-    const openclawUrl = url.searchParams.get('url') || 'https://claw.kilosessions.ai';
+    const openclawUrl = url.searchParams.get('url') || 'https://claw.kilosessions.ai/';
     const token = url.searchParams.get('token') || KILO_API_KEY;
     
     try {
@@ -399,7 +399,7 @@ async function handleRequest(request) {
   }
 
   if (url.pathname === '/api/openclaw/test') {
-    const openclawUrl = url.searchParams.get('url') || 'https://claw.kilosessions.ai';
+    const openclawUrl = url.searchParams.get('url') || 'https://claw.kilosessions.ai/';
     const token = url.searchParams.get('token') || KILO_API_KEY;
     
     try {
@@ -417,7 +417,7 @@ async function handleRequest(request) {
   }
 
   if (url.pathname === '/api/telegram/messages') {
-    const openclawUrl = url.searchParams.get('url') || 'https://claw.kilosessions.ai';
+    const openclawUrl = url.searchParams.get('url') || 'https://claw.kilosessions.ai/';
     const token = url.searchParams.get('token') || KILO_API_KEY;
     
     try {
