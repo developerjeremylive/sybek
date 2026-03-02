@@ -218,8 +218,7 @@ const HTML = `<!DOCTYPE html>
           </div>
           <button class="btn btn-telegram" style="margin-left: auto;" onclick="refreshTelegram()"><i class="fas fa-sync"></i> Sincronizar</button>
         </div>
-      <div class="grid grid-cols </div>
-     -4" style="margin-bottom: 24px;">
+      <div class="grid grid-cols-4" style="margin-bottom: 24px;">
         <div class="stat-card"><div class="stat-number" id="tgMessages">0</div><div class="stat-label">Mensajes Hoy</div></div>
         <div class="stat-card"><div class="stat-number" id="tgChats">0</div><div class="stat-label">Chats Activos</div></div>
         <div class="stat-card"><div class="stat-number" id="tgGroups">0</div><div class="stat-label">Grupos</div></div>
