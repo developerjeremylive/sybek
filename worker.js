@@ -1,6 +1,8 @@
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request));
-});
+export default {
+  async fetch(request, env, ctx) {
+    return handleRequest(request);
+  }
+};
 
 const MCP_SERVERS_NO_AUTH = [
   { id: 'filesystem', name: 'Filesystem', desc: 'Acceso a archivos locales', icon: '📁', command: 'npx -y @modelcontextprotocol/server-filesystem /root' },

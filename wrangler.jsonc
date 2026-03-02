@@ -6,7 +6,5 @@
   "observability": {
     "enabled": true
   },
-  "compatibility_flags": [
-    "nodejs_compat"
-  ]
+  "compatibility_flags": []
 }
