@@ -261,7 +261,9 @@ const HTML = `<!DOCTYPE html>
     </div>
 
     <!-- Settings Section -->
-    <div id="section-settings" class="hidden">
+    <div id="section-settings" class="hidden" style="display: none; color: #e2e8f0;">
+      <div class="section-title" style="color: #e2e8f0;"><i class="fas fa-cog" style="color: #6366f1;"></i> Configuración</div>
+      <div class="card" style="background: #1a1a24; border: 1px solid #2d2d3a; color: #e2e8f0;">
       <div class="section-title"><i class="fas fa-cog" style="color: var(--accent);"></i> Configuración</div>
       <div class="card">
         <h3 style="margin-bottom: 20px;">☁️ Cloudflare</h3>
