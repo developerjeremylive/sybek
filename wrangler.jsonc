@@ -5,9 +5,6 @@
   "observability": {
     "enabled": true
   },
-  "assets": {
-    "directory": "mcp-playground-react"
-  },
   "compatibility_flags": [
     "nodejs_compat"
   ]
