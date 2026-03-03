@@ -15,10 +15,10 @@ interface Tool {
 interface Props {
   activeTools: string[];
   onToggle: (toolId: string) => void;
-  nativeTools?: string[]; // Tools that are always active
+  alwaysActiveTools?: string[]; // Tools that are always active
 }
 
-export function ToolsToggle({ activeTools, onToggle, nativeTools = ['fetch_url', 'browser'] }: Props) {
+export function ToolsToggle({ activeTools, onToggle, alwaysActiveTools = ['fetch_url', 'browser'] }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +30,7 @@ export function ToolsToggle({ activeTools, onToggle, nativeTools = ['fetch_url',
   ];
 
   // Native tools are always active
-  const isAlwaysActive = (id: string) => nativeTools.includes(id);
+  const isAlwaysActive = (id: string) => alwaysActiveTools?.includes(id);
 
   useEffect(() => {
     // Fetch available tools from API
@@ -56,10 +56,10 @@ export function ToolsToggle({ activeTools, onToggle, nativeTools = ['fetch_url',
       });
   }, []);
 
-  const isActive = (id: string) => activeTools.includes(id) || nativeTools.includes(id);
+  const isActive = (id: string) => activeTools.includes(id) || alwaysActiveTools?.includes(id);
 
-  const mcpTools = tools.filter(t => t.type === 'mcp');
-  const nativeTools = tools.filter(t => t.type === 'native');
+  const mcpToolsList = tools.filter(t => t.type === 'mcp');
+  const nativeToolsList = tools.filter(t => t.type === 'native');
 
   return (
     <div className="relative">
@@ -99,13 +99,13 @@ export function ToolsToggle({ activeTools, onToggle, nativeTools = ['fetch_url',
             ) : (
               <>
                 {/* MCP Tools Section */}
-                {mcpTools.length > 0 && (
+                {mcpToolsList.length > 0 && (
                   <div className="mb-3">
                     <div className="flex items-center gap-2 px-2 py-1 text-xs font-medium text-cyan-400 uppercase">
                       <Zap className="w-3 h-3" />
                       MCP Tools
                     </div>
-                    {mcpTools.map((tool) => (
+                    {mcpToolsList.map((tool) => (
                       <button
                         key={tool.id}
                         onClick={() => onToggle(tool.id)}
