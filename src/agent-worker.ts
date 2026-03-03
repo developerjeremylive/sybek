@@ -215,8 +215,8 @@ async function autoSaveCodeFiles(groupId: string, userMessage: string, aiRespons
         ? sections.map(s => `<li><a href="#${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</a></li>`).join('\n        ')
         : '<li><a href="#inicio">Inicio</a></li>\n        <li><a href="#servicios">Servicios</a></li>\n        <li><a href="#contacto">Contacto</a></li>';
       
-      // Add header if requested
-      if (lowerMessage.includes('header') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir')) {
+      // Add header if requested - only if not already exists
+      if ((lowerMessage.includes('header') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir')) && !htmlContent.includes('<header')) {
         const headerCode = `
   <header>
     <nav>
@@ -236,8 +236,8 @@ async function autoSaveCodeFiles(groupId: string, userMessage: string, aiRespons
         }
       }
       
-      // Add footer if requested
-      if (lowerMessage.includes('footer') || lowerMessage.includes('pie') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir')) {
+      // Add footer if requested - only if not already exists
+      if ((lowerMessage.includes('footer') || lowerMessage.includes('pie') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir')) && !htmlContent.includes('<footer')) {
         const footerCode = `
   <footer>
     <p>&copy; 2026 Mi Empresa. Todos los derechos reservados.</p>
