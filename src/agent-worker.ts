@@ -398,7 +398,7 @@ function post(msg: WorkerOutbound): void {
   self.postMessage(msg);
 }
 
-function log(groupId: string, kind: string, title: string, text: string): void {
-  const entry: any = { id: ulid(), timestamp: Date.now(), kind, title, text };
-  post({ type: 'thinking-log', payload: entry } as any);
+function log(groupId: string, kind: string, label: string, detail: string): void {
+  const entry = { id: ulid(), timestamp: Date.now(), kind, label, detail };
+  post({ type: 'thinking-log', payload: entry });
 }
