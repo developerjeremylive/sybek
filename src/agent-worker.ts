@@ -279,7 +279,7 @@ async function autoSaveCodeFiles(groupId: string, aiResponse: string): Promise<s
 // ---------------------------------------------------------------------------
 
 async function handleInvoke(payload: InvokePayload): Promise<void> {
-  const { groupId = DEFAULT_GROUP_ID, messages, systemPrompt, model = DEFAULT_MODEL, maxTokens = 4096, sessionFolder, contextFolders, fileContext } = payload;
+  const { groupId = DEFAULT_GROUP_ID, messages, systemPrompt, model = DEFAULT_MODEL, maxTokens = 4096, sessionFolder, contextFolders, fileContext, tools } = payload;
 
   // Use first context folder as working folder if available, otherwise use sessionFolder
   if (contextFolders && contextFolders.length > 0) {
