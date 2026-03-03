@@ -74,6 +74,38 @@ async function combineHtmlWithResources(
     );
   }
   
+  // Add inline script to handle internal anchor links and prevent iframe reload
+  const anchorHandler = `
+<script>
+(function() {
+  document.addEventListener('DOMContentLoaded', function() {
+    // Handle anchor links within the page
+    document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        var targetId = this.getAttribute('href').substring(1);
+        var target = document.getElementById(targetId);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+    
+    // Remove any base tags that might interfere
+    document.querySelectorAll('base').forEach(function(el) {
+      el.parentNode.removeChild(el);
+    });
+  });
+})();
+</script>`;
+  
+  // Insert the handler before </body>
+  if (combinedHtml.includes('</body>')) {
+    combinedHtml = combinedHtml.replace('</body>', anchorHandler + '</body>');
+  } else {
+    combinedHtml += anchorHandler;
+  }
+  
   return combinedHtml;
 }
 
@@ -292,8 +324,8 @@ export function FilesPage() {
                 <iframe
                   srcDoc={previewContent}
                   className="w-full h-full border-0 rounded bg-white"
-                  sandbox="allow-scripts"
-                  title="File preview"
+                  sandbox="allow-scripts allow-same-origin allow-modals"
+                  title={`Preview: ${previewFile}`}
                 />
               ) : (
                 <pre className="text-xs font-mono whitespace-pre-wrap break-all">
