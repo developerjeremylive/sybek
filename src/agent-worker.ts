@@ -287,6 +287,14 @@ async function autoSaveCodeFiles(groupId: string, userMessage: string, aiRespons
         sections.push(match[1]);
       }
       
+      // Also detect id attributes on any element
+      const idRegex = /<(\w+)[^>]+id=["']([^"']+)["'][^>]*>/gi;
+      while ((match = idRegex.exec(htmlContent)) !== null) {
+        if (!sections.includes(match[2]) && match[2]) {
+          sections.push(match[2]);
+        }
+      }
+      
       // Also detect anchor links in existing content
       const anchorRegex = /<a[^>]+href=["']#([^"']+)["'][^>]*>/gi;
       while ((match = anchorRegex.exec(htmlContent)) !== null) {
@@ -295,10 +303,26 @@ async function autoSaveCodeFiles(groupId: string, userMessage: string, aiRespons
         }
       }
       
-      // Build navigation based on detected sections
-      const navLinks = sections.length > 0 
-        ? sections.map(s => `<li><a href="#${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</a></li>`).join('\n        ')
-        : '<li><a href="#inicio">Inicio</a></li>\n        <li><a href="#servicios">Servicios</a></li>\n        <li><a href="#contacto">Contacto</a></li>';
+      // Build navigation based on detected sections - use actual detected sections
+      let navLinks = '';
+      if (sections.length > 0) {
+        navLinks = sections.map(s => `<li><a href="#${s}">${s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, ' ')}</a></li>`).join('\n        ');
+      } else {
+        navLinks = '<li><a href="#inicio">Inicio</a></li>\n        <li><a href="#servicios">Servicios</a></li>\n        <li><a href="#contacto">Contacto</a></li>';
+        
+        // Auto-add IDs to sections if they don't exist
+        htmlContent = htmlContent.replace(/(<section[^>]*)(>)/gi, (m, start, end) => {
+          if (!m.includes('id="')) {
+            // Try to find a heading to create ID from
+            const headingMatch = m.match(/<h[12][^>]*>([^<]+)<\/h[12]>/i);
+            if (headingMatch) {
+              const id = headingMatch[1].toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+              return start + ` id="${id}"` + end;
+            }
+          }
+          return m;
+        });
+      }
       
       // Add header if requested - only if not already exists
       if ((lowerMessage.includes('header') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir')) && !htmlContent.includes('<header')) {
