@@ -328,16 +328,12 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         max_tokens: maxTokens,
       };
 
-      // Add tools if provided - Workers AI format for function calling
+      // Add tools if provided - Workers AI expects {id, desc}
       const activeTools = tools || [];
       if (activeTools.length > 0) {
         requestBody.tools = activeTools.map((id: string) => ({
-          type: 'function',
-          function: {
-            name: id,
-            description: getToolDescription(id),
-            parameters: { type: 'object', properties: {} }
-          }
+          id,
+          desc: getToolDescription(id),
         }));
       }
 
