@@ -188,12 +188,32 @@ async function autoSaveCodeFiles(groupId: string, userMessage: string, aiRespons
   // Detect user intent from message
   const lowerMessage = userMessage.toLowerCase();
   
-  // If user wants to add header/footer - modify existing files
+  // If user wants to add header/footer - analyze existing content and edit
   if ((lowerMessage.includes('header') || lowerMessage.includes('footer') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir') || lowerMessage.includes('modificar')) && hasHtml) {
     try {
-      // Read existing HTML
       const htmlPath = `${targetFolder}/index.html`;
       let htmlContent = await readGroupFile(groupId, htmlPath);
+      
+      // Analyze existing HTML to detect navigation sections
+      const sections: string[] = [];
+      const sectionRegex = /<section[^>]*id=["']([^"']+)["'][^>]*>/gi;
+      let match;
+      while ((match = sectionRegex.exec(htmlContent)) !== null) {
+        sections.push(match[1]);
+      }
+      
+      // Also detect anchor links in existing content
+      const anchorRegex = /<a[^>]+href=["']#([^"']+)["'][^>]*>/gi;
+      while ((match = anchorRegex.exec(htmlContent)) !== null) {
+        if (!sections.includes(match[1]) && match[1]) {
+          sections.push(match[1]);
+        }
+      }
+      
+      // Build navigation based on detected sections
+      const navLinks = sections.length > 0 
+        ? sections.map(s => `<li><a href="#${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</a></li>`).join('\n        ')
+        : '<li><a href="#inicio">Inicio</a></li>\n        <li><a href="#servicios">Servicios</a></li>\n        <li><a href="#contacto">Contacto</a></li>';
       
       // Add header if requested
       if (lowerMessage.includes('header') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir')) {
@@ -550,9 +570,30 @@ IMPORTANTE: Si ves "file-skip: no se sobrescribe" significa que NO debes guardar
 
       // AUTO-SAVE FILES: Extract code blocks and save them automatically
       const savedFiles = await autoSaveCodeFiles(groupId, userMessage, responseContent);
+      
+      // Generate summary response - remove code blocks from chat response
+      let summaryResponse = responseContent;
+      
+      // If files were edited/saved, show summary instead of code
       if (savedFiles.length > 0) {
-        responseContent += '\n\n📁 Archivos guardados en Files:\n' + savedFiles.map(f => `- ${f}`).join('\n');
+        // Remove code blocks from response
+        summaryResponse = responseContent.replace(/```[\s\S]*?```/g, '');
+        summaryResponse = summaryResponse.replace(/<style>[\s\S]*?<\/style>/gi, '');
+        summaryResponse = summaryResponse.replace(/<script>[\s\S]*?<\/script>/gi, '');
+        
+        // Extract just the main message (first paragraph or key sentences)
+        const lines = summaryResponse.split('\n').filter(l => l.trim() && !l.startsWith('#'));
+        const summary = lines.slice(0, 3).join(' ').slice(0, 300);
+        
+        summaryResponse = `✅ ${savedFiles.length} archivo(s) actualizado(s):\n\n${savedFiles.map(f => `📄 ${f.split('/').pop()}`).join('\n')}\n\nLos cambios se han guardado directamente en los archivos.`;
       }
+      
+      // Return the cleaned summary response
+      currentMessages.push({ role: 'assistant', content: responseContent });
+      currentMessages.push({ role: 'user', content: `Tool result: Archivos actualizados` });
+      
+      // Final response is the summary
+      const finalResponse = summaryResponse;
 
       // Check for tool calls - try multiple formats
       let toolCalls: any[] = [];
@@ -603,8 +644,8 @@ IMPORTANTE: Si ves "file-skip: no se sobrescribe" significa que NO debes guardar
         
         post({ type: 'typing', payload: { groupId } });
       } else {
-        // Final response - no tools
-        const cleaned = responseContent.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
+        // Final response - no tools - use summary if files were edited
+        const cleaned = (finalResponse || responseContent).replace(/<internal>[\s\S]*?<\/internal>/g, '').replace(/```[\s\S]*?```/g, '').replace(/<style>[\s\S]*?<\/style>/gi, '').replace(/<script>[\s\S]*?<\/script>/gi, '').trim();
         post({ type: 'response', payload: { groupId, text: cleaned || '(no response)' } });
         return;
       }
