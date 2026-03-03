@@ -348,10 +348,10 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       // Auto-save code files from response
       const savedFiles = await autoSaveCodeFiles(groupId, responseContent);
       
-      // Generate clean response
+      // Generate response - show LLM response AND saved files
       let finalText = responseContent;
       if (savedFiles.length > 0) {
-        finalText = `✅ Archivos guardados:\n${savedFiles.map(f => `- ${f.split('/').pop()}`).join('\n')}`;
+        finalText = responseContent + '\n\n✅ Archivos guardados:\n' + savedFiles.map(f => `- ${f.split('/').pop()}`).join('\n');
       } else {
         // Remove code blocks from display
         finalText = responseContent.replace(/```[\s\S]*?```/g, '').trim();
