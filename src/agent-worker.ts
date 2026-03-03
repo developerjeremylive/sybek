@@ -212,7 +212,23 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
 
       const result = await res.json();
       
-      const responseContent = result.response || '';
+      // Debug: log full response
+      log(groupId, 'debug', 'Full API response', JSON.stringify(result).slice(0, 500));
+      
+      // Try multiple response formats
+      let responseContent = '';
+      if (typeof result.response === 'string') {
+        responseContent = result.response;
+      } else if (typeof result.content === 'string') {
+        responseContent = result.content;
+      } else if (result.message && typeof result.message.content === 'string') {
+        responseContent = result.message.content;
+      } else if (Array.isArray(result)) {
+        // Handle array response
+        responseContent = result.map((r: any) => r.response || r.content || r.message?.content || '').join('');
+      } else if (typeof result === 'string') {
+        responseContent = result;
+      }
       
       log(groupId, 'text', 'Response', responseContent.slice(0, 200));
 
