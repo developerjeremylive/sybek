@@ -161,7 +161,19 @@ async function getSessionFolderContext(groupId: string): Promise<string> {
 // Auto-save code files from AI response
 async function autoSaveCodeFiles(groupId: string, content: string): Promise<string[]> {
   const savedFiles: string[] = [];
-  const sessionFolder = getSessionFolder();
+  
+  // Use context folders if available, otherwise use session folder
+  let targetFolders = [...contextFolders];
+  if (currentSessionFolder && !targetFolders.includes(currentSessionFolder)) {
+    targetFolders = [currentSessionFolder, ...targetFolders];
+  }
+  
+  // If no folders, create a new one
+  if (targetFolders.length === 0) {
+    targetFolders = [getSessionFolder()];
+  }
+  
+  const targetFolder = targetFolders[0]; // Save to first available folder
   
   // Patterns to detect code that should be saved
   const patterns = [
@@ -187,7 +199,7 @@ async function autoSaveCodeFiles(groupId: string, content: string): Promise<stri
     else if (code.includes('import ') || code.includes('export ')) fileName = 'module.js';
     
     try {
-      const filePath = `${sessionFolder}/${fileName}`;
+      const filePath = `${targetFolder}/${fileName}`;
       await writeGroupFile(groupId, filePath, code);
       savedFiles.push(filePath);
       log(groupId, 'file-saved', 'Auto-saved', filePath);
@@ -205,7 +217,7 @@ async function autoSaveCodeFiles(groupId: string, content: string): Promise<stri
         if (cleanCode.length < 50) continue;
         
         try {
-          const filePath = `${sessionFolder}/${pattern.name}`;
+          const filePath = `${targetFolder}/${pattern.name}`;
           await writeGroupFile(groupId, filePath, cleanCode);
           if (!savedFiles.includes(filePath)) {
             savedFiles.push(filePath);
