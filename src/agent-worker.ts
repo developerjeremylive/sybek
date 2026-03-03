@@ -457,12 +457,15 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         });
         
         const finalResult = await finalRes.json();
+        log(groupId, 'info', 'Final API result', JSON.stringify(finalResult).slice(0, 200));
         let finalResponseContent = '';
         
         if (finalResult.response) {
           finalResponseContent = typeof finalResult.response === 'string' ? finalResult.response : JSON.stringify(finalResult.response);
         } else if (finalResult.result?.response) {
           finalResponseContent = typeof finalResult.result.response === 'string' ? finalResult.result.response : JSON.stringify(finalResult.result.response);
+        } else {
+          finalResponseContent = JSON.stringify(finalResult).slice(0, 500);
         }
         
         const cleaned = finalResponseContent.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
