@@ -2,17 +2,29 @@
 // OpenBrowserClaw — Chat input
 // ---------------------------------------------------------------------------
 
-import { useState, useRef, type KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { Send } from 'lucide-react';
 
 interface Props {
   onSend: (text: string) => void;
   disabled: boolean;
+  initialValue?: string;
 }
 
-export function ChatInput({ onSend, disabled }: Props) {
+export function ChatInput({ onSend, disabled, initialValue }: Props) {
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Set initial value from prop
+  useEffect(() => {
+    if (initialValue) {
+      setText(initialValue);
+      // Focus the textarea
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
+    }
+  }, [initialValue]);
 
   function handleSend() {
     const trimmed = text.trim();
@@ -37,7 +49,7 @@ export function ChatInput({ onSend, disabled }: Props) {
       <textarea
         ref={textareaRef}
         className="textarea textarea-bordered flex-1 chat-textarea text-base leading-snug"
-        placeholder="Type a message..."
+        placeholder="Escribe tu mensaje..."
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
