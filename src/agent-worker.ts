@@ -194,10 +194,11 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         max_tokens: maxTokens,
       };
 
-      // Only add tools on first call - simpler approach
-      if (iterations === 1) {
-        requestBody.tools = TOOLS;
-      }
+      // Note: Workers AI doesn't support tools in the same way as Anthropic
+      // Tools are handled separately
+      // if (iterations === 1) {
+      //   requestBody.tools = TOOLS;
+      // }
 
       const res = await fetch(CHAT_URL, {
         method: 'POST',
@@ -212,22 +213,25 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
 
       const result = await res.json();
       
-      // Debug: log full response
-      log(groupId, 'debug', 'Full API response', JSON.stringify(result).slice(0, 500));
-      
-      // Try multiple response formats
+      // Try multiple response formats (Workers AI returns different format)
       let responseContent = '';
-      if (typeof result.response === 'string') {
-        responseContent = result.response;
-      } else if (typeof result.content === 'string') {
-        responseContent = result.content;
-      } else if (result.message && typeof result.message.content === 'string') {
-        responseContent = result.message.content;
-      } else if (Array.isArray(result)) {
-        // Handle array response
-        responseContent = result.map((r: any) => r.response || r.content || r.message?.content || '').join('');
+      if (result.response) {
+        // Anthropic-style or custom format
+        responseContent = typeof result.response === 'string' ? result.response : JSON.stringify(result.response);
+      } else if (result.result && result.result.response) {
+        // Workers AI format
+        responseContent = typeof result.result.response === 'string' ? result.result.response : JSON.stringify(result.result.response);
+      } else if (result.messages && result.messages.length > 0) {
+        // Array of messages
+        responseContent = result.messages.map((m: any) => m.content || m.response || '').join('');
+      } else if (result.choices && result.choices.length > 0) {
+        // OpenAI-style
+        responseContent = result.choices[0].message?.content || '';
       } else if (typeof result === 'string') {
         responseContent = result;
+      } else {
+        // Fallback: stringify everything
+        responseContent = JSON.stringify(result);
       }
       
       log(groupId, 'text', 'Response', responseContent.slice(0, 200));
