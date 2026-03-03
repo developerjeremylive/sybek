@@ -14,11 +14,6 @@ import { decryptValue } from '../../crypto.js';
 import { getOrchestrator } from '../../stores/orchestrator-store.js';
 import { useThemeStore, type ThemeChoice } from '../../stores/theme-store.js';
 
-const MODELS = [
-  { value: 'claude-opus-4-6', label: 'Claude Opus 4.6' },
-  { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' },
-  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
-];
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
