@@ -9,6 +9,7 @@ import { initOrchestratorStore, useOrchestratorStore } from './stores/orchestrat
 import { Layout } from './components/layout/Layout.js';
 import { ChatPage } from './components/chat/ChatPage.js';
 import { FilesPage } from './components/files/FilesPage.js';
+import { AgentsPage } from './components/agents/AgentsPage.js';
 import { TasksPage } from './components/tasks/TasksPage.js';
 import { SettingsPage } from './components/settings/SettingsPage.js';
 
@@ -74,6 +75,7 @@ export function App() {
           />
           <Route path="chat" element={<ChatPage />} />
           <Route path="files" element={<FilesPage />} />
+          <Route path="agents" element={<AgentsPage />} />
           <Route path="tasks" element={<TasksPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/chat" replace />} />

@@ -288,8 +288,28 @@ export class Orchestrator {
       // No memory file yet
     }
 
+    // Load AGENTS.md if enabled
+    let agentsContent = '';
+    const useAgentsFile = await getConfig(CONFIG_KEYS.USE_AGENTS_FILE);
+    if (useAgentsFile !== 'false') {
+      const agentsPath = await getConfig(CONFIG_KEYS.AGENTS_FILE_PATH) || 'AGENTS.md';
+      try {
+        agentsContent = await readGroupFile(groupId, agentsPath);
+      } catch {
+        // No AGENTS.md file yet — that's fine
+      }
+    }
+
+    // Load custom system prompt
+    const customSystemPrompt = await getConfig(CONFIG_KEYS.SYSTEM_PROMPT);
+
     const messages = await buildConversationMessages(groupId, CONTEXT_WINDOW_SIZE);
-    const systemPrompt = buildSystemPrompt(this.assistantName, memory);
+    const systemPrompt = buildSystemPrompt(
+      this.assistantName,
+      memory,
+      agentsContent,
+      customSystemPrompt || undefined
+    );
 
     this.agentWorker.postMessage({
       type: 'compact',
@@ -407,10 +427,30 @@ export class Orchestrator {
       // No memory file yet — that's fine
     }
 
+    // Load AGENTS.md if enabled
+    let agentsContent = '';
+    const useAgentsFile = await getConfig(CONFIG_KEYS.USE_AGENTS_FILE);
+    if (useAgentsFile !== 'false') {
+      const agentsPath = await getConfig(CONFIG_KEYS.AGENTS_FILE_PATH) || 'AGENTS.md';
+      try {
+        agentsContent = await readGroupFile(groupId, agentsPath);
+      } catch {
+        // No AGENTS.md file yet — that's fine
+      }
+    }
+
+    // Load custom system prompt
+    const customSystemPrompt = await getConfig(CONFIG_KEYS.SYSTEM_PROMPT);
+
     // Build conversation context
     const messages = await buildConversationMessages(groupId, CONTEXT_WINDOW_SIZE);
 
-    const systemPrompt = buildSystemPrompt(this.assistantName, memory);
+    const systemPrompt = buildSystemPrompt(
+      this.assistantName,
+      memory,
+      agentsContent,
+      customSystemPrompt || undefined
+    );
 
     // Send to agent worker
     this.agentWorker.postMessage({
@@ -537,7 +577,24 @@ export class Orchestrator {
 // System prompt builder
 // ---------------------------------------------------------------------------
 
-function buildSystemPrompt(assistantName: string, memory: string): string {
+function buildSystemPrompt(
+  assistantName: string,
+  memory: string,
+  agentsContent?: string,
+  customPrompt?: string
+): string {
+  // If custom prompt is provided, use it (with optional AGENTS.md appended)
+  if (customPrompt) {
+    const parts = [customPrompt];
+    if (agentsContent) {
+      parts.push('', '---', '## AGENTS.md (Project Instructions)', '', agentsContent);
+    }
+    if (memory) {
+      parts.push('', '## Persistent Memory', '', memory);
+    }
+    return parts.join('\n');
+  }
+
   const parts = [
     `You are ${assistantName}, a personal AI assistant running in the user's browser.`,
     '',
@@ -556,6 +613,11 @@ function buildSystemPrompt(assistantName: string, memory: string): string {
     '- For scheduled tasks, confirm the schedule with the user.',
     '- Strip <internal> tags from your responses — they are for your internal reasoning only.',
   ];
+
+  // Add AGENTS.md content if present
+  if (agentsContent) {
+    parts.push('', '## Project Instructions (AGENTS.md)', '', agentsContent);
+  }
 
   if (memory) {
     parts.push('', '## Persistent Memory', '', memory);

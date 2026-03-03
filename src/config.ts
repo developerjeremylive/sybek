@@ -76,4 +76,7 @@ export const CONFIG_KEYS = {
   PASSPHRASE_SALT: 'passphrase_salt',
   PASSPHRASE_VERIFY: 'passphrase_verify',
   ASSISTANT_NAME: 'assistant_name',
+  SYSTEM_PROMPT: 'system_prompt',
+  AGENTS_FILE_PATH: 'agents_file_path',
+  USE_AGENTS_FILE: 'use_agents_file',
 } as const;
