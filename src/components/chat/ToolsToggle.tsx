@@ -15,12 +15,16 @@ interface Tool {
 interface Props {
   activeTools: string[];
   onToggle: (toolId: string) => void;
+  nativeTools?: string[]; // Tools that are always active
 }
 
-export function ToolsToggle({ activeTools, onToggle }: Props) {
+export function ToolsToggle({ activeTools, onToggle, nativeTools = ['fetch_url', 'browser'] }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Native tools are always active
+  const isAlwaysActive = (id: string) => nativeTools.includes(id);
 
   useEffect(() => {
     // Fetch available tools from API
@@ -40,12 +44,13 @@ export function ToolsToggle({ activeTools, onToggle }: Props) {
           { id: 'cat_fact', name: 'Cat Facts', description: 'Random cat fact', type: 'mcp' },
           { id: 'web_search', name: 'Web Search', description: 'Search the web', type: 'mcp' },
           { id: 'fetch_url', name: 'Fetch URL', description: 'Native Workers AI tool', type: 'native' },
+          { id: 'browser', name: 'Browser', description: 'Browser automation', type: 'native' },
         ]);
         setLoading(false);
       });
   }, []);
 
-  const isActive = (id: string) => activeTools.includes(id);
+  const isActive = (id: string) => activeTools.includes(id) || nativeTools.includes(id);
 
   const mcpTools = tools.filter(t => t.type === 'mcp');
   const nativeTools = tools.filter(t => t.type === 'native');
@@ -118,34 +123,31 @@ export function ToolsToggle({ activeTools, onToggle }: Props) {
                   </div>
                 )}
 
-                {/* Native Tools Section */}
+                {/* Native Tools Section - Always Active */}
                 {nativeTools.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 px-2 py-1 text-xs font-medium text-emerald-400 uppercase">
                       <Zap className="w-3 h-3" />
-                      Herramientas Nativas
+                      Nativas (siempre activas)
                     </div>
-                    {nativeTools.map((tool) => (
-                      <button
-                        key={tool.id}
-                        onClick={() => onToggle(tool.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-all ${
-                          isActive(tool.id)
-                            ? 'bg-emerald-500/30 border border-emerald-500/50'
-                            : 'bg-base-200/50 border border-transparent hover:bg-base-200'
-                        }`}
-                      >
-                        <div className={`w-5 h-5 rounded flex items-center justify-center ${
-                          isActive(tool.id) ? 'bg-emerald-500 text-white' : 'bg-base-300 text-base-content/50'
-                        }`}>
-                          {isActive(tool.id) ? <Check className="w-3 h-3" /> : null}
+                    {nativeTools.map((toolId) => {
+                      const tool = nativeTools.find(t => t.id === toolId);
+                      if (!tool) return null;
+                      return (
+                        <div
+                          key={tool.id}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg mb-1 bg-emerald-500/20 border border-emerald-500/40 opacity-60"
+                        >
+                          <div className="w-5 h-5 rounded flex items-center justify-center bg-emerald-500 text-white">
+                            <Check className="w-3 h-3" />
+                          </div>
+                          <div className="text-left">
+                            <div className="text-sm font-medium text-base-content">{tool.name}</div>
+                            <div className="text-xs text-base-content/50">{tool.description}</div>
+                          </div>
                         </div>
-                        <div className="text-left">
-                          <div className="text-sm font-medium text-base-content">{tool.name}</div>
-                          <div className="text-xs text-base-content/50">{tool.description}</div>
-                        </div>
-                      </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </>

@@ -149,6 +149,8 @@ function getToolDescription(toolId: string): string {
     'joke': 'Get a random joke',
     'cat_fact': 'Get a random cat fact',
     'web_search': 'Search the web - accepts {query: "search term"}',
+    'fetch_url': 'Fetch content from a URL - native Workers AI tool',
+    'browser': 'Browser automation - native Workers AI tool',
   };
   return TOOL_DESCRIPTIONS[toolId] || 'Tool description';
 }
