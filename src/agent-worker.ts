@@ -158,7 +158,7 @@ async function getSessionFolderContext(groupId: string): Promise<string> {
   }
 }
 
-// Auto-save code files from AI response
+// Auto-save code files from AI response - ONLY save if file doesn't exist
 async function autoSaveCodeFiles(groupId: string, content: string): Promise<string[]> {
   const savedFiles: string[] = [];
   
@@ -174,6 +174,15 @@ async function autoSaveCodeFiles(groupId: string, content: string): Promise<stri
   }
   
   const targetFolder = targetFolders[0]; // Save to first available folder
+  
+  // Check what files already exist in the folder
+  let existingFiles: string[] = [];
+  try {
+    existingFiles = await listGroupFiles(groupId, targetFolder);
+  } catch {}
+  
+  // Only save NEW files - don't overwrite existing ones
+  // If user wants to edit, they should do it manually or AI should use write_file
   
   // Patterns to detect code that should be saved
   const patterns = [
@@ -198,6 +207,12 @@ async function autoSaveCodeFiles(groupId: string, content: string): Promise<stri
     else if (code.includes('function') || code.includes('const ') || code.includes('let ') || code.includes('=>')) fileName = 'script.js';
     else if (code.includes('import ') || code.includes('export ')) fileName = 'module.js';
     
+    // Skip if file already exists - don't overwrite!
+    if (existingFiles.includes(fileName)) {
+      log(groupId, 'file-skip', 'File exists', `${targetFolder}/${fileName} - no se Sobrescribe`);
+      continue;
+    }
+    
     try {
       const filePath = `${targetFolder}/${fileName}`;
       await writeGroupFile(groupId, filePath, code);
@@ -215,6 +230,12 @@ async function autoSaveCodeFiles(groupId: string, content: string): Promise<stri
       for (const code of matches) {
         const cleanCode = code.replace(/<\/?(style|script)[^>]*>/gi, '');
         if (cleanCode.length < 50) continue;
+        
+        // Skip if file already exists - don't overwrite!
+        if (existingFiles.includes(pattern.name)) {
+          log(groupId, 'file-skip', 'File exists', `${targetFolder}/${pattern.name} - no se sobrescribe`);
+          continue;
+        }
         
         try {
           const filePath = `${targetFolder}/${pattern.name}`;

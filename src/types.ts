@@ -117,7 +117,7 @@ export interface TokenUsage {
 /** A single entry in the thinking activity log */
 export interface ThinkingLogEntry {
   groupId: string;
-  kind: 'api-call' | 'tool-call' | 'tool-result' | 'text' | 'info' | 'file-saved' | 'file-error' | 'file-created' | 'file-updated';
+  kind: 'api-call' | 'tool-call' | 'tool-result' | 'text' | 'info' | 'file-saved' | 'file-error' | 'file-created' | 'file-updated' | 'file-skip';
   timestamp: number;
   label: string;
   detail?: string;
