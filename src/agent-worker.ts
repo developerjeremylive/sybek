@@ -226,7 +226,7 @@ async function autoSaveCodeFiles(groupId: string, aiResponse: string): Promise<s
     let fileName = 'code.txt';
     if (code.includes('<!DOCTYPE html') || code.includes('<html') || code.includes('<header') || code.includes('<body') || code.includes('<footer') || code.includes('<section')) {
       fileName = 'index.html';
-    } else if (code.includes('{') && code.includes(';') && (code.includes('color:') || code.includes('margin:') || code.includes('padding:') || code.includes('display:') || code.includes('@media'))) {
+    } else if (code.includes('{') && code.includes(';') && (code.includes('color:') || code.includes('margin:') || code.includes('padding:') || code.includes('display:') || code.includes('@media')) {
       fileName = 'styles.css';
     } else if (code.includes('function') || code.includes('const ') || code.includes('let ') || code.includes('=>') || code.includes('document.') || code.includes('window.')) {
       fileName = 'script.js';
