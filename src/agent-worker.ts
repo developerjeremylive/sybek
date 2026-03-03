@@ -188,6 +188,51 @@ async function autoSaveCodeFiles(groupId: string, userMessage: string, aiRespons
   // Detect user intent from message
   const lowerMessage = userMessage.toLowerCase();
   
+  // If user wants to remove duplicates or fix issues
+  const wantsFix = lowerMessage.includes('eliminar') || lowerMessage.includes('remove') || lowerMessage.includes('delete') || lowerMessage.includes('duplicado') || lowerMessage.includes('duplicate') || lowerMessage.includes('quitar') || lowerMessage.includes('fix');
+  
+  if (wantsFix && hasHtml) {
+    try {
+      const htmlPath = `${targetFolder}/index.html`;
+      let htmlContent = await readGroupFile(groupId, htmlPath);
+      let modified = false;
+      
+      // Remove duplicate footers
+      const footerMatches = htmlContent.match(/<footer[\s\S]*?<\/footer>/gi);
+      if (footerMatches && footerMatches.length > 1) {
+        // Keep only the first footer
+        htmlContent = htmlContent.replace(/<footer[\s\S]*?<\/footer>/gi, (match, index) => {
+          if (index === 0) return match;
+          modified = true;
+          return '';
+        });
+        // Clean up extra whitespace
+        htmlContent = htmlContent.replace(/\n\s*\n\s*\n/g, '\n\n');
+        log(groupId, 'file-updated', 'Footer eliminado', 'Eliminado footer duplicado');
+      }
+      
+      // Remove duplicate headers (keep first only)
+      const headerMatches = htmlContent.match(/<header[\s\S]*?<\/header>/gi);
+      if (headerMatches && headerMatches.length > 1) {
+        htmlContent = htmlContent.replace(/<header[\s\S]*?<\/header>/gi, (match, index) => {
+          if (index === 0) return match;
+          modified = true;
+          return '';
+        });
+        htmlContent = htmlContent.replace(/\n\s*\n\s*\n/g, '\n\n');
+        log(groupId, 'file-updated', 'Header eliminado', 'Eliminado header duplicado');
+      }
+      
+      if (modified) {
+        await writeGroupFile(groupId, htmlPath, htmlContent);
+        savedFiles.push(htmlPath);
+        return savedFiles;
+      }
+    } catch (e) {
+      log(groupId, 'file-error', 'Error fix', String(e));
+    }
+  }
+  
   // If user wants to improve UI/UX design - add modern styles
   const wantsImprove = lowerMessage.includes('mejorar') || lowerMessage.includes('improve') || lowerMessage.includes(' design') || lowerMessage.includes('ui') || lowerMessage.includes('ux') || lowerMessage.includes('upgrade') || lowerMessage.includes('enhance') || lowerMessage.includes('modern') || lowerMessage.includes('diseno');
   
