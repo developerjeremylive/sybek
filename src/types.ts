@@ -90,6 +90,7 @@ export interface InvokePayload {
   maxTokens: number;
   sessionFolder?: string;
   contextFolders?: string[];
+  fileContext?: string;
 }
 
 /** Messages sent from Agent Worker → main thread */

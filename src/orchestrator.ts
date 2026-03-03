@@ -39,13 +39,52 @@ import {
   saveTask,
   clearGroupMessages,
 } from './db.js';
-import { readGroupFile } from './storage.js';
+import { readGroupFile, listGroupFiles } from './storage.js';
 import { encryptValue, decryptValue } from './crypto.js';
 import { BrowserChatChannel } from './channels/browser-chat.js';
 import { TelegramChannel } from './channels/telegram.js';
 import { Router } from './router.js';
 import { TaskScheduler } from './task-scheduler.js';
 import { ulid } from './ulid.js';
+
+// ---------------------------------------------------------------------------
+// Build file context from folders
+// ---------------------------------------------------------------------------
+
+async function buildFileContext(groupId: string, sessionFolder: string, contextFolders: string[]): Promise<string> {
+  let context = '';
+  
+  // Collect all folders
+  let allFolders = contextFolders.filter(f => f !== sessionFolder);
+  if (sessionFolder) {
+    allFolders = [sessionFolder, ...allFolders];
+  }
+  
+  if (allFolders.length === 0) return '';
+  
+  try {
+    for (const folder of allFolders) {
+      const files = await listGroupFiles(groupId, folder);
+      if (files.length > 0) {
+        context += `\n\n## Archivos en "${folder}":\n`;
+        for (const file of files) {
+          if (!file.endsWith('/')) {
+            try {
+              const content = await readGroupFile(groupId, `${folder}/${file}`);
+              context += `\n### ${file}\n\`\`\`\n${content.slice(0, 3000)}\n\`\`\`\n`;
+            } catch {
+              context += `\n### ${file}\n(archivo no legible)\n`;
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Error building file context:', e);
+  }
+  
+  return context;
+}
 
 // ---------------------------------------------------------------------------
 // Event emitter for UI updates
@@ -456,6 +495,9 @@ export class Orchestrator {
     const sessionFolder = localStorage.getItem('currentSessionFolder') || '';
     const contextFolders = JSON.parse(localStorage.getItem('contextFolders') || '[]');
     
+    // Build file context from all context folders
+    const fileContext = await buildFileContext(groupId, sessionFolder, contextFolders);
+    
     this.agentWorker.postMessage({
       type: 'invoke',
       payload: {
@@ -467,6 +509,7 @@ export class Orchestrator {
         maxTokens: this.maxTokens,
         sessionFolder,
         contextFolders,
+        fileContext,
       },
     });
   }

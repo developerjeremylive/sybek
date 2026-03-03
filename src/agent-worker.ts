@@ -292,7 +292,7 @@ async function listGroupFiles(groupId: string, dirPath: string = '.'): Promise<s
 // ---------------------------------------------------------------------------
 
 async function handleInvoke(payload: InvokePayload): Promise<void> {
-  const { groupId = DEFAULT_GROUP_ID, messages, systemPrompt, model = DEFAULT_MODEL, maxTokens = 4096, sessionFolder, contextFolders } = payload;
+  const { groupId = DEFAULT_GROUP_ID, messages, systemPrompt, model = DEFAULT_MODEL, maxTokens = 4096, sessionFolder, contextFolders, fileContext } = payload;
 
   // Use session folder from payload or generate new one
   if (sessionFolder) {
@@ -306,8 +306,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
     setContextFolders(contextFolders);
   }
 
-  // Get existing files context for this session
-  const folderContext = await getSessionFolderContext(groupId);
+  // Use fileContext from payload if available, otherwise build from folders
+  const folderContext = fileContext || await getSessionFolderContext(groupId);
   
   // Append folder context to system prompt
   const fullSystemPrompt = systemPrompt + folderContext;
