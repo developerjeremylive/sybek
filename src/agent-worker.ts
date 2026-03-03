@@ -114,7 +114,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
           const cmd = toolArgs.command || toolArgs.code || '';
           const output = cmd ? await executeShell(cmd, groupId) : { output: 'No command provided', exitCode: 1 };
 
-          const outputStr = typeof output === 'string' ? output : (output.output || JSON.stringify(output));
+          const outputStr = typeof output === 'string' ? output : (output.output || "" || JSON.stringify(output));
           const outputShort = outputStr.length > 500 ? outputStr.slice(0, 500) + '…' : outputStr;
           log(groupId, 'tool-result', `Result: ${toolName}`, outputShort);
 
