@@ -1,17 +1,13 @@
 // ---------------------------------------------------------------------------
 // OpenBrowserClaw — Agent Worker
 // ---------------------------------------------------------------------------
-//
-// Runs in a dedicated Web Worker. Uses Cloudflare Workers AI for the agent.
 
 import type { WorkerInbound, WorkerOutbound, InvokePayload, CompactPayload, ConversationMessage } from './types.js';
-import { TOOL_DEFINITIONS } from './tools.js';
 import { DEFAULT_MODEL } from './config.js';
-import { readGroupFile, writeGroupFile, listGroupFiles } from './storage.js';
-import { executeShell } from './shell.js';
 import { ulid } from './ulid.js';
 
-const WORKERS_AI_URL = 'https://kilocode-proxy.developerjeremylive.workers.dev/api/ai';
+// MCP endpoint
+const MCP_URL = 'https://kilocode-proxy-live.developerjeremylive.workers.dev/mcp';
 
 self.onmessage = async (event: MessageEvent<WorkerInbound>) => {
   const { type, payload } = event.data;
@@ -32,102 +28,90 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
   const { groupId, messages, systemPrompt, model, maxTokens } = payload;
 
   post({ type: 'typing', payload: { groupId } });
-  log(groupId, 'info', 'Starting', `Model: ${model} · Max tokens: ${maxTokens}`);
-
-  const actualModel = model || DEFAULT_MODEL;
+  log(groupId, 'info', 'Starting', `Model: ${model || 'default'}`);
 
   try {
-    let currentMessages: ConversationMessage[] = [...messages];
+    const currentMessages: ConversationMessage[] = [...messages];
     let iterations = 0;
-    const maxIterations = 25;
+    const maxIterations = 10;
 
     while (iterations < maxIterations) {
       iterations++;
 
-      log(groupId, 'api-call', `API call #${iterations}`, `${currentMessages.length} messages in context`);
+      log(groupId, 'api-call', `API call #${iterations}`, `${currentMessages.length} messages`);
 
-      const aiMessages = [
-        { role: 'user' as const, content: systemPrompt },
-        ...currentMessages.map(msg => ({
-          role: msg.role,
-          content: typeof msg.content === 'string' ? msg.content : ''
-        }))
-      ];
-
-      const tools = TOOL_DEFINITIONS.map(t => ({
-        name: t.name,
-        description: t.description,
-        parameters: t.input_schema
-      }));
-
-      const body: any = {
-        model: actualModel,
-        messages: aiMessages,
-        max_tokens: maxTokens,
-      };
+      // Send to MCP server as JSON-RPC
+      const lastUserMsg = currentMessages.filter(m => m.role === 'user').pop();
+      const userContent = lastUserMsg ? (typeof lastUserMsg.content === 'string' ? lastUserMsg.content : '') : '';
       
-      if (tools.length > 0) {
-        body.tools = tools;
-      }
+      const requestBody = {
+        jsonrpc: '2.0',
+        method: 'anthropic.messages',
+        params: {
+          model: '@cf/meta/llama-3.1-8b-instruct',
+          max_tokens: maxTokens || 4096,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...currentMessages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content : '' }))
+          ],
+          tools: [
+            { name: 'get_current_time', description: 'Get current time', input_schema: { type: 'object', properties: {} } },
+            { name: 'get_weather', description: 'Get weather', input_schema: { type: 'object', properties: {} } },
+            { name: 'hackernews', description: 'Get hacker news', input_schema: { type: 'object', properties: {} } },
+            { name: 'joke', description: 'Get a joke', input_schema: { type: 'object', properties: {} } },
+            { name: 'cat_fact', description: 'Get a cat fact', input_schema: { type: 'object', properties: {} } }
+          ]
+        },
+        id: crypto.randomUUID()
+      };
 
-      const res = await fetch(WORKERS_AI_URL, {
+      const res = await fetch(MCP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify(requestBody),
       });
 
       if (!res.ok) {
         const errBody = await res.text();
-        throw new Error(`Workers AI error ${res.status}: ${errBody}`);
+        throw new Error(`MCP error ${res.status}: ${errBody}`);
       }
 
       const result = await res.json();
 
-      const responseMessage = result.response;
-      const responseContent = responseMessage?.content || '';
-      const toolCalls = responseMessage?.tool_calls || [];
-
-      if (result.usage) {
-        post({ type: 'token-usage', payload: { groupId, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, contextLimit: 128000 } });
+      // Handle JSON-RPC response
+      let responseContent = '';
+      
+      if (result.result?.content) {
+        responseContent = result.result.content;
+      } else if (result.error) {
+        throw new Error(`MCP error: ${result.error.message}`);
       }
 
-      if (responseContent) {
-        const preview = responseContent.length > 200 ? responseContent.slice(0, 200) + '…' : responseContent;
-        log(groupId, 'text', 'Response', preview);
-      }
+      const preview = responseContent.length > 200 ? responseContent.slice(0, 200) + '…' : responseContent;
+      log(groupId, 'text', 'Response', preview);
 
-      if (toolCalls && toolCalls.length > 0) {
-        const toolResults = [];
+      // Check for tool calls in response
+      const toolMatch = responseContent.match(/<tool_call>(.*?)<\/tool_call>/s);
+      
+      if (toolMatch) {
+        const toolName = toolMatch[1].trim();
+        log(groupId, 'tool-call', `Tool: ${toolName}`, 'Executing...');
         
-        for (const toolCall of toolCalls) {
-          const toolName = toolCall.function?.name || toolCall.name;
-          const toolArgs = typeof toolCall.function?.arguments === 'string' 
-            ? JSON.parse(toolCall.function.arguments) 
-            : toolCall.function?.arguments || {};
-          
-          const inputPreview = JSON.stringify(toolArgs);
-          const inputShort = inputPreview.length > 300 ? inputPreview.slice(0, 300) + '…' : inputPreview;
-          log(groupId, 'tool-call', `Tool: ${toolName}`, inputShort);
+        post({ type: 'tool-activity', payload: { groupId, tool: toolName, status: 'running' } });
 
-          post({ type: 'tool-activity', payload: { groupId, tool: toolName, status: 'running' } });
-
-          const cmd = toolArgs.command || toolArgs.code || '';
-          const output = cmd ? await executeShell(cmd, groupId) : { output: 'No command provided', exitCode: 1 };
-
-          const outputStr = typeof output === 'string' ? output : ((output as any).stdout || (output as any).output || "" || JSON.stringify(output));
-          const outputShort = outputStr.length > 500 ? outputStr.slice(0, 500) + '…' : outputStr;
-          log(groupId, 'tool-result', `Result: ${toolName}`, outputShort);
-
-          post({ type: 'tool-activity', payload: { groupId, tool: toolName, status: 'done' } });
-
-          toolResults.push({ tool_call_id: toolCall.id || crypto.randomUUID(), name: toolName, content: outputStr.slice(0, 100_000) });
-        }
+        // Call the tool via MCP
+        const toolResult = await callMcpTool(toolName, groupId);
+        
+        log(groupId, 'tool-result', `Result: ${toolName}`, toolResult.slice(0, 200));
+        
+        post({ type: 'tool-activity', payload: { groupId, tool: toolName, status: 'done' } });
 
         currentMessages.push({ role: 'assistant', content: responseContent });
-        currentMessages.push({ role: 'user', content: JSON.stringify(toolResults) });
-
+        currentMessages.push({ role: 'user', content: `Tool result: ${toolResult}` });
+        
         post({ type: 'typing', payload: { groupId } });
       } else {
+        // Final response
         const cleaned = responseContent.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
         post({ type: 'response', payload: { groupId, text: cleaned || '(no response)' } });
         return;
@@ -142,8 +126,32 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
   }
 }
 
+async function callMcpTool(toolName: string, groupId: string): Promise<string> {
+  try {
+    const res = await fetch(MCP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: `tools/${toolName}`,
+        params: {},
+        id: crypto.randomUUID()
+      }),
+    });
+
+    if (!res.ok) {
+      return `Error: ${res.status}`;
+    }
+
+    const result = await res.json();
+    return result.result?.content || JSON.stringify(result);
+  } catch (err) {
+    return `Error: ${err}`;
+  }
+}
+
 async function handleCompact(payload: CompactPayload): Promise<void> {
-  const { groupId, systemPrompt } = payload;
+  const { groupId } = payload;
   post({ type: 'compact-done', payload: { groupId, summary: 'Compacted' } });
 }
 
