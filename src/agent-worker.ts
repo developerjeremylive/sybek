@@ -328,9 +328,10 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       };
 
       // Add tools if provided
-      if (tools && tools.length > 0) {
+      const activeTools = tools || [];
+      if (activeTools.length > 0) {
         // Map tool IDs to tool definitions
-        requestBody.tools = tools.map((id: string) => ({
+        requestBody.tools = activeTools.map((id: string) => ({
           id,
           desc: getToolDescription(id),
         }));

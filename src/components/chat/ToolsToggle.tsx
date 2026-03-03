@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState, useEffect } from 'react';
-import { Tool, X, Check } from 'lucide-react';
+import { Wrench, X, Check } from 'lucide-react';
 
 interface Tool {
   id: string;
@@ -57,7 +57,7 @@ export function ToolsToggle({ activeTools, onToggle }: Props) {
             : 'bg-base-200 border-base-300 text-base-content/70 hover:border-purple-500/30'
         }`}
       >
-        <Tool className="w-4 h-4" />
+        <Wrench className="w-4 h-4" />
         <span className="text-sm font-medium">Herramientas</span>
         {activeTools.length > 0 && (
           <span className="px-1.5 py-0.5 bg-purple-500/50 rounded text-xs">
