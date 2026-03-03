@@ -399,6 +399,6 @@ function post(msg: WorkerOutbound): void {
 }
 
 function log(groupId: string, kind: string, label: string, detail: string): void {
-  const entry = { id: ulid(), timestamp: Date.now(), kind, label, detail };
+  const entry = { groupId, id: ulid(), timestamp: Date.now(), kind, label, detail };
   post({ type: 'thinking-log', payload: entry });
 }
