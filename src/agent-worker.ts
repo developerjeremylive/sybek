@@ -217,7 +217,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       log(groupId, 'text', 'Response', responseContent.slice(0, 200));
 
       // Check for tool calls - try multiple formats
-      let toolCalls: string[] = [];
+      let toolCalls: any[] = [];
       
       if (result.tool_calls && Array.isArray(result.tool_calls)) {
         toolCalls = result.tool_calls;
@@ -236,17 +236,14 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       if (toolCalls.length > 0) {
         for (const toolCall of toolCalls) {
           let toolName = '';
-          let toolInput = {};
+          let toolInput: Record<string, any> = {};
           
           // Handle different tool call formats
           if (typeof toolCall === 'string') {
             toolName = toolCall;
-          } else if (toolCall.name) {
-            toolName = toolCall.name;
-            toolInput = toolCall.input || {};
-          } else if (toolCall.tool) {
-            toolName = toolCall.tool;
-            toolInput = toolCall.input || {};
+          } else if (toolCall && typeof toolCall === 'object') {
+            toolName = (toolCall as any).name || (toolCall as any).tool || '';
+            toolInput = (toolCall as any).input || {};
           }
           
           if (!toolName) continue;
