@@ -309,8 +309,25 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
   // Use fileContext from payload if available, otherwise build from folders
   const folderContext = fileContext || await getSessionFolderContext(groupId);
   
+  // Add explicit instructions about editing existing files
+  const editInstructions = folderContext ? `
+
+## IMPORTANTE - EDITAR ARCHIVOS EXISTENTES:
+Los siguientes archivos YA EXISTEN en tu contexto. Debes EDITARLOS, no crear nuevos:
+${folderContext}
+
+Cuando el usuario pida agregar, modificar o editar algo:
+1. Localiza el archivo existente en la lista de arriba
+2. Lee el contenido actual del archivo
+3. Modifica SOLO lo que necesites
+4. Guarda el archivo actualizado (no crees uno nuevo)
+5. NO crees nuevas carpetas - usa las existentes
+
+Ejemplo: "agrega header" = busca el HTML y agrega el código al archivo existente, no crees uno nuevo.
+` : '';
+  
   // Append folder context to system prompt
-  const fullSystemPrompt = systemPrompt + folderContext;
+  const fullSystemPrompt = systemPrompt + editInstructions;
 
   post({ type: 'typing', payload: { groupId } });
   log(groupId, 'info', 'Starting', `Model: ${model}, Session: ${currentSessionFolder}, Files: ${folderContext ? 'yes' : 'no'}`);
