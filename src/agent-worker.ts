@@ -306,8 +306,10 @@ async function listGroupFiles(groupId: string, dirPath: string = '.'): Promise<s
 async function handleInvoke(payload: InvokePayload): Promise<void> {
   const { groupId = DEFAULT_GROUP_ID, messages, systemPrompt, model = DEFAULT_MODEL, maxTokens = 4096, sessionFolder, contextFolders, fileContext } = payload;
 
-  // Use session folder from payload or generate new one
-  if (sessionFolder) {
+  // Use first context folder as working folder if available, otherwise use sessionFolder
+  if (contextFolders && contextFolders.length > 0) {
+    currentSessionFolder = contextFolders[0];
+  } else if (sessionFolder) {
     currentSessionFolder = sessionFolder;
   } else if (!currentSessionFolder) {
     getSessionFolder();
