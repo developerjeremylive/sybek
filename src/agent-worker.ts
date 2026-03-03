@@ -515,7 +515,7 @@ function post(msg: WorkerOutbound): void {
   self.postMessage(msg);
 }
 
-function log(groupId: string, kind: 'api-call' | 'tool-call' | 'tool-result' | 'text' | 'info' | 'file-saved' | 'file-error', label: string, detail: string): void {
+function log(groupId: string, kind: 'api-call' | 'tool-call' | 'tool-result' | 'text' | 'info' | 'file-saved' | 'file-error' | 'file-created' | 'file-updated' | 'file-skip', label: string, detail: string): void {
   const entry = { groupId, id: ulid(), timestamp: Date.now(), kind, label, detail };
   post({ type: 'thinking-log', payload: entry });
 }
