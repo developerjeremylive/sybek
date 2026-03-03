@@ -17,6 +17,66 @@ interface FileEntry {
   isDir: boolean;
 }
 
+// Combine HTML with its CSS and JS files for proper preview
+async function combineHtmlWithResources(
+  groupId: string,
+  htmlContent: string,
+  currentDir: string
+): Promise<string> {
+  let combinedHtml = htmlContent;
+  
+  // Find and inject CSS files
+  const cssRegex = /<link[^>]+href=["']([^"']+\.css)["'][^>]*>/gi;
+  let match;
+  const cssFiles: Record<string, string> = {};
+  
+  while ((match = cssRegex.exec(htmlContent)) !== null) {
+    const cssFile = match[1];
+    try {
+      const cssPath = currentDir ? `${currentDir}/${cssFile}` : cssFile;
+      const cssContent = await readGroupFile(groupId, cssPath);
+      cssFiles[cssFile] = cssContent;
+    } catch {
+      console.log('CSS file not found:', cssFile);
+    }
+  }
+  
+  // Replace CSS links with inline styles
+  for (const [cssFile, cssContent] of Object.entries(cssFiles)) {
+    const styleTag = `<style>\n/* From ${cssFile} */\n${cssContent}\n</style>`;
+    combinedHtml = combinedHtml.replace(
+      new RegExp(`<link[^>]+href=["']${cssFile.replace('/', '\\/')}["'][^>]*>`, 'gi'),
+      styleTag
+    );
+  }
+  
+  // Find and inject JS files
+  const jsRegex = /<script[^>]+src=["']([^"']+\.js)["'][^>]*><\/script>/gi;
+  const jsFiles: Record<string, string> = {};
+  
+  while ((match = jsRegex.exec(htmlContent)) !== null) {
+    const jsFile = match[1];
+    try {
+      const jsPath = currentDir ? `${currentDir}/${jsFile}` : jsFile;
+      const jsContent = await readGroupFile(groupId, jsPath);
+      jsFiles[jsFile] = jsContent;
+    } catch {
+      console.log('JS file not found:', jsFile);
+    }
+  }
+  
+  // Replace JS script tags with inline scripts
+  for (const [jsFile, jsContent] of Object.entries(jsFiles)) {
+    const scriptTag = `<script>\n/* From ${jsFile} */\n${jsContent}\n</script>`;
+    combinedHtml = combinedHtml.replace(
+      new RegExp(`<script[^>]+src=["']${jsFile.replace('/', '\\/')}["'][^>]*><\\/script>`, 'gi'),
+      scriptTag
+    );
+  }
+  
+  return combinedHtml;
+}
+
 function getFileIcon(name: string, isDir: boolean): LucideIcon {
   if (isDir) return Folder;
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
@@ -76,7 +136,14 @@ export function FilesPage() {
     try {
       const filePath = path.length > 0 ? `${path.join('/')}/${name}` : name;
       const content = await readGroupFile(groupId, filePath);
-      setPreviewContent(content);
+      
+      // If HTML, combine with CSS and JS files
+      if (name.endsWith('.html') || name.endsWith('.htm')) {
+        const combined = await combineHtmlWithResources(groupId, content, path.join('/'));
+        setPreviewContent(combined);
+      } else {
+        setPreviewContent(content);
+      }
     } catch {
       setPreviewContent('[Unable to read file]');
     }
