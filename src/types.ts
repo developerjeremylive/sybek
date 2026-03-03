@@ -10,6 +10,7 @@ export interface InboundMessage {
   content: string;
   timestamp: number; // epoch ms
   channel: ChannelType;
+  tools?: string[]; // Active tools for this message
 }
 
 /** Stored message (superset of InboundMessage) */
@@ -91,6 +92,7 @@ export interface InvokePayload {
   sessionFolder?: string;
   contextFolders?: string[];
   fileContext?: string;
+  tools?: string[];
 }
 
 /** Messages sent from Agent Worker → main thread */

@@ -1,12 +1,14 @@
 // ---------------------------------------------------------------------------
-// OpenBrowserClaw — Chat input
+// OpenBrowserClaw — Chat input with tools
 // ---------------------------------------------------------------------------
 
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { Send } from 'lucide-react';
+import { ToolsToggle } from './ToolsToggle.js';
+import { useActiveToolsStore } from '../../stores/active-tools-store.js';
 
 interface Props {
-  onSend: (text: string) => void;
+  onSend: (text: string, tools?: string[]) => void;
   disabled: boolean;
   initialValue?: string;
 }
@@ -14,12 +16,13 @@ interface Props {
 export function ChatInput({ onSend, disabled, initialValue }: Props) {
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const activeTools = useActiveToolsStore((s) => s.activeTools);
+  const toggleTool = useActiveToolsStore((s) => s.toggleTool);
 
   // Set initial value from prop
   useEffect(() => {
     if (initialValue) {
       setText(initialValue);
-      // Focus the textarea
       setTimeout(() => {
         textareaRef.current?.focus();
       }, 100);
@@ -29,9 +32,9 @@ export function ChatInput({ onSend, disabled, initialValue }: Props) {
   function handleSend() {
     const trimmed = text.trim();
     if (!trimmed || disabled) return;
-    onSend(trimmed);
+    // Send with active tools
+    onSend(trimmed, activeTools);
     setText('');
-    // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
@@ -46,24 +49,29 @@ export function ChatInput({ onSend, disabled, initialValue }: Props) {
 
   return (
     <div className="flex items-end gap-2 p-4">
-      <textarea
-        ref={textareaRef}
-        className="textarea textarea-bordered flex-1 chat-textarea text-base leading-snug"
-        placeholder="Escribe tu mensaje..."
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={handleKeyDown}
-        disabled={disabled}
-        rows={1}
-      />
-      <button
-        className="btn btn-primary btn-circle"
-        onClick={handleSend}
-        disabled={disabled || !text.trim()}
-        aria-label="Send message"
-      >
-        <Send className="w-5 h-5" />
-      </button>
+      <div className="flex-1">
+        <textarea
+          ref={textareaRef}
+          className="textarea textarea-bordered w-full chat-textarea text-base leading-snug"
+          placeholder="Escribe tu mensaje..."
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={disabled}
+          rows={1}
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <ToolsToggle activeTools={activeTools} onToggle={toggleTool} />
+        <button
+          className="btn btn-primary btn-circle"
+          onClick={handleSend}
+          disabled={disabled || !text.trim()}
+          aria-label="Send message"
+        >
+          <Send className="w-5 h-5" />
+        </button>
+      </div>
     </div>
   );
 }

@@ -32,7 +32,7 @@ export class BrowserChatChannel implements Channel {
   /**
    * Called by the UI when the user submits a message.
    */
-  submit(text: string, groupId?: string): void {
+  submit(text: string, groupId?: string, tools?: string[]): void {
     const gid = groupId || this.activeGroupId;
     const msg: InboundMessage = {
       id: ulid(),
@@ -41,6 +41,7 @@ export class BrowserChatChannel implements Channel {
       content: text,
       timestamp: Date.now(),
       channel: 'browser',
+      tools,
     };
     this.messageCallback?.(msg);
   }

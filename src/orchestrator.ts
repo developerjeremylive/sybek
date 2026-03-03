@@ -282,8 +282,8 @@ export class Orchestrator {
   /**
    * Submit a message from the browser chat UI.
    */
-  submitMessage(text: string, groupId?: string): void {
-    this.browserChat.submit(text, groupId);
+  submitMessage(text: string, groupId?: string, tools?: string[]): void {
+    this.browserChat.submit(text, groupId, tools);
   }
 
   /**
@@ -423,7 +423,7 @@ export class Orchestrator {
     const msg = this.messageQueue.shift()!;
 
     try {
-      await this.invokeAgent(msg.groupId, msg.content);
+      await this.invokeAgent(msg.groupId, msg.content, msg.tools);
     } catch (err) {
       console.error('Failed to invoke agent:', err);
     } finally {
@@ -435,7 +435,7 @@ export class Orchestrator {
     }
   }
 
-  private async invokeAgent(groupId: string, triggerContent: string): Promise<void> {
+  private async invokeAgent(groupId: string, triggerContent: string, tools?: string[]): Promise<void> {
     this.setState('thinking');
     this.router.setTyping(groupId, true);
     this.events.emit('typing', { groupId, typing: true });
@@ -510,6 +510,7 @@ export class Orchestrator {
         sessionFolder,
         contextFolders,
         fileContext,
+        tools,
       },
     });
   }

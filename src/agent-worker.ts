@@ -141,6 +141,19 @@ function parsePath(filePath: string): { dirs: string[]; filename: string } {
   return { dirs: parts, filename };
 }
 
+function getToolDescription(toolId: string): string {
+  const tools: Record<string, string> = {
+    'get_current_time': 'Get the current date and time',
+    'get_weather': 'Get weather for a city - accepts {city: "CityName"}',
+    'hackernews': 'Get top stories from Hacker News',
+    'joke': 'Get a random joke',
+    'cat_fact': 'Get a random cat fact',
+    'web_search': 'Search the web - accepts {query: "search term"}',
+    'fetch_url': 'Fetch content from a URL - accepts {url: "https://..."}',
+  };
+  return tools[toolId] || 'Tool description';
+}
+
 async function readGroupFile(groupId: string, filePath: string): Promise<string> {
   const dir = await getGroupDir(groupId);
   const { dirs, filename } = parsePath(filePath);
@@ -313,6 +326,15 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         model,
         max_tokens: maxTokens,
       };
+
+      // Add tools if provided
+      if (tools && tools.length > 0) {
+        // Map tool IDs to tool definitions
+        requestBody.tools = tools.map((id: string) => ({
+          id,
+          desc: getToolDescription(id),
+        }));
+      }
 
       const res = await fetch(CHAT_URL, {
         method: 'POST',
