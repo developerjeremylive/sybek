@@ -234,7 +234,7 @@ async function autoSaveCodeFiles(groupId: string, userMessage: string, aiRespons
   }
   
   // If user wants to improve UI/UX design - add modern styles
-  const wantsImprove = lowerMessage.includes('mejorar') || lowerMessage.includes('improve') || lowerMessage.includes(' design') || lowerMessage.includes('ui') || lowerMessage.includes('ux') || lowerMessage.includes('upgrade') || lowerMessage.includes('enhance') || lowerMessage.includes('modern') || lowerMessage.includes('diseno');
+  const wantsImprove = lowerMessage.includes('mejorar') || lowerMessage.includes('improve') || lowerMessage.includes(' design') || lowerMessage.includes(' ui') || lowerMessage.includes('ux') || lowerMessage.includes('upgrade') || lowerMessage.includes('enhance') || lowerMessage.includes('modern') || lowerMessage.includes('diseno') || lowerMessage.includes('disen') || lowerMessage.includes('dise') || lowerMessage.includes('diseño') || lowerMessage.includes('estilo') || lowerMessage.includes('style');
   
   if (wantsImprove && hasHtml) {
     try {
@@ -256,6 +256,12 @@ async function autoSaveCodeFiles(groupId: string, userMessage: string, aiRespons
         await writeGroupFile(groupId, cssPath, modernStyles);
         savedFiles.push(cssPath);
         log(groupId, 'file-updated', 'UI/UX Creado', 'Estilos modernos creados');
+      } else {
+        // User requested improvement - apply anyway
+        cssContent += '\n' + modernStyles;
+        await writeGroupFile(groupId, cssPath, cssContent);
+        savedFiles.push(cssPath);
+        log(groupId, 'file-updated', 'UI/UX Mejorado', 'Estilos modernos aplicados');
       }
       
       return savedFiles;
