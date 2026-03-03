@@ -166,6 +166,7 @@ export function AgentsPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'system' | 'agents'>('system');
 
   // Load saved agents and active agent
   useEffect(() => {
@@ -198,6 +199,7 @@ export function AgentsPage() {
       const agent = agents.find(a => a.id === selectedAgentId);
       if (agent) {
         setEditingAgent({ ...agent });
+        setActiveTab('system'); // Reset to system tab when switching agents
       }
     }
   }, [selectedAgentId, agents]);
@@ -389,20 +391,37 @@ export function AgentsPage() {
             {/* Editor tabs */}
             <div className="flex-1 flex flex-col overflow-hidden">
               <div className="tabs tabs-boxed bg-base-200 m-4 mb-0">
-                <input type="radio" name="editor_tab" className="tab" defaultChecked /> 
-                <label className="tab">System Prompt</label>
-                <input type="radio" name="editor_tab" className="tab" /> 
-                <label className="tab">AGENTS.md</label>
+                <button 
+                  className={`tab ${activeTab === 'system' ? 'tab-active' : ''}`}
+                  onClick={() => setActiveTab('system')}
+                >
+                  System Prompt
+                </button>
+                <button 
+                  className={`tab ${activeTab === 'agents' ? 'tab-active' : ''}`}
+                  onClick={() => setActiveTab('agents')}
+                >
+                  AGENTS.md
+                </button>
               </div>
 
-              {/* System Prompt Editor */}
+              {/* Content based on active tab */}
               <div className="flex-1 p-4 pt-2 overflow-hidden">
-                <textarea
-                  className="textarea textarea-bordered w-full h-full font-mono text-sm resize-none"
-                  value={editingAgent.systemPrompt}
-                  onChange={(e) => setEditingAgent({ ...editingAgent, systemPrompt: e.target.value })}
-                  placeholder="Escribe las instrucciones del system prompt..."
-                />
+                {activeTab === 'system' ? (
+                  <textarea
+                    className="textarea textarea-bordered w-full h-full font-mono text-sm resize-none"
+                    value={editingAgent.systemPrompt}
+                    onChange={(e) => setEditingAgent({ ...editingAgent, systemPrompt: e.target.value })}
+                    placeholder="Escribe las instrucciones del system prompt..."
+                  />
+                ) : (
+                  <textarea
+                    className="textarea textarea-bordered w-full h-full font-mono text-sm resize-none"
+                    value={editingAgent.agentsMd}
+                    onChange={(e) => setEditingAgent({ ...editingAgent, agentsMd: e.target.value })}
+                    placeholder="# AGENTS.md\n\nEscribe las instrucciones del agente..."
+                  />
+                )}
               </div>
             </div>
 
