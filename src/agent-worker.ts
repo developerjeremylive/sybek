@@ -404,8 +404,20 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
           if (typeof toolCall === 'string') {
             toolName = toolCall;
           } else if (toolCall && typeof toolCall === 'object') {
-            toolName = (toolCall as any).name || (toolCall as any).tool || '';
-            toolInput = (toolCall as any).input || {};
+            // Handle both {name, arguments} and {function: {name, arguments}} formats
+            const tc = toolCall as any;
+            toolName = tc.name || tc.function?.name || '';
+            const args = tc.arguments || tc.function?.arguments || {};
+            // Parse arguments if they're a string
+            if (typeof args === 'string') {
+              try {
+                toolInput = JSON.parse(args);
+              } catch {
+                toolInput = {};
+              }
+            } else {
+              toolInput = args;
+            }
           }
           
           if (!toolName) continue;
@@ -419,10 +431,36 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
           post({ type: 'tool-activity', payload: { groupId, tool: toolName, status: 'done' } });
 
           currentMessages.push({ role: 'assistant', content: responseContent });
-          currentMessages.push({ role: 'user', content: `Tool ${toolName} result: ${toolResult}` });
+          currentMessages.push({ role: 'user', content: `Tool result: ${toolResult}` });
         }
         
+        // Make another API call with tool results to get final response
         post({ type: 'typing', payload: { groupId } });
+        
+        const finalRequestBody = {
+          messages: currentMessages,
+          model,
+          max_tokens: maxTokens,
+        };
+        
+        const finalRes = await fetch(CHAT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(finalRequestBody),
+        });
+        
+        const finalResult = await finalRes.json();
+        let finalResponseContent = '';
+        
+        if (finalResult.response) {
+          finalResponseContent = typeof finalResult.response === 'string' ? finalResult.response : JSON.stringify(finalResult.response);
+        } else if (finalResult.result?.response) {
+          finalResponseContent = typeof finalResult.result.response === 'string' ? finalResult.result.response : JSON.stringify(finalResult.result.response);
+        }
+        
+        const cleaned = finalResponseContent.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
+        post({ type: 'response', payload: { groupId, text: cleaned || '(sin respuesta)' });
+        return;
       } else {
         // Final response
         const cleaned = finalText.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
