@@ -327,13 +327,16 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         max_tokens: maxTokens,
       };
 
-      // Add tools if provided
+      // Add tools if provided - Workers AI format for function calling
       const activeTools = tools || [];
       if (activeTools.length > 0) {
-        // Map tool IDs to tool definitions
         requestBody.tools = activeTools.map((id: string) => ({
-          id,
-          desc: getToolDescription(id),
+          type: 'function',
+          function: {
+            name: id,
+            description: getToolDescription(id),
+            parameters: { type: 'object', properties: {} }
+          }
         }));
       }
 
@@ -350,16 +353,30 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
 
       const result = await res.json();
       
-      // Get response content
+      // Get response content and tool calls
       let responseContent = '';
+      let toolCalls: any[] = [];
+      
       if (result.response) {
         responseContent = typeof result.response === 'string' ? result.response : JSON.stringify(result.response);
-      } else if (result.result && result.result.response) {
-        responseContent = typeof result.result.response === 'string' ? result.result.response : JSON.stringify(result.result.response);
+        // Check for tool_calls in response (Workers AI returns them in the response object)
+        if (result.response.tool_calls) {
+          toolCalls = result.response.tool_calls;
+        }
+      } else if (result.result) {
+        if (result.result.response) {
+          responseContent = typeof result.result.response === 'string' ? result.result.response : JSON.stringify(result.result.response);
+        }
+        if (result.result.tool_calls) {
+          toolCalls = result.result.tool_calls;
+        }
       } else if (result.messages && result.messages.length > 0) {
         responseContent = result.messages.map((m: any) => m.content || m.response || '').join('');
       } else if (result.choices && result.choices.length > 0) {
         responseContent = result.choices[0].message?.content || '';
+        if (result.choices[0].message?.tool_calls) {
+          toolCalls = result.choices[0].message.tool_calls;
+        }
       } else if (typeof result === 'string') {
         responseContent = result;
       } else {
@@ -380,14 +397,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         finalText = responseContent.replace(/```[\s\S]*?```/g, '').trim();
       }
 
-      // Check for tool calls
-      let toolCalls: any[] = [];
-      
-      if (result.tool_calls && Array.isArray(result.tool_calls)) {
-        toolCalls = result.tool_calls;
-      } else if (result.tools && Array.isArray(result.tools)) {
-        toolCalls = result.tools;
-      }
+      // Already extracted toolCalls above
 
       if (toolCalls.length > 0) {
         for (const toolCall of toolCalls) {
