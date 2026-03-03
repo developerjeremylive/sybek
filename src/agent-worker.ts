@@ -188,6 +188,37 @@ async function autoSaveCodeFiles(groupId: string, userMessage: string, aiRespons
   // Detect user intent from message
   const lowerMessage = userMessage.toLowerCase();
   
+  // If user wants to improve UI/UX design - add modern styles
+  const wantsImprove = lowerMessage.includes('mejorar') || lowerMessage.includes('improve') || lowerMessage.includes(' design') || lowerMessage.includes('ui') || lowerMessage.includes('ux') || lowerMessage.includes('upgrade') || lowerMessage.includes('enhance') || lowerMessage.includes('modern') || lowerMessage.includes('diseno');
+  
+  if (wantsImprove && hasHtml) {
+    try {
+      const htmlPath = `${targetFolder}/index.html`;
+      const cssPath = `${targetFolder}/styles.css`;
+      let htmlContent = await readGroupFile(groupId, htmlPath);
+      let cssContent = hasCss ? await readGroupFile(groupId, cssPath) : '';
+      
+      const modernStyles = `
+/* Modern UI/UX */
+:root {--primary:#6366f1;--primary-dark:#4f46e5;--secondary:#a855f7;--dark:#1a1a2e}*{scroll-behavior:smooth}body{font-family:'Inter',sans-serif;line-height:1.6;color:#334155}header{position:fixed;top:0;left:0;right:0;background:rgba(26,26,46,.95);backdrop-filter:blur(10px);padding:1rem 0;z-index:1000}.header-container{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;padding:0 2rem}.logo{font-size:1.5rem;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}header nav ul{display:flex;gap:2rem;list-style:none;margin:0;padding:0}header nav a{color:#e2e8f0;text-decoration:none;font-weight:500;transition:color .3s}header nav a:hover{color:#fff}.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);color:#fff;padding:6rem 2rem 4rem}.hero h1{font-size:3.5rem;font-weight:800;margin-bottom:1.5rem}.btn{display:inline-block;padding:.875rem 2rem;border-radius:50px;font-weight:600;text-decoration:none;transition:all .3s}.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 4px 15px rgba(99,102,241,.4)}.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(99,102,241,.6)}section{padding:5rem 2rem}.container{max-width:1200px;margin:0 auto}.features{background:#f8fafc}.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:2rem;margin-top:3rem}.feature-card{background:#fff;padding:2rem;border-radius:16px;box-shadow:0 4px 6px rgba(0,0,0,.05);transition:all .3s}.feature-card:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(0,0,0,.1)}footer{background:var(--dark);color:#94a3b8;padding:3rem 2rem;text-align:center}@media(max-width:768px){.hero h1{font-size:2.5rem}header nav{display:none}}`;
+      
+      if (cssContent && !cssContent.includes('Modern UI/UX')) {
+        cssContent += '\n' + modernStyles;
+        await writeGroupFile(groupId, cssPath, cssContent);
+        savedFiles.push(cssPath);
+        log(groupId, 'file-updated', 'UI/UX Mejorado', 'Estilos modernos aplicados');
+      } else if (!cssContent) {
+        await writeGroupFile(groupId, cssPath, modernStyles);
+        savedFiles.push(cssPath);
+        log(groupId, 'file-updated', 'UI/UX Creado', 'Estilos modernos creados');
+      }
+      
+      return savedFiles;
+    } catch (e) {
+      log(groupId, 'file-error', 'Error UI/UX', String(e));
+    }
+  }
+  
   // If user wants to add header/footer - analyze existing content and edit
   if ((lowerMessage.includes('header') || lowerMessage.includes('footer') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir') || lowerMessage.includes('modificar')) && hasHtml) {
     try {
