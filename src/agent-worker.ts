@@ -344,22 +344,6 @@ async function autoSaveCodeFiles(groupId: string, userMessage: string, aiRespons
           htmlContent = htmlContent.replace('<body>', '<body>\n' + headerCode);
         } else if (htmlContent.includes('<body ')) {
           htmlContent = htmlContent.replace(/<body [^>]*>/, match => match + '\n' + headerCode);
-        const headerCode = `
-  <header>
-    <nav>
-      <ul>
-        <li><a href="#inicio">Inicio</a></li>
-        <li><a href="#servicios">Servicios</a></li>
-        <li><a href="#contacto">Contacto</a></li>
-      </ul>
-    </nav>
-  </header>`;
-        
-        // Add header after <body> or at beginning of body content
-        if (htmlContent.includes('<body>')) {
-          htmlContent = htmlContent.replace('<body>', '<body>\n' + headerCode);
-        } else if (htmlContent.includes('<body ')) {
-          htmlContent = htmlContent.replace(/<body [^>]*>/, match => match + '\n' + headerCode);
         }
       }
       
