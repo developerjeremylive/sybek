@@ -4,19 +4,24 @@
 
 import { useState, useEffect } from 'react';
 import { Folder, X, RefreshCw, Check, FileCode } from 'lucide-react';
-import { useContextFoldersStore } from '../stores/context-folders-store.js';
 
 interface Props {
   onNewChat?: () => void;
 }
 
 export function ChatContextIndicator({ onNewChat }: Props) {
-  const { contextFolders, currentSessionFolder, loadFromStorage } = useContextFoldersStore();
+  const [contextFolders, setContextFolders] = useState<string[]>([]);
+  const [currentSessionFolder, setCurrentSessionFolder] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   
   useEffect(() => {
-    loadFromStorage();
-  }, [loadFromStorage]);
+    // Load from localStorage
+    const savedFolders = localStorage.getItem('contextFolders');
+    const savedSession = localStorage.getItem('currentSessionFolder');
+    
+    setContextFolders(savedFolders ? JSON.parse(savedFolders) : []);
+    setCurrentSessionFolder(savedSession || '');
+  }, []);
   
   const hasContext = currentSessionFolder || contextFolders.length > 0;
   
@@ -50,7 +55,7 @@ export function ChatContextIndicator({ onNewChat }: Props) {
           {contextFolders.length > 0 && (
             <div className="space-y-1">
               <span className="text-xs opacity-50">Carpetas adicionales:</span>
-              {contextFolders.map((folder) => (
+              {contextFolders.map((folder: string) => (
                 <div key={folder} className="flex items-center gap-2 text-xs bg-base-300 p-2 rounded">
                   <FileCode className="w-4 h-4 text-primary shrink-0" />
                   <span className="truncate flex-1">{folder}</span>
@@ -64,8 +69,8 @@ export function ChatContextIndicator({ onNewChat }: Props) {
             <button
               className="btn btn-sm btn-outline w-full mt-2"
               onClick={onNewChat}
-            >
-              <RefreshCw className="w-4 h-4" />
+<RefreshCw className="w-4            >
+               h-4" />
               Nueva conversación
             </button>
           )}
