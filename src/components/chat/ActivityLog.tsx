@@ -166,7 +166,7 @@ export function ActivityLog({ entries }: Props) {
                       </span>
                       {detail.length > 60 && (
                         <button
-                          className="text-[10px] link link-primary"
+                          className="text-[10px] link link-primary hidden"
                           onClick={() => toggleDetail(originalIdx)}
                         >
                           {isExpanded ? '▼' : '▶'}

@@ -181,7 +181,8 @@ async function getGroupDir(groupId: string): Promise<FileSystemDirectoryHandle> 
   let current = await root.getDirectoryHandle(OPFS_ROOT, { create: true });
   current = await current.getDirectoryHandle('groups', { create: true });
   current = await current.getDirectoryHandle(safeId, { create: true });
-  return current.getDirectoryHandle('workspace', { create: true });
+  // Files directly in group folder, not in workspace subfolder
+  return current;
 }
 
 function parsePath(filePath: string): { dirs: string[]; filename: string } {

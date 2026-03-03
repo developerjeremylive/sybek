@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Folder, Globe, Image, FileText, FileCode, FileJson, FileSpreadsheet,
-  File, Home, Search, Download, Trash2, X, FolderOpen,
+  File, Home, Search, Download, Trash2, X, FolderOpen, Pin, PinOff,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { DEFAULT_GROUP_ID } from '../../config.js';
@@ -132,9 +132,56 @@ export function FilesPage() {
   const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [viewerFile, setViewerFile] = useState<{ name: string; content: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [pinnedFolders, setPinnedFolders] = useState<Set<string>>(new Set());
 
   const groupId = DEFAULT_GROUP_ID;
   const currentDir = path.length > 0 ? path.join('/') : '.';
+
+  // Toggle pin for a folder
+  function togglePin(folderName: string) {
+    setPinnedFolders(prev => {
+      const next = new Set(prev);
+      if (next.has(folderName)) {
+        next.delete(folderName);
+      } else {
+        next.add(folderName);
+      }
+      // Save to localStorage
+      localStorage.setItem('pinnedFolders', JSON.stringify([...next]));
+      return next;
+    });
+  }
+
+  // Load pinned folders from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('pinnedFolders');
+    if (saved) {
+      try {
+        setPinnedFolders(new Set(JSON.parse(saved)));
+      } catch {}
+    }
+  }, []);
+
+  // Sort entries: pinned folders first (in pin order), then alphabetical descending
+  const sortedEntries = [...entries].sort((a, b) => {
+    const aPinned = pinnedFolders.has(a.name);
+    const bPinned = pinnedFolders.has(b.name);
+    
+    // Both are folders
+    if (a.isDir && b.isDir) {
+      // Pinned first
+      if (aPinned && !bPinned) return -1;
+      if (!aPinned && bPinned) return 1;
+      // Both pinned or both unpinned: alphabetical descending
+      return b.name.localeCompare(a.name);
+    }
+    
+    // Directories first
+    if (a.isDir && !b.isDir) return -1;
+    if (!a.isDir && b.isDir) return 1;
+    
+    return b.name.localeCompare(a.name);
+  });
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
@@ -259,12 +306,12 @@ export function FilesPage() {
           ) : (
             <table className="table table-sm">
               <tbody>
-                {entries.map((entry) => (
+                {sortedEntries.map((entry) => {
+                  const isPinned = entry.isDir && pinnedFolders.has(entry.name);
+                  return (
                   <tr
                     key={entry.name}
-                    className={`hover cursor-pointer ${
-                      previewFile === entry.name ? 'active' : ''
-                    }`}
+                    className={`hover cursor-pointer ${previewFile === entry.name ? 'active' : ''} ${isPinned ? 'bg-primary/10' : ''}`}
                     onClick={() =>
                       entry.isDir
                         ? setPath([...path, entry.name])
@@ -272,16 +319,28 @@ export function FilesPage() {
                     }
                   >
                     <td className="w-8 text-center">
-                      {(() => { const Icon = getFileIcon(entry.name, entry.isDir); return <Icon className="w-4 h-4 inline-block" />; })()}
+                      {(() => { const Icon = getFileIcon(entry.name, entry.isDir); return <Icon className={`w-4 h-4 inline-block ${isPinned ? 'text-primary' : ''}`} />; })()}
                     </td>
                     <td className="font-medium">
+                      {entry.isDir && entry.name && (
+                        <button
+                          className={`btn btn-ghost btn-xs mr-1 ${isPinned ? 'text-primary' : 'opacity-30'}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            togglePin(entry.name);
+                          }}
+                          title={isPinned ? 'Desfijar carpeta' : 'Fijar carpeta'}
+                        >
+                          {isPinned ? <Pin className="w-3 h-3" /> : <PinOff className="w-3 h-3" />}
+                        </button>
+                      )}
                       {entry.name}
                       {entry.isDir && (
                         <span className="opacity-30 ml-1">/</span>
                       )}
                     </td>
                   </tr>
-                ))}
+                );})}
               </tbody>
             </table>
           )}
