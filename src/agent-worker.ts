@@ -11,7 +11,7 @@ import { readGroupFile, writeGroupFile, listGroupFiles } from './storage.js';
 import { executeShell } from './shell.js';
 import { ulid } from './ulid.js';
 
-const WORKERS_AI_URL = '/api/ai';
+const WORKERS_AI_URL = 'https://kilocode-proxy.developerjeremylive.workers.dev/api/ai';
 
 self.onmessage = async (event: MessageEvent<WorkerInbound>) => {
   const { type, payload } = event.data;
