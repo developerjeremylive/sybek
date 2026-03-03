@@ -274,7 +274,7 @@ async function autoSaveCodeFiles(groupId: string, userMessage: string, aiRespons
   }
   
   // If user wants to add header/footer - analyze existing content and edit
-  if ((lowerMessage.includes('header') || lowerMessage.includes('footer') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir') || lowerMessage.includes('modificar')) && hasHtml) {
+  if ((lowerMessage.includes('header') || lowerMessage.includes('footer') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir') || lowerMessage.includes('modificar') || lowerMessage.includes('arreglar') || lowerMessage.includes('fix') || lowerMessage.includes('sirva') || lowerMessage.includes('funcion')) && hasHtml) {
     try {
       const htmlPath = `${targetFolder}/index.html`;
       let htmlContent = await readGroupFile(groupId, htmlPath);
@@ -324,8 +324,26 @@ async function autoSaveCodeFiles(groupId: string, userMessage: string, aiRespons
         });
       }
       
-      // Add header if requested - only if not already exists
-      if ((lowerMessage.includes('header') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir')) && !htmlContent.includes('<header')) {
+      // Add/fix header if requested - rebuild with working links
+      const wantsHeader = lowerMessage.includes('header') && (lowerMessage.includes('arreglar') || lowerMessage.includes('sirva') || lowerMessage.includes('funcion') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir') || lowerMessage.includes('fix'));
+      
+      if (wantsHeader) {
+        // Remove old broken header and add new one
+        htmlContent = htmlContent.replace(/<header[\s\S]*?<\/header>/gi, '');
+        
+        const headerCode = `
+  <header>
+    <nav>
+      <ul>
+        ${navLinks}
+      </ul>
+    </nav>
+  </header>`;
+        
+        if (htmlContent.includes('<body>')) {
+          htmlContent = htmlContent.replace('<body>', '<body>\n' + headerCode);
+        } else if (htmlContent.includes('<body ')) {
+          htmlContent = htmlContent.replace(/<body [^>]*>/, match => match + '\n' + headerCode);
         const headerCode = `
   <header>
     <nav>
