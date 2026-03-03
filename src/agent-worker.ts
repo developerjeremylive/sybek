@@ -347,18 +347,23 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
   // Add explicit instructions about editing existing files
   const editInstructions = folderContext ? `
 
-## IMPORTANTE - EDITAR ARCHIVOS EXISTENTES:
-Los siguientes archivos YA EXISTEN en tu contexto. Debes EDITARLOS, no crear nuevos:
+## 🚨 IMPORTANTE - NO CREES ARCHIVOS NUEVOS:
+
+Los siguientes archivos YA EXISTEN en tu contexto:
 ${folderContext}
 
-Cuando el usuario pida agregar, modificar o editar algo:
-1. Localiza el archivo existente en la lista de arriba
-2. Lee el contenido actual del archivo
-3. Modifica SOLO lo que necesites
-4. Guarda el archivo actualizado (no crees uno nuevo)
-5. NO crees nuevas carpetas - usa las existentes
+Cuando el usuario pida AGREGAR, MODIFICAR, EDITAR o CAMBIAR algo:
+1. NO crees archivos nuevos - los archivos arriba YA EXISTEN
+2. Usa write_file para ACTUALIZAR el archivo existente
+3. Si el usuario dice "agrega header" - necesitas:
+   a) Leer el contenido actual del archivo HTML
+   b) Agregar el código al archivo existente
+   c) Usar write_file para GUARDAR los cambios
 
-Ejemplo: "agrega header" = busca el HTML y agrega el código al archivo existente, no crees uno nuevo.
+Ejemplo INCORRECTO: "crear nuevo archivo"
+Ejemplo CORRECTO: "usar write_file para actualizar index.html existente"
+
+IMPORTANTE: Si ves "file-skip: no se sobrescribe" significa que NO debes guardar ahí.
 ` : '';
   
   // Append folder context to system prompt
