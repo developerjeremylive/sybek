@@ -123,375 +123,6 @@ function getSessionFolder(): string {
   return currentSessionFolder;
 }
 
-// Get context about existing files in the session folder and additional context folders
-async function getSessionFolderContext(groupId: string): Promise<string> {
-  let context = '';
-  
-  // Always include main session folder if it exists
-  let allFolders = contextFolders.filter(f => f !== currentSessionFolder);
-  if (currentSessionFolder) {
-    allFolders = [currentSessionFolder, ...allFolders];
-  }
-  
-  if (allFolders.length === 0) return '';
-  
-  try {
-    for (const folder of allFolders) {
-      const files = await listGroupFiles(groupId, folder);
-      if (files.length > 0) {
-        context += `\n\n## Archivos en "${folder}":\n`;
-        for (const file of files) {
-          if (!file.endsWith('/')) {
-            try {
-              const content = await readGroupFile(groupId, `${folder}/${file}`);
-              context += `\n### ${file}\n\`\`\`\n${content.slice(0, 1500)}\n\`\`\`\n`;
-            } catch {
-              context += `\n### ${file}\n(archivo no legible)\n`;
-            }
-          }
-        }
-      }
-    }
-    return context;
-  } catch (e) {
-    return '';
-  }
-}
-
-// Auto-save code files from AI response - Edit existing files based on user intent
-async function autoSaveCodeFiles(groupId: string, userMessage: string, aiResponse: string): Promise<string[]> {
-  const savedFiles: string[] = [];
-  const content = aiResponse; // alias for compatibility
-  
-  // Use context folders if available, otherwise use session folder
-  let targetFolders = [...contextFolders];
-  if (currentSessionFolder && !targetFolders.includes(currentSessionFolder)) {
-    targetFolders = [currentSessionFolder, ...targetFolders];
-  }
-  
-  if (targetFolders.length === 0) {
-    targetFolders = [getSessionFolder()];
-  }
-  
-  const targetFolder = targetFolders[0];
-  
-  // Check what files already exist in the folder
-  let existingFiles: string[] = [];
-  try {
-    existingFiles = await listGroupFiles(groupId, targetFolder);
-  } catch {}
-  
-  const hasHtml = existingFiles.includes('index.html');
-  const hasCss = existingFiles.includes('styles.css');
-  const hasJs = existingFiles.includes('script.js');
-  
-  // Detect user intent from message
-  const lowerMessage = userMessage.toLowerCase();
-  
-  // If user wants to remove duplicates or fix issues
-  const wantsFixFooter = lowerMessage.includes('footer') && (lowerMessage.includes('eliminar') || lowerMessage.includes('remove') || lowerMessage.includes('delete') || lowerMessage.includes('duplicado') || lowerMessage.includes('duplicate') || lowerMessage.includes('quitar'));
-  const wantsFixHeader = lowerMessage.includes('header') && (lowerMessage.includes('eliminar') || lowerMessage.includes('remove') || lowerMessage.includes('delete') || lowerMessage.includes('duplicado') || lowerMessage.includes('duplicate') || lowerMessage.includes('quitar'));
-  
-  if ((wantsFixFooter || wantsFixHeader) && hasHtml) {
-    try {
-      const htmlPath = `${targetFolder}/index.html`;
-      let htmlContent = await readGroupFile(groupId, htmlPath);
-      let modified = false;
-      
-      // Remove duplicate footers ONLY if specifically asked
-      if (wantsFixFooter) {
-        const footerMatches = htmlContent.match(/<footer[\s\S]*?<\/footer>/gi);
-        if (footerMatches && footerMatches.length > 1) {
-          htmlContent = htmlContent.replace(/<footer[\s\S]*?<\/footer>/gi, (match, index) => {
-            if (index === 0) return match;
-            modified = true;
-            return '';
-          });
-          htmlContent = htmlContent.replace(/\n\s*\n\s*\n/g, '\n\n');
-          log(groupId, 'file-updated', 'Footer eliminado', 'Eliminado footer duplicado');
-        }
-      }
-      
-      // Remove duplicate headers ONLY if specifically asked
-      if (wantsFixHeader) {
-        const headerMatches = htmlContent.match(/<header[\s\S]*?<\/header>/gi);
-        if (headerMatches && headerMatches.length > 1) {
-          htmlContent = htmlContent.replace(/<header[\s\S]*?<\/header>/gi, (match, index) => {
-            if (index === 0) return match;
-            modified = true;
-            return '';
-          });
-          htmlContent = htmlContent.replace(/\n\s*\n\s*\n/g, '\n\n');
-          log(groupId, 'file-updated', 'Header eliminado', 'Eliminado header duplicado');
-        }
-      }
-      
-      if (modified) {
-        await writeGroupFile(groupId, htmlPath, htmlContent);
-        savedFiles.push(htmlPath);
-        return savedFiles;
-      }
-    } catch (e) {
-      log(groupId, 'file-error', 'Error fix', String(e));
-    }
-  }
-  
-  // If user wants to improve UI/UX design - add modern styles
-  const wantsImprove = lowerMessage.includes('mejorar') || lowerMessage.includes('improve') || lowerMessage.includes(' design') || lowerMessage.includes(' ui') || lowerMessage.includes('ux') || lowerMessage.includes('upgrade') || lowerMessage.includes('enhance') || lowerMessage.includes('modern') || lowerMessage.includes('diseno') || lowerMessage.includes('disen') || lowerMessage.includes('dise') || lowerMessage.includes('diseño') || lowerMessage.includes('estilo') || lowerMessage.includes('style');
-  
-  if (wantsImprove && hasHtml) {
-    try {
-      const htmlPath = `${targetFolder}/index.html`;
-      const cssPath = `${targetFolder}/styles.css`;
-      let htmlContent = await readGroupFile(groupId, htmlPath);
-      let cssContent = hasCss ? await readGroupFile(groupId, cssPath) : '';
-      
-      const modernStyles = `
-/* Modern UI/UX */
-:root {--primary:#6366f1;--primary-dark:#4f46e5;--secondary:#a855f7;--dark:#1a1a2e}*{scroll-behavior:smooth}body{font-family:'Inter',sans-serif;line-height:1.6;color:#334155;margin:0}header{background:#1a1a2e;padding:1rem 0}header+*,main+*{padding-top:0}.header-container{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;padding:0 2rem}.logo{font-size:1.5rem;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none}header nav ul{display:flex;gap:2rem;list-style:none;margin:0;padding:0}header nav a{color:#e2e8f0;text-decoration:none;font-weight:500;transition:color .3s}header nav a:hover{color:#fff}.hero{min-height:80vh;display:flex;align-items:center;justify-content:center;text-align:center;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);color:#fff;padding:4rem 2rem}.hero h1{font-size:3rem;font-weight:800;margin-bottom:1rem}.hero p{font-size:1.1rem;opacity:.9;max-width:600px;margin:0 auto 2rem}.btn{display:inline-block;padding:.875rem 2rem;border-radius:50px;font-weight:600;text-decoration:none;transition:all .3s}.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 4px 15px rgba(99,102,241,.4)}.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(99,102,241,.6)}section{padding:4rem 2rem}.container{max-width:1200px;margin:0 auto}.features{background:#f8fafc}.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:2rem;margin-top:2rem}.feature-card{background:#fff;padding:2rem;border-radius:16px;box-shadow:0 4px 6px rgba(0,0,0,.05);transition:all .3s}.feature-card:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(0,0,0,.1)}footer{background:var(--dark);color:#94a3b8;padding:2rem;text-align:center}@media(max-width:768px){.hero h1{font-size:2rem}header nav{display:none}}`;
-      
-      if (cssContent && !cssContent.includes('Modern UI/UX')) {
-        cssContent += '\n' + modernStyles;
-        await writeGroupFile(groupId, cssPath, cssContent);
-        savedFiles.push(cssPath);
-        log(groupId, 'file-updated', 'UI/UX Mejorado', 'Estilos modernos aplicados');
-      } else if (!cssContent) {
-        await writeGroupFile(groupId, cssPath, modernStyles);
-        savedFiles.push(cssPath);
-        log(groupId, 'file-updated', 'UI/UX Creado', 'Estilos modernos creados');
-      } else {
-        // User requested improvement - apply anyway
-        cssContent += '\n' + modernStyles;
-        await writeGroupFile(groupId, cssPath, cssContent);
-        savedFiles.push(cssPath);
-        log(groupId, 'file-updated', 'UI/UX Mejorado', 'Estilos modernos aplicados');
-      }
-      
-      return savedFiles;
-    } catch (e) {
-      log(groupId, 'file-error', 'Error UI/UX', String(e));
-    }
-  }
-  
-  // If user wants to add header/footer - analyze existing content and edit
-  if ((lowerMessage.includes('header') || lowerMessage.includes('footer') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir') || lowerMessage.includes('modificar') || lowerMessage.includes('arreglar') || lowerMessage.includes('fix') || lowerMessage.includes('sirva') || lowerMessage.includes('funcion')) && hasHtml) {
-    try {
-      const htmlPath = `${targetFolder}/index.html`;
-      let htmlContent = await readGroupFile(groupId, htmlPath);
-      
-      // Analyze existing HTML to detect navigation sections
-      const sections: string[] = [];
-      const sectionRegex = /<section[^>]*id=["']([^"']+)["'][^>]*>/gi;
-      let match;
-      while ((match = sectionRegex.exec(htmlContent)) !== null) {
-        sections.push(match[1]);
-      }
-      
-      // Also detect id attributes on any element
-      const idRegex = /<(\w+)[^>]+id=["']([^"']+)["'][^>]*>/gi;
-      while ((match = idRegex.exec(htmlContent)) !== null) {
-        if (!sections.includes(match[2]) && match[2]) {
-          sections.push(match[2]);
-        }
-      }
-      
-      // Also detect anchor links in existing content
-      const anchorRegex = /<a[^>]+href=["']#([^"']+)["'][^>]*>/gi;
-      while ((match = anchorRegex.exec(htmlContent)) !== null) {
-        if (!sections.includes(match[1]) && match[1]) {
-          sections.push(match[1]);
-        }
-      }
-      
-      // Build navigation based on detected sections - use actual detected sections
-      let navLinks = '';
-      if (sections.length > 0) {
-        navLinks = sections.map(s => `<li><a href="#${s}">${s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, ' ')}</a></li>`).join('\n        ');
-      } else {
-        navLinks = '<li><a href="#inicio">Inicio</a></li>\n        <li><a href="#servicios">Servicios</a></li>\n        <li><a href="#contacto">Contacto</a></li>';
-        
-        // Auto-add IDs to sections if they don't exist
-        htmlContent = htmlContent.replace(/(<section[^>]*)(>)/gi, (m, start, end) => {
-          if (!m.includes('id="')) {
-            // Try to find a heading to create ID from
-            const headingMatch = m.match(/<h[12][^>]*>([^<]+)<\/h[12]>/i);
-            if (headingMatch) {
-              const id = headingMatch[1].toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-              return start + ` id="${id}"` + end;
-            }
-          }
-          return m;
-        });
-      }
-      
-      // Add/fix header if requested - rebuild with working links
-      const wantsHeader = lowerMessage.includes('header') && (lowerMessage.includes('arreglar') || lowerMessage.includes('sirva') || lowerMessage.includes('funcion') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir') || lowerMessage.includes('fix'));
-      
-      if (wantsHeader) {
-        // Remove old broken header and add new one
-        htmlContent = htmlContent.replace(/<header[\s\S]*?<\/header>/gi, '');
-        
-        const headerCode = `
-  <header>
-    <nav>
-      <ul>
-        ${navLinks}
-      </ul>
-    </nav>
-  </header>`;
-        
-        if (htmlContent.includes('<body>')) {
-          htmlContent = htmlContent.replace('<body>', '<body>\n' + headerCode);
-        } else if (htmlContent.includes('<body ')) {
-          htmlContent = htmlContent.replace(/<body [^>]*>/, match => match + '\n' + headerCode);
-        }
-      }
-      
-      // Add footer if requested - only if not already exists
-      if ((lowerMessage.includes('footer') || lowerMessage.includes('pie') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir')) && !htmlContent.includes('<footer')) {
-        const footerCode = `
-  <footer>
-    <p>&copy; 2026 Mi Empresa. Todos los derechos reservados.</p>
-  </footer>`;
-        
-        // Add footer before </body>
-        if (htmlContent.includes('</body>')) {
-          htmlContent = htmlContent.replace('</body>', footerCode + '\n</body>');
-        }
-      }
-      
-      // Save updated HTML
-      await writeGroupFile(groupId, htmlPath, htmlContent);
-      savedFiles.push(htmlPath);
-      log(groupId, 'file-updated', 'Edited HTML', `Agregado header/footer a ${htmlPath}`);
-      
-      // Also update CSS if needed
-      if (hasCss) {
-        const cssPath = `${targetFolder}/styles.css`;
-        let cssContent = await readGroupFile(groupId, cssPath);
-        
-        // Add header/footer styles
-        const additionalStyles = `
-/* Header */
-header {
-  background: #1a1a2e;
-  color: white;
-  padding: 1rem;
-  position: fixed;
-  width: 100%;
-  top: 0;
-  z-index: 1000;
-}
-header nav ul {
-  list-style: none;
-  display: flex;
-  gap: 1rem;
-  margin: 0;
-  padding: 0;
-}
-header nav a {
-  color: white;
-  text-decoration: none;
-}
-header nav a:hover {
-  color: #6366f1;
-}
-
-/* Footer */
-footer {
-  background: #1a1a2e;
-  color: white;
-  padding: 2rem;
-  text-align: center;
-  margin-top: auto;
-}`;
-        
-        if (!cssContent.includes('/* Header */')) {
-          cssContent += additionalStyles;
-          await writeGroupFile(groupId, cssPath, cssContent);
-          savedFiles.push(cssPath);
-          log(groupId, 'file-updated', 'Edited CSS', `Agregado estilos a ${cssPath}`);
-        }
-      }
-      
-      return savedFiles;
-    } catch (e) {
-      log(groupId, 'file-error', 'Failed to edit', String(e));
-    }
-  }
-  
-  // Original auto-save logic for new files only (only if no existing files)
-  
-  // Patterns to detect code that should be saved
-  const patterns = [
-    { regex: /<!DOCTYPE html>[\s\S]*?<\/html>/gi, ext: 'html', name: 'index.html' },
-    { regex: /<html[\s\S]*?<\/html>/gi, ext: 'html', name: 'index.html' },
-    { regex: /<style>[\s\S]*?<\/style>/gi, ext: 'css', name: 'styles.css' },
-    { regex: /<script>[\s\S]*?<\/script>/gi, ext: 'js', name: 'script.js' },
-  ];
-  
-  // Also check for marked code blocks
-  const codeBlockRegex = /```(?:html|css|javascript|js)?\n([\s\S]*?)```/g;
-  let match;
-  
-  while ((match = codeBlockRegex.exec(content)) !== null) {
-    const code = match[1].trim();
-    if (code.length < 50) continue; // Skip too short blocks
-    
-    // Determine file type from content
-    let fileName = 'code.txt';
-    if (code.includes('<html') || code.includes('<!DOCTYPE')) fileName = 'index.html';
-    else if (code.includes('<style') || (code.includes('{') && code.includes(';') && !code.includes('function'))) fileName = 'styles.css';
-    else if (code.includes('function') || code.includes('const ') || code.includes('let ') || code.includes('=>')) fileName = 'script.js';
-    else if (code.includes('import ') || code.includes('export ')) fileName = 'module.js';
-    
-    // Skip if file already exists - don't overwrite!
-    if (existingFiles.includes(fileName)) {
-      log(groupId, 'file-skip', 'File exists', `${targetFolder}/${fileName} - no se Sobrescribe`);
-      continue;
-    }
-    
-    try {
-      const filePath = `${targetFolder}/${fileName}`;
-      await writeGroupFile(groupId, filePath, code);
-      savedFiles.push(filePath);
-      log(groupId, 'file-saved', 'Auto-saved', filePath);
-    } catch (e) {
-      log(groupId, 'file-error', 'Failed to save', fileName);
-    }
-  }
-  
-  // Check for inline HTML/CSS/JS
-  for (const pattern of patterns) {
-    const matches = content.match(pattern.regex);
-    if (matches) {
-      for (const code of matches) {
-        const cleanCode = code.replace(/<\/?(style|script)[^>]*>/gi, '');
-        if (cleanCode.length < 50) continue;
-        
-        // Skip if file already exists - don't overwrite!
-        if (existingFiles.includes(pattern.name)) {
-          log(groupId, 'file-skip', 'File exists', `${targetFolder}/${pattern.name} - no se sobrescribe`);
-          continue;
-        }
-        
-        try {
-          const filePath = `${targetFolder}/${pattern.name}`;
-          await writeGroupFile(groupId, filePath, cleanCode);
-          if (!savedFiles.includes(filePath)) {
-            savedFiles.push(filePath);
-            log(groupId, 'file-saved', 'Auto-saved', filePath);
-          }
-        } catch (e) {
-          // Ignore
-        }
-      }
-    }
-  }
-  
-  return savedFiles;
-}
-
 async function getGroupDir(groupId: string): Promise<FileSystemDirectoryHandle> {
   const root = await navigator.storage.getDirectory();
   const safeId = groupId.replace(/:/g, '-');
@@ -499,7 +130,6 @@ async function getGroupDir(groupId: string): Promise<FileSystemDirectoryHandle> 
   let current = await root.getDirectoryHandle(OPFS_ROOT, { create: true });
   current = await current.getDirectoryHandle('groups', { create: true });
   current = await current.getDirectoryHandle(safeId, { create: true });
-  // Files directly in group folder, not in workspace subfolder
   return current;
 }
 
@@ -559,6 +189,79 @@ async function listGroupFiles(groupId: string, dirPath: string = '.'): Promise<s
 }
 
 // ---------------------------------------------------------------------------
+// Auto-save: Extract code from LLM response and save to files
+// ---------------------------------------------------------------------------
+
+async function autoSaveCodeFiles(groupId: string, aiResponse: string): Promise<string[]> {
+  const savedFiles: string[] = [];
+  const content = aiResponse;
+  
+  // Use context folders if available, otherwise use session folder
+  let targetFolders = [...contextFolders];
+  if (currentSessionFolder && !targetFolders.includes(currentSessionFolder)) {
+    targetFolders = [currentSessionFolder, ...targetFolders];
+  }
+  
+  if (targetFolders.length === 0) {
+    targetFolders = [getSessionFolder()];
+  }
+  
+  const targetFolder = targetFolders[0];
+  
+  // Check what files already exist
+  let existingFiles: string[] = [];
+  try {
+    existingFiles = await listGroupFiles(groupId, targetFolder);
+  } catch {}
+  
+  // Extract code blocks from response
+  const codeBlockRegex = /```(?:html|css|javascript|js|typescript)?\n([\s\S]*?)```/g;
+  let match;
+  
+  while ((match = codeBlockRegex.exec(content)) !== null) {
+    const code = match[1].trim();
+    if (code.length < 30) continue;
+    
+    // Determine file type
+    let fileName = 'code.txt';
+    if (code.includes('<!DOCTYPE html') || code.includes('<html') || code.includes('<header') || code.includes('<body') || code.includes('<footer') || code.includes('<section')) {
+      fileName = 'index.html';
+    } else if (code.includes('{') && code.includes(';') && (code.includes('color:') || code.includes('margin:') || code.includes('padding:') || code.includes('display:') || code.includes('@media')) {
+      fileName = 'styles.css';
+    } else if (code.includes('function') || code.includes('const ') || code.includes('let ') || code.includes('=>') || code.includes('document.') || code.includes('window.')) {
+      fileName = 'script.js';
+    }
+    
+    try {
+      const filePath = `${targetFolder}/${fileName}`;
+      await writeGroupFile(groupId, filePath, code);
+      savedFiles.push(filePath);
+      log(groupId, 'file-saved', 'Saved', filePath);
+    } catch (e) {
+      log(groupId, 'file-error', 'Failed to save', fileName);
+    }
+  }
+  
+  // Also check for inline HTML/CSS/JS
+  const htmlRegex = /<!DOCTYPE html>[\s\S]*?<\/html>/gi;
+  const htmlMatches = content.match(htmlRegex) || [];
+  
+  for (const html of htmlMatches) {
+    if (html.length < 100) continue;
+    try {
+      const filePath = `${targetFolder}/index.html`;
+      await writeGroupFile(groupId, filePath, html);
+      if (!savedFiles.includes(filePath)) {
+        savedFiles.push(filePath);
+        log(groupId, 'file-saved', 'Saved HTML', filePath);
+      }
+    } catch {}
+  }
+  
+  return savedFiles;
+}
+
+// ---------------------------------------------------------------------------
 // Main handler
 // ---------------------------------------------------------------------------
 
@@ -579,36 +282,16 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
     setContextFolders(contextFolders);
   }
 
-  // Use fileContext from payload if available, otherwise build from folders
-  const folderContext = fileContext || await getSessionFolderContext(groupId);
+  // Use fileContext from payload if available
+  const folderContext = fileContext || '';
   
-  // Add explicit instructions about editing existing files
-  const editInstructions = folderContext ? `
-
-## 🚨 IMPORTANTE - NO CREES ARCHIVOS NUEVOS:
-
-Los siguientes archivos YA EXISTEN en tu contexto:
-${folderContext}
-
-Cuando el usuario pida AGREGAR, MODIFICAR, EDITAR o CAMBIAR algo:
-1. NO crees archivos nuevos - los archivos arriba YA EXISTEN
-2. Usa write_file para ACTUALIZAR el archivo existente
-3. Si el usuario dice "agrega header" - necesitas:
-   a) Leer el contenido actual del archivo HTML
-   b) Agregar el código al archivo existente
-   c) Usar write_file para GUARDAR los cambios
-
-Ejemplo INCORRECTO: "crear nuevo archivo"
-Ejemplo CORRECTO: "usar write_file para actualizar index.html existente"
-
-IMPORTANTE: Si ves "file-skip: no se sobrescribe" significa que NO debes guardar ahí.
-` : '';
-  
-  // Append folder context to system prompt
-  const fullSystemPrompt = systemPrompt + editInstructions;
+  // Add context to system prompt
+  const fullSystemPrompt = folderContext 
+    ? systemPrompt + '\n\n## Archivos existentes:\n' + folderContext
+    : systemPrompt;
 
   post({ type: 'typing', payload: { groupId } });
-  log(groupId, 'info', 'Starting', `Model: ${model}, Session: ${currentSessionFolder}, Files: ${folderContext ? 'yes' : 'no'}`);
+  log(groupId, 'info', 'Starting', `Model: ${model}, Folder: ${currentSessionFolder}`);
 
   try {
     let currentMessages: ConversationMessage[] = [...messages];
@@ -620,7 +303,6 @@ IMPORTANTE: Si ves "file-skip: no se sobrescribe" significa que NO debes guardar
 
       log(groupId, 'api-call', `API call #${iterations}`, `${currentMessages.length} messages`);
 
-      // Build messages with tools
       const chatMessages = [
         { role: 'system', content: fullSystemPrompt },
         ...currentMessages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content : '' }))
@@ -631,12 +313,6 @@ IMPORTANTE: Si ves "file-skip: no se sobrescribe" significa que NO debes guardar
         model,
         max_tokens: maxTokens,
       };
-
-      // Note: Workers AI doesn't support tools in the same way as Anthropic
-      // Tools are handled separately
-      // if (iterations === 1) {
-      //   requestBody.tools = TOOLS;
-      // }
 
       const res = await fetch(CHAT_URL, {
         method: 'POST',
@@ -651,62 +327,37 @@ IMPORTANTE: Si ves "file-skip: no se sobrescribe" significa que NO debes guardar
 
       const result = await res.json();
       
-      // Try multiple response formats (Workers AI returns different format)
+      // Get response content
       let responseContent = '';
       if (result.response) {
-        // Anthropic-style or custom format
         responseContent = typeof result.response === 'string' ? result.response : JSON.stringify(result.response);
       } else if (result.result && result.result.response) {
-        // Workers AI format
         responseContent = typeof result.result.response === 'string' ? result.result.response : JSON.stringify(result.result.response);
       } else if (result.messages && result.messages.length > 0) {
-        // Array of messages
         responseContent = result.messages.map((m: any) => m.content || m.response || '').join('');
       } else if (result.choices && result.choices.length > 0) {
-        // OpenAI-style
         responseContent = result.choices[0].message?.content || '';
       } else if (typeof result === 'string') {
         responseContent = result;
       } else {
-        // Fallback: stringify everything
         responseContent = JSON.stringify(result);
       }
       
       log(groupId, 'text', 'Response', responseContent.slice(0, 200));
 
-      // Get user's last message for intent detection
-      const userMessage = currentMessages.length > 0 
-        ? currentMessages[currentMessages.length - 1].content?.toString() || ''
-        : '';
-
-      // AUTO-SAVE FILES: Extract code blocks and save them automatically
-      const savedFiles = await autoSaveCodeFiles(groupId, userMessage, responseContent);
+      // Auto-save code files from response
+      const savedFiles = await autoSaveCodeFiles(groupId, responseContent);
       
-      // Generate summary response - remove code blocks from chat response
-      let summaryResponse = responseContent;
-      
-      // If files were edited/saved, show summary instead of code
+      // Generate clean response
+      let finalText = responseContent;
       if (savedFiles.length > 0) {
-        // Remove code blocks from response
-        summaryResponse = responseContent.replace(/```[\s\S]*?```/g, '');
-        summaryResponse = summaryResponse.replace(/<style>[\s\S]*?<\/style>/gi, '');
-        summaryResponse = summaryResponse.replace(/<script>[\s\S]*?<\/script>/gi, '');
-        
-        // Extract just the main message (first paragraph or key sentences)
-        const lines = summaryResponse.split('\n').filter(l => l.trim() && !l.startsWith('#'));
-        const summary = lines.slice(0, 3).join(' ').slice(0, 300);
-        
-        summaryResponse = `✅ ${savedFiles.length} archivo(s) actualizado(s):\n\n${savedFiles.map(f => `📄 ${f.split('/').pop()}`).join('\n')}\n\nLos cambios se han guardado directamente en los archivos.`;
+        finalText = `✅ Archivos guardados:\n${savedFiles.map(f => `- ${f.split('/').pop()}`).join('\n')}`;
+      } else {
+        // Remove code blocks from display
+        finalText = responseContent.replace(/```[\s\S]*?```/g, '').trim();
       }
-      
-      // Return the cleaned summary response
-      currentMessages.push({ role: 'assistant', content: responseContent });
-      currentMessages.push({ role: 'user', content: `Tool result: Archivos actualizados` });
-      
-      // Final response is the summary
-      const finalResponse = summaryResponse;
 
-      // Check for tool calls - try multiple formats
+      // Check for tool calls
       let toolCalls: any[] = [];
       
       if (result.tool_calls && Array.isArray(result.tool_calls)) {
@@ -714,21 +365,12 @@ IMPORTANTE: Si ves "file-skip: no se sobrescribe" significa que NO debes guardar
       } else if (result.tools && Array.isArray(result.tools)) {
         toolCalls = result.tools;
       }
-      
-      // Also check for tool calls in response content (some APIs return them as text)
-      const toolCallMatch = responseContent.match(/<tool_call>(.*?)<\/tool_call>/);
-      if (toolCallMatch) {
-        try {
-          toolCalls = JSON.parse(toolCallMatch[1]);
-        } catch {}
-      }
 
       if (toolCalls.length > 0) {
         for (const toolCall of toolCalls) {
           let toolName = '';
           let toolInput: Record<string, any> = {};
           
-          // Handle different tool call formats
           if (typeof toolCall === 'string') {
             toolName = toolCall;
           } else if (toolCall && typeof toolCall === 'object') {
@@ -739,14 +381,11 @@ IMPORTANTE: Si ves "file-skip: no se sobrescribe" significa que NO debes guardar
           if (!toolName) continue;
           
           log(groupId, 'tool-call', `Tool: ${toolName}`, JSON.stringify(toolInput).slice(0, 100));
-          
           post({ type: 'tool-activity', payload: { groupId, tool: toolName, status: 'running' } });
 
-          // Execute tool
           const toolResult = await executeTool(toolName, toolInput, groupId);
           
           log(groupId, 'tool-result', `Result: ${toolName}`, toolResult.slice(0, 200));
-          
           post({ type: 'tool-activity', payload: { groupId, tool: toolName, status: 'done' } });
 
           currentMessages.push({ role: 'assistant', content: responseContent });
@@ -755,14 +394,14 @@ IMPORTANTE: Si ves "file-skip: no se sobrescribe" significa que NO debes guardar
         
         post({ type: 'typing', payload: { groupId } });
       } else {
-        // Final response - no tools - use summary if files were edited
-        const cleaned = (finalResponse || responseContent).replace(/<internal>[\s\S]*?<\/internal>/g, '').replace(/```[\s\S]*?```/g, '').replace(/<style>[\s\S]*?<\/style>/gi, '').replace(/<script>[\s\S]*?<\/script>/gi, '').trim();
-        post({ type: 'response', payload: { groupId, text: cleaned || '(no response)' } });
+        // Final response
+        const cleaned = finalText.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
+        post({ type: 'response', payload: { groupId, text: cleaned || '(sin respuesta)' } });
         return;
       }
     }
 
-    post({ type: 'response', payload: { groupId, text: '(max iterations reached)' } });
+    post({ type: 'response', payload: { groupId, text: '(máximo de iteraciones alcanzado)' } });
   } catch (err) {
     console.error('[agent-worker] Error:', err);
     const errorMsg = err instanceof Error ? err.message : String(err);
@@ -779,7 +418,7 @@ function post(msg: WorkerOutbound): void {
   self.postMessage(msg);
 }
 
-function log(groupId: string, kind: 'api-call' | 'tool-call' | 'tool-result' | 'text' | 'info' | 'file-saved' | 'file-error' | 'file-created' | 'file-updated' | 'file-skip', label: string, detail: string): void {
+function log(groupId: string, kind: 'api-call' | 'tool-call' | 'tool-result' | 'text' | 'info' | 'file-saved' | 'file-error', label: string, detail: string): void {
   const entry = { groupId, id: ulid(), timestamp: Date.now(), kind, label, detail };
   post({ type: 'thinking-log', payload: entry });
 }
