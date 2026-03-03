@@ -97,6 +97,66 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
 // OPFS helpers
 // ---------------------------------------------------------------------------
 
+// Auto-save code files from AI response
+async function autoSaveCodeFiles(groupId: string, content: string): Promise<string[]> {
+  const savedFiles: string[] = [];
+  
+  // Patterns to detect code that should be saved
+  const patterns = [
+    { regex: /<!DOCTYPE html>[\s\S]*?<\/html>/gi, ext: 'html', name: 'index.html' },
+    { regex: /<html[\s\S]*?<\/html>/gi, ext: 'html', name: 'index.html' },
+    { regex: /<style>[\s\S]*?<\/style>/gi, ext: 'css', name: 'styles.css' },
+    { regex: /<script>[\s\S]*?<\/script>/gi, ext: 'js', name: 'script.js' },
+  ];
+  
+  // Also check for marked code blocks
+  const codeBlockRegex = /```(?:html|css|javascript|js)?\n([\s\S]*?)```/g;
+  let match;
+  
+  while ((match = codeBlockRegex.exec(content)) !== null) {
+    const code = match[1].trim();
+    if (code.length < 50) continue; // Skip too short blocks
+    
+    // Determine file type from content
+    let fileName = 'code.txt';
+    if (code.includes('<html') || code.includes('<!DOCTYPE')) fileName = 'index.html';
+    else if (code.includes('<style') || (code.includes('{') && code.includes(';') && !code.includes('function'))) fileName = 'styles.css';
+    else if (code.includes('function') || code.includes('const ') || code.includes('let ') || code.includes('=>')) fileName = 'script.js';
+    else if (code.includes('import ') || code.includes('export ')) fileName = 'module.js';
+    
+    try {
+      await writeGroupFile(groupId, fileName, code);
+      savedFiles.push(fileName);
+      log(groupId, 'file-saved', 'Auto-saved', fileName);
+    } catch (e) {
+      log(groupId, 'file-error', 'Failed to save', fileName);
+    }
+  }
+  
+  // Check for inline HTML/CSS/JS
+  for (const pattern of patterns) {
+    const matches = content.match(pattern.regex);
+    if (matches) {
+      for (const code of matches) {
+        const cleanCode = code.replace(/<\/?(style|script)[^>]*>/gi, '');
+        if (cleanCode.length < 50) continue;
+        
+        try {
+          await writeGroupFile(groupId, pattern.name, cleanCode);
+          if (!savedFiles.includes(pattern.name)) {
+            savedFiles.push(pattern.name);
+            log(groupId, 'file-saved', 'Auto-saved', pattern.name);
+          }
+        } catch (e) {
+          // Ignore
+        }
+      }
+    }
+  }
+  
+  return savedFiles;
+}
+
 async function getGroupDir(groupId: string): Promise<FileSystemDirectoryHandle> {
   const root = await navigator.storage.getDirectory();
   const safeId = groupId.replace(/:/g, '-');
@@ -235,6 +295,12 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       }
       
       log(groupId, 'text', 'Response', responseContent.slice(0, 200));
+
+      // AUTO-SAVE FILES: Extract code blocks and save them automatically
+      const savedFiles = await autoSaveCodeFiles(groupId, responseContent);
+      if (savedFiles.length > 0) {
+        responseContent += '\n\n📁 Archivos guardados en Files:\n' + savedFiles.map(f => `- ${f}`).join('\n');
+      }
 
       // Check for tool calls - try multiple formats
       let toolCalls: any[] = [];
