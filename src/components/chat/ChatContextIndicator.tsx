@@ -15,10 +15,8 @@ export function ChatContextIndicator({ onNewChat }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
   
   useEffect(() => {
-    // Load from localStorage
     const savedFolders = localStorage.getItem('contextFolders');
     const savedSession = localStorage.getItem('currentSessionFolder');
-    
     setContextFolders(savedFolders ? JSON.parse(savedFolders) : []);
     setCurrentSessionFolder(savedSession || '');
   }, []);
@@ -29,20 +27,15 @@ export function ChatContextIndicator({ onNewChat }: Props) {
   
   return (
     <div className="fixed bottom-24 right-4 z-50">
-      {/* Expanded panel */}
       {isExpanded && (
         <div className="absolute bottom-12 right-0 w-72 bg-base-200 border border-base-300 rounded-lg shadow-xl p-3 space-y-2">
           <div className="flex items-center justify-between">
             <span className="font-medium text-sm">Contexto del Chat</span>
-            <button
-              className="btn btn-ghost btn-xs"
-              onClick={() => setIsExpanded(false)}
-            >
+            <button className="btn btn-ghost btn-xs" onClick={() => setIsExpanded(false)}>
               <X className="w-3 h-3" />
             </button>
           </div>
           
-          {/* Current session folder */}
           {currentSessionFolder && (
             <div className="flex items-center gap-2 text-xs bg-success/10 p-2 rounded">
               <Folder className="w-4 h-4 text-success shrink-0" />
@@ -51,7 +44,6 @@ export function ChatContextIndicator({ onNewChat }: Props) {
             </div>
           )}
           
-          {/* Additional context folders */}
           {contextFolders.length > 0 && (
             <div className="space-y-1">
               <span className="text-xs opacity-50">Carpetas adicionales:</span>
@@ -64,20 +56,15 @@ export function ChatContextIndicator({ onNewChat }: Props) {
             </div>
           )}
           
-          {/* New chat button */}
           {onNewChat && (
-            <button
-              className="btn btn-sm btn-outline w-full mt-2"
-              onClick={onNewChat}
-<RefreshCw className="w-4            >
-               h-4" />
+            <button className="btn btn-sm btn-outline w-full mt-2" onClick={onNewChat}>
+              <RefreshCw className="w-4 h-4" />
               Nueva conversación
             </button>
           )}
         </div>
       )}
       
-      {/* Floating button */}
       <button
         className="btn btn-circle btn-lg bg-primary text-primary-content shadow-lg hover:bg-primary-focus"
         onClick={() => setIsExpanded(!isExpanded)}
