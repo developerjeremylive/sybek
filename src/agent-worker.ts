@@ -158,8 +158,8 @@ async function getSessionFolderContext(groupId: string): Promise<string> {
   }
 }
 
-// Auto-save code files from AI response - ONLY save if file doesn't exist
-async function autoSaveCodeFiles(groupId: string, content: string): Promise<string[]> {
+// Auto-save code files from AI response - Edit existing files based on user intent
+async function autoSaveCodeFiles(groupId: string, userMessage: string, aiResponse: string): Promise<string[]> {
   const savedFiles: string[] = [];
   
   // Use context folders if available, otherwise use session folder
@@ -168,12 +168,11 @@ async function autoSaveCodeFiles(groupId: string, content: string): Promise<stri
     targetFolders = [currentSessionFolder, ...targetFolders];
   }
   
-  // If no folders, create a new one
   if (targetFolders.length === 0) {
     targetFolders = [getSessionFolder()];
   }
   
-  const targetFolder = targetFolders[0]; // Save to first available folder
+  const targetFolder = targetFolders[0];
   
   // Check what files already exist in the folder
   let existingFiles: string[] = [];
@@ -181,8 +180,115 @@ async function autoSaveCodeFiles(groupId: string, content: string): Promise<stri
     existingFiles = await listGroupFiles(groupId, targetFolder);
   } catch {}
   
-  // Only save NEW files - don't overwrite existing ones
-  // If user wants to edit, they should do it manually or AI should use write_file
+  const hasHtml = existingFiles.includes('index.html');
+  const hasCss = existingFiles.includes('styles.css');
+  const hasJs = existingFiles.includes('script.js');
+  
+  // Detect user intent from message
+  const lowerMessage = userMessage.toLowerCase();
+  
+  // If user wants to add header/footer - modify existing files
+  if ((lowerMessage.includes('header') || lowerMessage.includes('footer') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir') || lowerMessage.includes('modificar')) && hasHtml) {
+    try {
+      // Read existing HTML
+      const htmlPath = `${targetFolder}/index.html`;
+      let htmlContent = await readGroupFile(groupId, htmlPath);
+      
+      // Add header if requested
+      if (lowerMessage.includes('header') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir')) {
+        const headerCode = `
+  <header>
+    <nav>
+      <ul>
+        <li><a href="#inicio">Inicio</a></li>
+        <li><a href="#servicios">Servicios</a></li>
+        <li><a href="#contacto">Contacto</a></li>
+      </ul>
+    </nav>
+  </header>`;
+        
+        // Add header after <body> or at beginning of body content
+        if (htmlContent.includes('<body>')) {
+          htmlContent = htmlContent.replace('<body>', '<body>\n' + headerCode);
+        } else if (htmlContent.includes('<body ')) {
+          htmlContent = htmlContent.replace(/<body [^>]*>/, match => match + '\n' + headerCode);
+        }
+      }
+      
+      // Add footer if requested
+      if (lowerMessage.includes('footer') || lowerMessage.includes('pie') || lowerMessage.includes('agregar') || lowerMessage.includes('añadir')) {
+        const footerCode = `
+  <footer>
+    <p>&copy; 2026 Mi Empresa. Todos los derechos reservados.</p>
+  </footer>`;
+        
+        // Add footer before </body>
+        if (htmlContent.includes('</body>')) {
+          htmlContent = htmlContent.replace('</body>', footerCode + '\n</body>');
+        }
+      }
+      
+      // Save updated HTML
+      await writeGroupFile(groupId, htmlPath, htmlContent);
+      savedFiles.push(htmlPath);
+      log(groupId, 'file-updated', 'Edited HTML', `Agregado header/footer a ${htmlPath}`);
+      
+      // Also update CSS if needed
+      if (hasCss) {
+        const cssPath = `${targetFolder}/styles.css`;
+        let cssContent = await readGroupFile(groupId, cssPath);
+        
+        // Add header/footer styles
+        const additionalStyles = `
+/* Header */
+header {
+  background: #1a1a2e;
+  color: white;
+  padding: 1rem;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 1000;
+}
+header nav ul {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+}
+header nav a {
+  color: white;
+  text-decoration: none;
+}
+header nav a:hover {
+  color: #6366f1;
+}
+
+/* Footer */
+footer {
+  background: #1a1a2e;
+  color: white;
+  padding: 2rem;
+  text-align: center;
+  margin-top: auto;
+}`;
+        
+        if (!cssContent.includes('/* Header */')) {
+          cssContent += additionalStyles;
+          await writeGroupFile(groupId, cssPath, cssContent);
+          savedFiles.push(cssPath);
+          log(groupId, 'file-updated', 'Edited CSS', `Agregado estilos a ${cssPath}`);
+        }
+      }
+      
+      return savedFiles;
+    } catch (e) {
+      log(groupId, 'file-error', 'Failed to edit', String(e));
+    }
+  }
+  
+  // Original auto-save logic for new files only (only if no existing files)
   
   // Patterns to detect code that should be saved
   const patterns = [
@@ -436,8 +542,13 @@ IMPORTANTE: Si ves "file-skip: no se sobrescribe" significa que NO debes guardar
       
       log(groupId, 'text', 'Response', responseContent.slice(0, 200));
 
+      // Get user's last message for intent detection
+      const userMessage = currentMessages.length > 0 
+        ? currentMessages[currentMessages.length - 1].content?.toString() || ''
+        : '';
+
       // AUTO-SAVE FILES: Extract code blocks and save them automatically
-      const savedFiles = await autoSaveCodeFiles(groupId, responseContent);
+      const savedFiles = await autoSaveCodeFiles(groupId, userMessage, responseContent);
       if (savedFiles.length > 0) {
         responseContent += '\n\n📁 Archivos guardados en Files:\n' + savedFiles.map(f => `- ${f}`).join('\n');
       }
