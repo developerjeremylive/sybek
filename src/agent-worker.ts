@@ -350,17 +350,17 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
 
       const result = await res.json();
       
-      // Get response content and tool calls
       let responseContent = '';
       let toolCalls: any[] = [];
       
-      if (result.response) {
+      // Handle Workers AI response format with tool_calls
+      if (result.response !== undefined && result.response !== null) {
         responseContent = typeof result.response === 'string' ? result.response : JSON.stringify(result.response);
-        // Check for tool_calls in response (Workers AI returns them in the response object)
+        // Check for tool_calls in response
         if (result.response.tool_calls) {
           toolCalls = result.response.tool_calls;
         }
-      } else if (result.result) {
+      } else if (result.result !== undefined && result.result !== null) {
         if (result.result.response) {
           responseContent = typeof result.result.response === 'string' ? result.result.response : JSON.stringify(result.result.response);
         }
@@ -377,7 +377,14 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       } else if (typeof result === 'string') {
         responseContent = result;
       } else {
-        responseContent = JSON.stringify(result);
+        // Only stringify if there's no response at all
+        const str = JSON.stringify(result);
+        // Don't show raw JSON if it contains tool_calls
+        if (str.includes('tool_calls')) {
+          responseContent = '';
+        } else {
+          responseContent = str;
+        }
       }
       
       log(groupId, 'text', 'Response', responseContent.slice(0, 200));
