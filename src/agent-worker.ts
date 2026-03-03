@@ -97,8 +97,9 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
 // OPFS helpers
 // ---------------------------------------------------------------------------
 
-// Store current session folder
+// Store current session folder - persists across messages in same conversation
 let currentSessionFolder = '';
+let isNewConversation = true;
 
 // Generate a unique session folder based on timestamp
 function getSessionFolder(): string {
@@ -109,6 +110,27 @@ function getSessionFolder(): string {
     currentSessionFolder = `chat-${dateStr}-${timeStr}`;
   }
   return currentSessionFolder;
+}
+
+// Get context about existing files in the session folder
+async function getSessionFolderContext(groupId: string): Promise<string> {
+  if (!currentSessionFolder) return '';
+  
+  try {
+    const files = await listGroupFiles(groupId, currentSessionFolder);
+    if (files.length === 0) return '';
+    
+    let context = `\n\n## Archivos existentes en este proyecto:\n`;
+    for (const file of files) {
+      if (!file.endsWith('/')) {
+        const content = await readGroupFile(groupId, `${currentSessionFolder}/${file}`);
+        context += `\n### ${file}\n\`\`\`\n${content.slice(0, 2000)}\n\`\`\`\n`;
+      }
+    }
+    return context;
+  } catch (e) {
+    return '';
+  }
 }
 
 // Auto-save code files from AI response
@@ -247,14 +269,21 @@ async function listGroupFiles(groupId: string, dirPath: string = '.'): Promise<s
 async function handleInvoke(payload: InvokePayload): Promise<void> {
   const { groupId = DEFAULT_GROUP_ID, messages, systemPrompt, model = DEFAULT_MODEL, maxTokens = 4096 } = payload;
 
-  // Reset session folder for new conversation (only if no messages yet)
-  if (messages.length === 0) {
+  // Only reset session folder for truly new conversations
+  if (isNewConversation) {
     currentSessionFolder = '';
     getSessionFolder(); // Generate new folder
+    isNewConversation = false;
   }
 
+  // Get existing files context for this session
+  const folderContext = await getSessionFolderContext(groupId);
+  
+  // Append folder context to system prompt
+  const fullSystemPrompt = systemPrompt + folderContext;
+
   post({ type: 'typing', payload: { groupId } });
-  log(groupId, 'info', 'Starting', `Model: ${model}`);
+  log(groupId, 'info', 'Starting', `Model: ${model}, Session: ${currentSessionFolder}, Files: ${folderContext ? 'yes' : 'no'}`);
 
   try {
     let currentMessages: ConversationMessage[] = [...messages];
@@ -268,7 +297,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
 
       // Build messages with tools
       const chatMessages = [
-        { role: 'system', content: systemPrompt },
+        { role: 'system', content: fullSystemPrompt },
         ...currentMessages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content : '' }))
       ];
 
