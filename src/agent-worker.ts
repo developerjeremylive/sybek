@@ -6,8 +6,8 @@ import type { WorkerInbound, WorkerOutbound, InvokePayload, CompactPayload, Conv
 import { DEFAULT_GROUP_ID, DEFAULT_MODEL } from './config.js';
 import { ulid } from './ulid.js';
 
-// MCP endpoint for AI chat - use Workers AI directly
-const CHAT_URL = '/api/ai';
+// MCP endpoint for AI chat - use Cloudflare Worker proxy
+const CHAT_URL = 'https://kilocode-proxy-live.developerjeremylive.workers.dev/api/ai';
 
 const OPFS_ROOT = 'openbrowserclaw';
 
