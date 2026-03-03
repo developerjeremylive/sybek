@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef, useState } from 'react';
-import { X, MessageSquare, Globe, FileText, MapPin, Layout, Smartphone, Code, Zap, ChevronLeft, ChevronRight, Copy, Check } from 'lucide-react';
+import { X, MessageSquare, Globe, FileText, MapPin, Layout, Smartphone, Code, Zap, ChevronLeft, ChevronRight, Copy, Check, Trash2 } from 'lucide-react';
 import { useOrchestratorStore } from '../../stores/orchestrator-store.js';
 import { MessageList } from './MessageList.js';
 import { ChatInput } from './ChatInput.js';
@@ -12,6 +12,7 @@ import { ToolActivity } from './ToolActivity.js';
 import { ActivityLog } from './ActivityLog.js';
 import { ContextBar } from './ContextBar.js';
 import { ChatActions } from './ChatActions.js';
+import { ChatContextIndicator } from './ChatContextIndicator.js';
 
 const LineGraphIcon = ({ className }: { className?: string }) => (
     <svg
@@ -269,6 +270,14 @@ export function ChatPage() {
           initialValue={inputValue}
         />
       </div>
+
+      {/* Floating context indicator */}
+      <ChatContextIndicator onNewChat={() => {
+        // Clear context and start new chat
+        localStorage.removeItem('currentSessionFolder');
+        localStorage.removeItem('contextFolders');
+        window.location.reload();
+      }} />
     </div>
   );
 }

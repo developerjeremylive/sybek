@@ -133,6 +133,7 @@ export function FilesPage() {
   const [viewerFile, setViewerFile] = useState<{ name: string; content: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [pinnedFolders, setPinnedFolders] = useState<Set<string>>(new Set());
+  const [contextFolders, setContextFolders] = useState<Set<string>>(new Set());
 
   const groupId = DEFAULT_GROUP_ID;
   const currentDir = path.length > 0 ? path.join('/') : '.';
@@ -152,12 +153,41 @@ export function FilesPage() {
     });
   }
 
+  // Toggle context folder for chat
+  function toggleContextFolder(folderName: string) {
+    setContextFolders(prev => {
+      const next = new Set(prev);
+      if (next.has(folderName)) {
+        next.delete(folderName);
+      } else {
+        next.add(folderName);
+      }
+      // Save to localStorage
+      const arr = [...next].filter(f => f !== currentSessionFolder);
+      localStorage.setItem('contextFolders', JSON.stringify(arr));
+      return next;
+    });
+  }
+
+  // Get current session folder
+  const currentSessionFolder = typeof window !== 'undefined' 
+    ? localStorage.getItem('currentSessionFolder') || ''
+    : '';
+
   // Load pinned folders from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('pinnedFolders');
     if (saved) {
       try {
         setPinnedFolders(new Set(JSON.parse(saved)));
+      } catch {}
+    }
+    
+    // Load context folders
+    const savedContext = localStorage.getItem('contextFolders');
+    if (savedContext) {
+      try {
+        setContextFolders(new Set(JSON.parse(savedContext)));
       } catch {}
     }
   }, []);
@@ -308,31 +338,54 @@ export function FilesPage() {
               <tbody>
                 {sortedEntries.map((entry) => {
                   const isPinned = entry.isDir && pinnedFolders.has(entry.name);
+                  const isContext = entry.isDir && contextFolders.has(entry.name);
+                  const isCurrentSession = entry.isDir && entry.name === currentSessionFolder;
                   return (
                   <tr
                     key={entry.name}
-                    className={`hover cursor-pointer ${previewFile === entry.name ? 'active' : ''} ${isPinned ? 'bg-primary/10' : ''}`}
+                    className={`hover cursor-pointer ${previewFile === entry.name ? 'active' : ''} ${isPinned ? 'bg-primary/10' : ''} ${isContext ? 'bg-success/10' : ''}`}
                     onClick={() =>
                       entry.isDir
                         ? setPath([...path, entry.name])
                         : handlePreview(entry.name)
                     }
                   >
+                    {/* Checkbox for context */}
+                    {entry.isDir && (
+                      <td className="w-8 text-center">
+                        <input
+                          type="checkbox"
+                          className="checkbox checkbox-xs checkbox-success"
+                          checked={isContext || isCurrentSession}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            if (!isCurrentSession) {
+                              toggleContextFolder(entry.name);
+                            }
+                          }}
+                          disabled={isCurrentSession}
+                          title={isCurrentSession ? 'Carpeta de sesión actual' : 'Agregar al contexto del chat'}
+                        />
+                      </td>
+                    )}
                     <td className="w-8 text-center">
                       {(() => { const Icon = getFileIcon(entry.name, entry.isDir); return <Icon className={`w-4 h-4 inline-block ${isPinned ? 'text-primary' : ''}`} />; })()}
                     </td>
                     <td className="font-medium">
-                      {entry.isDir && entry.name && (
-                        <button
-                          className={`btn btn-ghost btn-xs mr-1 ${isPinned ? 'text-primary' : 'opacity-30'}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            togglePin(entry.name);
-                          }}
-                          title={isPinned ? 'Desfijar carpeta' : 'Fijar carpeta'}
-                        >
-                          {isPinned ? <Pin className="w-3 h-3" /> : <PinOff className="w-3 h-3" />}
-                        </button>
+                      {entry.isDir && (
+                        <>
+                          <button
+                            className={`btn btn-ghost btn-xs mr-1 ${isPinned ? 'text-primary' : 'opacity-30'}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              togglePin(entry.name);
+                            }}
+                            title={isPinned ? 'Desfijar carpeta' : 'Fijar carpeta'}
+                          >
+                            {isPinned ? <Pin className="w-3 h-3" /> : <PinOff className="w-3 h-3" />}
+                          </button>
+                          {isCurrentSession && <span className="badge badge-xs badge-success mr-1">chat</span>}
+                        </>
                       )}
                       {entry.name}
                       {entry.isDir && (

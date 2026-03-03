@@ -97,34 +97,75 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
 // OPFS helpers
 // ---------------------------------------------------------------------------
 
-// Store current session folder - persists across messages in same conversation
+// Store current session folder - persists in localStorage
 let currentSessionFolder = '';
 let isNewConversation = true;
 
-// Generate a unique session folder based on timestamp
-function getSessionFolder(): string {
-  if (!currentSessionFolder) {
-    const now = new Date();
-    const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
-    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
-    currentSessionFolder = `chat-${dateStr}-${timeStr}`;
+// Load session folder from localStorage
+function loadSessionFolder(): string {
+  if (currentSessionFolder) return currentSessionFolder;
+  
+  const saved = localStorage.getItem('currentSessionFolder');
+  if (saved) {
+    currentSessionFolder = saved;
   }
   return currentSessionFolder;
 }
 
-// Get context about existing files in the session folder
+// Save session folder to localStorage
+function saveSessionFolder(folder: string): void {
+  currentSessionFolder = folder;
+  localStorage.setItem('currentSessionFolder', folder);
+}
+
+// Generate a unique session folder based on timestamp
+function getSessionFolder(): string {
+  loadSessionFolder();
+  if (!currentSessionFolder) {
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+    currentSessionFolder = `chat-${dateStr}-${timeStr}`;
+    saveSessionFolder(currentSessionFolder);
+  }
+  return currentSessionFolder;
+}
+
+// Get context about existing files in the session folder and additional context folders
 async function getSessionFolderContext(groupId: string): Promise<string> {
-  if (!currentSessionFolder) return '';
+  let context = '';
+  
+  // Get additional context folders from localStorage
+  let contextFolders: string[] = [];
+  try {
+    const saved = localStorage.getItem('contextFolders');
+    if (saved) {
+      contextFolders = JSON.parse(saved);
+    }
+  } catch {}
+  
+  // Always include main session folder if it exists
+  if (currentSessionFolder) {
+    contextFolders = [currentSessionFolder, ...contextFolders.filter(f => f !== currentSessionFolder)];
+  }
+  
+  if (contextFolders.length === 0) return '';
   
   try {
-    const files = await listGroupFiles(groupId, currentSessionFolder);
-    if (files.length === 0) return '';
-    
-    let context = `\n\n## Archivos existentes en este proyecto:\n`;
-    for (const file of files) {
-      if (!file.endsWith('/')) {
-        const content = await readGroupFile(groupId, `${currentSessionFolder}/${file}`);
-        context += `\n### ${file}\n\`\`\`\n${content.slice(0, 2000)}\n\`\`\`\n`;
+    for (const folder of contextFolders) {
+      const files = await listGroupFiles(groupId, folder);
+      if (files.length > 0) {
+        context += `\n\n## Archivos en "${folder}":\n`;
+        for (const file of files) {
+          if (!file.endsWith('/')) {
+            try {
+              const content = await readGroupFile(groupId, `${folder}/${file}`);
+              context += `\n### ${file}\n\`\`\`\n${content.slice(0, 1500)}\n\`\`\`\n`;
+            } catch {
+              context += `\n### ${file}\n(archivo no legible)\n`;
+            }
+          }
+        }
       }
     }
     return context;
