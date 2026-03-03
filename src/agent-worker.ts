@@ -161,6 +161,7 @@ async function getSessionFolderContext(groupId: string): Promise<string> {
 // Auto-save code files from AI response - Edit existing files based on user intent
 async function autoSaveCodeFiles(groupId: string, userMessage: string, aiResponse: string): Promise<string[]> {
   const savedFiles: string[] = [];
+  const content = aiResponse; // alias for compatibility
   
   // Use context folders if available, otherwise use session folder
   let targetFolders = [...contextFolders];
