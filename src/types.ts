@@ -88,6 +88,8 @@ export interface InvokePayload {
   apiKey: string;
   model: string;
   maxTokens: number;
+  sessionFolder?: string;
+  contextFolders?: string[];
 }
 
 /** Messages sent from Agent Worker → main thread */

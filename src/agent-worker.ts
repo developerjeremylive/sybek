@@ -99,34 +99,26 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
 
 // Store current session folder - persists in localStorage
 let currentSessionFolder = '';
-let isNewConversation = true;
 
-// Load session folder from localStorage
-function loadSessionFolder(): string {
-  if (currentSessionFolder) return currentSessionFolder;
-  
-  const saved = localStorage.getItem('currentSessionFolder');
-  if (saved) {
-    currentSessionFolder = saved;
-  }
-  return currentSessionFolder;
+// Load session folder from localStorage (will be set from main thread)
+export function setSessionFolder(folder: string): void {
+  currentSessionFolder = folder;
 }
 
-// Save session folder to localStorage
-function saveSessionFolder(folder: string): void {
-  currentSessionFolder = folder;
-  localStorage.setItem('currentSessionFolder', folder);
+// Load context folders from localStorage (will be set from main thread)
+let contextFolders: string[] = [];
+
+export function setContextFolders(folders: string[]): void {
+  contextFolders = folders;
 }
 
 // Generate a unique session folder based on timestamp
 function getSessionFolder(): string {
-  loadSessionFolder();
   if (!currentSessionFolder) {
     const now = new Date();
     const dateStr = now.toISOString().split('T')[0];
     const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
     currentSessionFolder = `chat-${dateStr}-${timeStr}`;
-    saveSessionFolder(currentSessionFolder);
   }
   return currentSessionFolder;
 }
@@ -135,24 +127,16 @@ function getSessionFolder(): string {
 async function getSessionFolderContext(groupId: string): Promise<string> {
   let context = '';
   
-  // Get additional context folders from localStorage
-  let contextFolders: string[] = [];
-  try {
-    const saved = localStorage.getItem('contextFolders');
-    if (saved) {
-      contextFolders = JSON.parse(saved);
-    }
-  } catch {}
-  
   // Always include main session folder if it exists
+  let allFolders = contextFolders.filter(f => f !== currentSessionFolder);
   if (currentSessionFolder) {
-    contextFolders = [currentSessionFolder, ...contextFolders.filter(f => f !== currentSessionFolder)];
+    allFolders = [currentSessionFolder, ...allFolders];
   }
   
-  if (contextFolders.length === 0) return '';
+  if (allFolders.length === 0) return '';
   
   try {
-    for (const folder of contextFolders) {
+    for (const folder of allFolders) {
       const files = await listGroupFiles(groupId, folder);
       if (files.length > 0) {
         context += `\n\n## Archivos en "${folder}":\n`;
@@ -308,13 +292,18 @@ async function listGroupFiles(groupId: string, dirPath: string = '.'): Promise<s
 // ---------------------------------------------------------------------------
 
 async function handleInvoke(payload: InvokePayload): Promise<void> {
-  const { groupId = DEFAULT_GROUP_ID, messages, systemPrompt, model = DEFAULT_MODEL, maxTokens = 4096 } = payload;
+  const { groupId = DEFAULT_GROUP_ID, messages, systemPrompt, model = DEFAULT_MODEL, maxTokens = 4096, sessionFolder, contextFolders } = payload;
 
-  // Only reset session folder for truly new conversations
-  if (isNewConversation) {
-    currentSessionFolder = '';
-    getSessionFolder(); // Generate new folder
-    isNewConversation = false;
+  // Use session folder from payload or generate new one
+  if (sessionFolder) {
+    currentSessionFolder = sessionFolder;
+  } else if (!currentSessionFolder) {
+    getSessionFolder();
+  }
+  
+  // Set context folders from payload
+  if (contextFolders) {
+    setContextFolders(contextFolders);
   }
 
   // Get existing files context for this session

@@ -453,6 +453,9 @@ export class Orchestrator {
     );
 
     // Send to agent worker
+    const sessionFolder = localStorage.getItem('currentSessionFolder') || '';
+    const contextFolders = JSON.parse(localStorage.getItem('contextFolders') || '[]');
+    
     this.agentWorker.postMessage({
       type: 'invoke',
       payload: {
@@ -462,6 +465,8 @@ export class Orchestrator {
         apiKey: this.apiKey,
         model: this.model,
         maxTokens: this.maxTokens,
+        sessionFolder,
+        contextFolders,
       },
     });
   }
