@@ -16,11 +16,18 @@ export const TRIGGER_PATTERN = buildTriggerPattern(ASSISTANT_NAME);
 /** How many recent messages to include in agent context */
 export const CONTEXT_WINDOW_SIZE = 50;
 
-/** Max tokens for Claude API response */
-export const DEFAULT_MAX_TOKENS = 8096;
+/** Max tokens for AI response */
+export const DEFAULT_MAX_TOKENS = 4096;
 
-/** Default model */
-export const DEFAULT_MODEL = 'claude-sonnet-4-6';
+/** Default model - using Workers AI with function calling */
+export const DEFAULT_MODEL = '@cf/meta/llama-3.1-8b-instruct';
+
+/** Available models with function calling support */
+export const MODELS = [
+  { value: '@cf/meta/llama-3.1-8b-instruct', label: 'Llama 3.1 8B (Workers AI)' },
+  { value: '@cf/meta/llama-3-8b-instruct', label: 'Llama 3 8B (Workers AI)' },
+  { value: '@cf/google/gemma-2-2b', label: 'Gemma 2 2B (Workers AI)' },
+];
 
 /** Anthropic API endpoint */
 export const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';

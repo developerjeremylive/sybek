@@ -8,7 +8,7 @@ import {
   Smartphone, HardDrive, Lock, Check,
 } from 'lucide-react';
 import { getConfig, setConfig } from '../../db.js';
-import { CONFIG_KEYS } from '../../config.js';
+import { CONFIG_KEYS, MODELS } from '../../config.js';
 import { getStorageEstimate, requestPersistentStorage } from '../../storage.js';
 import { decryptValue } from '../../crypto.js';
 import { getOrchestrator } from '../../stores/orchestrator-store.js';
