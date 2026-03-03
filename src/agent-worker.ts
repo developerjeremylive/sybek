@@ -3,21 +3,15 @@
 // ---------------------------------------------------------------------------
 //
 // Runs in a dedicated Web Worker. Uses Cloudflare Workers AI for the agent.
-// Supports function calling with Llama models.
 
-import type { WorkerInbound, WorkerOutbound, InvokePayload, CompactPayload, ConversationMessage, ThinkingLogEntry, TokenUsage } from './types.js';
+import type { WorkerInbound, WorkerOutbound, InvokePayload, CompactPayload, ConversationMessage } from './types.js';
 import { TOOL_DEFINITIONS } from './tools.js';
 import { DEFAULT_MODEL } from './config.js';
 import { readGroupFile, writeGroupFile, listGroupFiles } from './storage.js';
 import { executeShell } from './shell.js';
 import { ulid } from './ulid.js';
 
-// Workers AI endpoint (via the worker proxy)
 const WORKERS_AI_URL = '/api/ai';
-
-// ---------------------------------------------------------------------------
-// Message handler
-// ---------------------------------------------------------------------------
 
 self.onmessage = async (event: MessageEvent<WorkerInbound>) => {
   const { type, payload } = event.data;
@@ -34,12 +28,8 @@ self.onmessage = async (event: MessageEvent<WorkerInbound>) => {
   }
 };
 
-// ---------------------------------------------------------------------------
-// Agent invocation — tool-use loop with Workers AI
-// ---------------------------------------------------------------------------
-
 async function handleInvoke(payload: InvokePayload): Promise<void> {
-  const { groupId, messages, systemPrompt, apiKey, model, maxTokens } = payload;
+  const { groupId, messages, systemPrompt, model, maxTokens } = payload;
 
   post({ type: 'typing', payload: { groupId } });
   log(groupId, 'info', 'Starting', `Model: ${model} · Max tokens: ${maxTokens}`);
@@ -57,10 +47,10 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       log(groupId, 'api-call', `API call #${iterations}`, `${currentMessages.length} messages in context`);
 
       const aiMessages = [
-        { role: 'system', content: systemPrompt },
+        { role: 'user' as const, content: systemPrompt },
         ...currentMessages.map(msg => ({
           role: msg.role,
-          content: typeof msg.content === 'string' ? msg.content : msg.content.map(c => c.type === 'text' ? c.text : '').join('')
+          content: typeof msg.content === 'string' ? msg.content : ''
         }))
       ];
 
@@ -70,12 +60,15 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         parameters: t.input_schema
       }));
 
-      const body = {
+      const body: any = {
         model: actualModel,
         messages: aiMessages,
         max_tokens: maxTokens,
-        tools: tools.length > 0 ? tools : undefined,
       };
+      
+      if (tools.length > 0) {
+        body.tools = tools;
+      }
 
       const res = await fetch(WORKERS_AI_URL, {
         method: 'POST',
@@ -90,20 +83,12 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
 
       const result = await res.json();
 
-      const responseMessage = result.response || result.messages?.[result.messages.length - 1];
+      const responseMessage = result.response;
       const responseContent = responseMessage?.content || '';
       const toolCalls = responseMessage?.tool_calls || [];
 
       if (result.usage) {
-        post({
-          type: 'token-usage',
-          payload: {
-            groupId,
-            inputTokens: result.usage.prompt_tokens || 0,
-            outputTokens: result.usage.completion_tokens || 0,
-            contextLimit: 128000,
-          },
-        });
+        post({ type: 'token-usage', payload: { groupId, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, contextLimit: 128000 } });
       }
 
       if (responseContent) {
@@ -126,29 +111,20 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
 
           post({ type: 'tool-activity', payload: { groupId, tool: toolName, status: 'running' } });
 
-          const output = await executeTool(toolName, toolArgs, groupId);
+          const cmd = toolArgs.command || toolArgs.code || '';
+          const output = cmd ? await executeShell(cmd, groupId) : { output: 'No command provided', exitCode: 1 };
 
-          const outputStr = typeof output === 'string' ? output : JSON.stringify(output);
+          const outputStr = typeof output === 'string' ? output : (output.output || JSON.stringify(output));
           const outputShort = outputStr.length > 500 ? outputStr.slice(0, 500) + '…' : outputStr;
           log(groupId, 'tool-result', `Result: ${toolName}`, outputShort);
 
           post({ type: 'tool-activity', payload: { groupId, tool: toolName, status: 'done' } });
 
-          toolResults.push({
-            tool_call_id: toolCall.id || crypto.randomUUID(),
-            name: toolName,
-            content: typeof output === 'string' ? output.slice(0, 100_000) : JSON.stringify(output).slice(0, 100_000),
-          });
+          toolResults.push({ tool_call_id: toolCall.id || crypto.randomUUID(), name: toolName, content: outputStr.slice(0, 100_000) });
         }
 
-        currentMessages.push({ 
-          role: 'assistant', 
-          content: responseContent + (toolCalls.length > 0 ? '\n' + JSON.stringify(toolCalls.map((tc: any) => ({ name: tc.function?.name || tc.name, arguments: tc.function?.arguments }))) : '')
-        });
-        currentMessages.push({ 
-          role: 'tool', 
-          content: toolResults.map(r => `Tool ${r.name}: ${r.content}`).join('\n\n')
-        });
+        currentMessages.push({ role: 'assistant', content: responseContent });
+        currentMessages.push({ role: 'user', content: JSON.stringify(toolResults) });
 
         post({ type: 'typing', payload: { groupId } });
       } else {
@@ -168,19 +144,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
 
 async function handleCompact(payload: CompactPayload): Promise<void> {
   const { groupId, systemPrompt } = payload;
-
-  try {
-    const messages: ConversationMessage[] = [
-      { role: 'user', content: 'Compact the conversation context. Keep all important information.' },
-    ];
-
-    post({
-      type: 'compacted',
-      payload: { groupId, systemPrompt, messages },
-    });
-  } catch (err) {
-    console.error('[agent-worker] Compact error:', err);
-  }
+  post({ type: 'compact-done', payload: { groupId, summary: 'Compacted' } });
 }
 
 function post(msg: WorkerOutbound): void {
@@ -188,12 +152,6 @@ function post(msg: WorkerOutbound): void {
 }
 
 function log(groupId: string, kind: string, title: string, text: string): void {
-  const entry: ThinkingLogEntry = {
-    id: ulid(),
-    timestamp: Date.now(),
-    kind: kind as any,
-    title,
-    text,
-  };
-  post({ type: 'thinking', payload: { groupId, entry } });
+  const entry: any = { id: ulid(), timestamp: Date.now(), kind, title, text };
+  post({ type: 'thinking-log', payload: entry } as any);
 }
