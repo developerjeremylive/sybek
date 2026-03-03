@@ -97,9 +97,24 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
 // OPFS helpers
 // ---------------------------------------------------------------------------
 
+// Store current session folder
+let currentSessionFolder = '';
+
+// Generate a unique session folder based on timestamp
+function getSessionFolder(): string {
+  if (!currentSessionFolder) {
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
+    currentSessionFolder = `chat-${dateStr}-${timeStr}`;
+  }
+  return currentSessionFolder;
+}
+
 // Auto-save code files from AI response
 async function autoSaveCodeFiles(groupId: string, content: string): Promise<string[]> {
   const savedFiles: string[] = [];
+  const sessionFolder = getSessionFolder();
   
   // Patterns to detect code that should be saved
   const patterns = [
@@ -125,9 +140,10 @@ async function autoSaveCodeFiles(groupId: string, content: string): Promise<stri
     else if (code.includes('import ') || code.includes('export ')) fileName = 'module.js';
     
     try {
-      await writeGroupFile(groupId, fileName, code);
-      savedFiles.push(fileName);
-      log(groupId, 'file-saved', 'Auto-saved', fileName);
+      const filePath = `${sessionFolder}/${fileName}`;
+      await writeGroupFile(groupId, filePath, code);
+      savedFiles.push(filePath);
+      log(groupId, 'file-saved', 'Auto-saved', filePath);
     } catch (e) {
       log(groupId, 'file-error', 'Failed to save', fileName);
     }
@@ -142,10 +158,11 @@ async function autoSaveCodeFiles(groupId: string, content: string): Promise<stri
         if (cleanCode.length < 50) continue;
         
         try {
-          await writeGroupFile(groupId, pattern.name, cleanCode);
-          if (!savedFiles.includes(pattern.name)) {
-            savedFiles.push(pattern.name);
-            log(groupId, 'file-saved', 'Auto-saved', pattern.name);
+          const filePath = `${sessionFolder}/${pattern.name}`;
+          await writeGroupFile(groupId, filePath, cleanCode);
+          if (!savedFiles.includes(filePath)) {
+            savedFiles.push(filePath);
+            log(groupId, 'file-saved', 'Auto-saved', filePath);
           }
         } catch (e) {
           // Ignore
@@ -228,6 +245,12 @@ async function listGroupFiles(groupId: string, dirPath: string = '.'): Promise<s
 
 async function handleInvoke(payload: InvokePayload): Promise<void> {
   const { groupId = DEFAULT_GROUP_ID, messages, systemPrompt, model = DEFAULT_MODEL, maxTokens = 4096 } = payload;
+
+  // Reset session folder for new conversation (only if no messages yet)
+  if (messages.length === 0) {
+    currentSessionFolder = '';
+    getSessionFolder(); // Generate new folder
+  }
 
   post({ type: 'typing', payload: { groupId } });
   log(groupId, 'info', 'Starting', `Model: ${model}`);
