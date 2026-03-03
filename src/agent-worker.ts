@@ -142,7 +142,7 @@ function parsePath(filePath: string): { dirs: string[]; filename: string } {
 }
 
 function getToolDescription(toolId: string): string {
-  const tools: Record<string, string> = {
+  const TOOL_DESCRIPTIONS: Record<string, string> = {
     'get_current_time': 'Get the current date and time',
     'get_weather': 'Get weather for a city - accepts {city: "CityName"}',
     'hackernews': 'Get top stories from Hacker News',
@@ -151,7 +151,7 @@ function getToolDescription(toolId: string): string {
     'web_search': 'Search the web - accepts {query: "search term"}',
     'fetch_url': 'Fetch content from a URL - accepts {url: "https://..."}',
   };
-  return tools[toolId] || 'Tool description';
+  return TOOL_DESCRIPTIONS[toolId] || 'Tool description';
 }
 
 async function readGroupFile(groupId: string, filePath: string): Promise<string> {
