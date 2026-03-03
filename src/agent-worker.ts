@@ -459,7 +459,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         }
         
         const cleaned = finalResponseContent.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
-        post({ type: 'response', payload: { groupId, text: cleaned || '(sin respuesta)' });
+        post({ type: 'response', payload: { groupId, text: cleaned || '(sin respuesta)' }});
         return;
       } else {
         // Final response
