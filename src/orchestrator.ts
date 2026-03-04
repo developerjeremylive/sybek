@@ -662,18 +662,11 @@ function buildSystemPrompt(
     return parts.join('\n');
   }
 
-  // Build skills section - include skill instructions in system prompt
+  // Skills are loaded from skills/ folder when needed
   let skillsSection = '';
   if (activeSkills.length > 0) {
-    // Get brief skill instructions
-    const skillInstructions = activeSkills.map(skillId => {
-      const content = getSkillContent(skillId);
-      // Extract just the key instructions (first 500 chars)
-      const brief = content ? content.slice(0, 500) + (content.length > 500 ? '...' : '') : `Skill: ${skillId}`;
-      return brief;
-    }).join('\n\n---\n\n');
-    
-    skillsSection = `\n\n🎯 ACTIVE SKILLS:\n\n${skillInstructions}`;
+    const skillList = activeSkills.join(', ');
+    skillsSection = `\n\n🎯 Active skills: ${skillList}\nYou have skills loaded. Use them to help with the user's request.`;
   }
 
   const parts = [
