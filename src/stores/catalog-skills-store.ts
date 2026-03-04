@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { getSkillContentFromCatalog, CATALOG_SKILL_CONTENTS } from '../skills-loader.js';
+import { getSkillContent, CATALOG_SKILLS_CONTENT } from '../skills-catalog-content.js';
 
 export interface CatalogSkill {
   id: string;           // e.g., "core/git"
@@ -100,8 +100,8 @@ export const useCatalogSkillsStore = create<CatalogSkillsState>()(
         
         const filePath = get().getSkillFilePath(skillId);
         
-        // Try to get actual content from skills-catalog
-        let skillContent = getSkillContentFromCatalog(skill.path);
+        // Get actual content from pre-bundled catalog
+        let skillContent = getSkillContent(skillId);
         
         // If not found in catalog, use placeholder
         if (!skillContent) {
