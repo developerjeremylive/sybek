@@ -31,7 +31,6 @@ import {
 } from './config.js';
 import { SKILL_DESCRIPTIONS } from './stores/skill-tool-map.js';
 import { useAgentSkillsStore } from './stores/agent-skills-store.js';
-} from './config.js';
 import {
   openDatabase,
   saveMessage,
