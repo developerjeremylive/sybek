@@ -125,7 +125,9 @@ Follow the instructions in this file when performing tasks related to ${skill.na
 
         try {
           const { writeGroupFile } = await import('../storage.js');
-          await writeGroupFile('default', filePath, skillContent);
+          // Use DEFAULT_GROUP_ID from config
+          const { DEFAULT_GROUP_ID } = await import('../config.js');
+          await writeGroupFile(DEFAULT_GROUP_ID, filePath, skillContent);
           
           // Only update state if file was created successfully
           set((state) => {
@@ -184,7 +186,8 @@ Follow the instructions in this file when performing tasks related to ${skill.na
         try {
           // Try to read from storage (custom version)
           const { readGroupFile } = await import('../storage.js');
-          const content = await readGroupFile('default', filePath);
+          const { DEFAULT_GROUP_ID } = await import('../config.js');
+          const content = await readGroupFile(DEFAULT_GROUP_ID, filePath);
           return content;
         } catch {
           // Return default content based on skill metadata
@@ -198,7 +201,8 @@ Follow the instructions in this file when performing tasks related to ${skill.na
         
         try {
           const { writeGroupFile } = await import('../storage.js');
-          await writeGroupFile('default', filePath, content);
+          const { DEFAULT_GROUP_ID } = await import('../config.js');
+          await writeGroupFile(DEFAULT_GROUP_ID, filePath, content);
         } catch (e) {
           console.error('Failed to save skill content:', e);
           throw e;
