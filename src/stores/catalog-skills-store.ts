@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { getSkillContentFromCatalog, CATALOG_SKILL_CONTENTS } from '../skills-loader.js';
 
 export interface CatalogSkill {
   id: string;           // e.g., "core/git"
@@ -92,15 +93,19 @@ export const useCatalogSkillsStore = create<CatalogSkillsState>()(
       installedSkills: [],
       activeSkills: [],
 
-      // Install skill - creates the SKILL.md file in the workspace
+      // Install skill - creates the SKILL.md file in the workspace from catalog
       installSkill: async (skillId: string) => {
         const skill = get().catalogSkills.find(s => s.id === skillId);
         if (!skill || get().installedSkills.includes(skillId)) return;
         
         const filePath = get().getSkillFilePath(skillId);
         
-        // Create default SKILL.md content
-        const skillContent = `---
+        // Try to get actual content from skills-catalog
+        let skillContent = getSkillContentFromCatalog(skill.path);
+        
+        // If not found in catalog, use placeholder
+        if (!skillContent) {
+          skillContent = `---
 name: ${skill.name}
 description: ${skill.description}
 ---
@@ -122,6 +127,7 @@ Follow the instructions in this file when performing tasks related to ${skill.na
 - Category: ${skill.category}
 - Original path: ${skill.path}
 `;
+        }
 
         try {
           const { writeGroupFile } = await import('../storage.js');
