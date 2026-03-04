@@ -380,7 +380,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         }
       } else if (typeof result === 'string') {
         responseContent = result;
-      }
+      } else {
         // Only stringify if there's no response at all
         const str = JSON.stringify(result);
         // Don't show raw JSON if it contains tool_calls
