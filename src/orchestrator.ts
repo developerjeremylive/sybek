@@ -650,14 +650,8 @@ function buildSystemPrompt(
   customPrompt?: string,
   activeSkills: string[] = []
 ): string {
-  // Build skills section - minimal
+  // Skills disabled temporarily - causes API issues
   let skillsSection = '';
-  if (activeSkills.length > 0) {
-    console.log('[Orchestrator] Active skills:', activeSkills);
-    const skillList = activeSkills.join(', ');
-    skillsSection = ` [SKILLS] Active: ${skillList}.`;
-    console.log('[Orchestrator] Skills section length:', skillsSection.length);
-  }
 
   // If custom prompt is provided, use it (with optional AGENTS.md appended)
   if (customPrompt) {
