@@ -662,16 +662,18 @@ function buildSystemPrompt(
     return parts.join('\n');
   }
 
-  // Build skills section - include full skill content for active skills
+  // Build skills section - include skill instructions in system prompt
   let skillsSection = '';
   if (activeSkills.length > 0) {
-    // Get skill content from catalog
-    const skillContents = activeSkills.map(skillId => {
+    // Get brief skill instructions
+    const skillInstructions = activeSkills.map(skillId => {
       const content = getSkillContent(skillId);
-      return content || `Skill: ${skillId}\n\nThis skill is installed. Follow its instructions.`;
+      // Extract just the key instructions (first 500 chars)
+      const brief = content ? content.slice(0, 500) + (content.length > 500 ? '...' : '') : `Skill: ${skillId}`;
+      return brief;
     }).join('\n\n---\n\n');
     
-    skillsSection = `\n\n🎯 ACTIVE SKILLS (follow their instructions):\n\n${skillContents}\n\n---\n\nRemember: Use the skills above when relevant to the user's request!`;
+    skillsSection = `\n\n🎯 ACTIVE SKILLS:\n\n${skillInstructions}`;
   }
 
   const parts = [
