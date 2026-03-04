@@ -425,7 +425,6 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
               try {
                 toolInput = JSON.parse(args);
               } catch {
-              } catch {
                 toolInput = {};
               }
             } else {
