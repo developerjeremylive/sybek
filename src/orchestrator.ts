@@ -661,16 +661,18 @@ function buildSystemPrompt(
     return parts.join('\n');
   }
 
-  // Build skills section - Agent Skills protocol format
+  // Build skills section - include full skill content for active skills
   let skillsSection = '';
   if (activeSkills.length > 0) {
-    // Use simple descriptions for now - full content loaded in invokeAgent
-    skillsSection = '\n\n<available_skills>\n' +
-      activeSkills.map(skillId => {
-        const skillPath = skillId.replace(/\//g, '-');
-        return `  <skill>\n    <name>${skillId}</name>\n    <description>Skills installed in your workspace at skills/${skillPath}/SKILL.md</description>\n    <location>skills/${skillPath}/SKILL.md</location>\n  </skill>`;
-      }).join('\n') +
-      '\n</available_skills>\n\nIMPORTANT: When a skill is activated, read its SKILL.md file to get the full instructions!';
+    // Get skill content from catalog
+    const { getSkillContent, CATALOG_SKILLS_CONTENT } = await import('./skills-catalog-content.js');
+    
+    const skillContents = activeSkills.map(skillId => {
+      const content = getSkillContent(skillId);
+      return content || `Skill: ${skillId}\n\nThis skill is installed. Follow its instructions.`;
+    }).join('\n\n---\n\n');
+    
+    skillsSection = `\n\n🎯 ACTIVE SKILLS (follow their instructions):\n\n${skillContents}\n\n---\n\nRemember: Use the skills above when relevant to the user's request!`;
   }
 
   const parts = [
