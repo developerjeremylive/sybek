@@ -3,9 +3,11 @@
 // ---------------------------------------------------------------------------
 
 // Import all SKILL.md files as raw strings
-// This is done at build time by Vite
+// Try multiple glob patterns to find the skills
+const skillsImport = import.meta.glob('./skills-catalog/.claude/skills/**/*.md', { as: 'raw', eager: true });
 
-const skillsImport = import.meta.glob('/src/skills-catalog/.claude/skills/**/*.md', { as: 'raw', eager: true });
+// Debug: log what's imported
+console.log('[SkillsLoader] Imported skill files:', Object.keys(skillsImport));
 
 export function getSkillContentFromCatalog(skillPath: string): string | null {
   // skillPath is like ".claude/skills/core/git"
@@ -16,18 +18,22 @@ export function getSkillContentFromCatalog(skillPath: string): string | null {
   
   // Try different patterns
   const patterns = [
+    `./skills-catalog/.claude/skills/${category}/${skillName}/SKILL.md`,
+    `./skills-catalog/.claude/skills/${category}/${skillName}/skill.md`,
+    `./skills-catalog/.claude/skills/${category}/${skillName}/README.md`,
+    `../skills-catalog/.claude/skills/${category}/${skillName}/SKILL.md`,
     `/src/skills-catalog/.claude/skills/${category}/${skillName}/SKILL.md`,
-    `/src/skills-catalog/.claude/skills/${category}/${skillName}/skill.md`,
-    `/src/skills-catalog/.claude/skills/${category}/${skillName}/README.md`,
   ];
   
   for (const pattern of patterns) {
     const content = skillsImport[pattern];
     if (content) {
-      return content;
+      console.log('[SkillsLoader] Found skill:', pattern);
+      return content as string;
     }
   }
   
+  console.log('[SkillsLoader] NOT found for:', skillPath, 'tried patterns:', patterns);
   return null;
 }
 
@@ -36,7 +42,7 @@ export function getAllSkillContents(): Record<string, string> {
   const result: Record<string, string> = {};
   
   for (const [path, content] of Object.entries(skillsImport)) {
-    if (path.endsWith('SKILL.md') || path.endsWith('skill.md')) {
+    if (path.toLowerCase().includes('skill') || path.toLowerCase().includes('readme')) {
       // Extract skill ID from path
       const match = path.match(/\.claude\/skills\/([^\/]+)\/([^\/]+)/);
       if (match) {
@@ -51,3 +57,4 @@ export function getAllSkillContents(): Record<string, string> {
 
 // Pre-loaded skill contents
 export const CATALOG_SKILL_CONTENTS = getAllSkillContents();
+console.log('[SkillsLoader] CATALOG_SKILL_CONTENTS:', Object.keys(CATALOG_SKILL_CONTENTS));
