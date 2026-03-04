@@ -29,6 +29,9 @@ import {
   DEFAULT_MODEL,
   buildTriggerPattern,
 } from './config.js';
+import { SKILL_DESCRIPTIONS } from './stores/skill-tool-map.js';
+import { useAgentSkillsStore } from './stores/agent-skills-store.js';
+} from './config.js';
 import {
   openDatabase,
   saveMessage,
@@ -342,12 +345,17 @@ export class Orchestrator {
     // Load custom system prompt
     const customSystemPrompt = await getConfig(CONFIG_KEYS.SYSTEM_PROMPT);
 
+    // Get active skills
+    const skillsStore = useAgentSkillsStore.getState();
+    const activeSkills = skillsStore.activeSkills;
+
     const messages = await buildConversationMessages(groupId, CONTEXT_WINDOW_SIZE);
     const systemPrompt = buildSystemPrompt(
       this.assistantName,
       memory,
       agentsContent,
-      customSystemPrompt || undefined
+      customSystemPrompt || undefined,
+      activeSkills
     );
 
     this.agentWorker.postMessage({
@@ -481,6 +489,10 @@ export class Orchestrator {
     // Load custom system prompt
     const customSystemPrompt = await getConfig(CONFIG_KEYS.SYSTEM_PROMPT);
 
+    // Get active skills
+    const skillsStore = useAgentSkillsStore.getState();
+    const activeSkills = skillsStore.activeSkills;
+
     // Build conversation context
     const messages = await buildConversationMessages(groupId, CONTEXT_WINDOW_SIZE);
 
@@ -488,7 +500,8 @@ export class Orchestrator {
       this.assistantName,
       memory,
       agentsContent,
-      customSystemPrompt || undefined
+      customSystemPrompt || undefined,
+      activeSkills
     );
 
     // Send to agent worker
@@ -630,7 +643,8 @@ function buildSystemPrompt(
   assistantName: string,
   memory: string,
   agentsContent?: string,
-  customPrompt?: string
+  customPrompt?: string,
+  activeSkills: string[] = []
 ): string {
   // If custom prompt is provided, use it (with optional AGENTS.md appended)
   if (customPrompt) {
@@ -642,6 +656,20 @@ function buildSystemPrompt(
       parts.push('', '## Persistent Memory', '', memory);
     }
     return parts.join('\n');
+  }
+
+  // Build skills section for system prompt
+  let skillsSection = '';
+  if (activeSkills.length > 0) {
+    const skillDescriptions = activeSkills
+      .map(skillId => SKILL_DESCRIPTIONS[skillId])
+      .filter(Boolean);
+    
+    if (skillDescriptions.length > 0) {
+      skillsSection = '\n\n🎯 ACTIVE SKILLS (use these instead of fetch_url when available):\n' +
+        skillDescriptions.map(s => `- ${s}`).join('\n') +
+        '\n\nIMPORTANT: When a skill is active, use its corresponding tool instead of fetch_url!';
+    }
   }
 
   const parts = [
@@ -658,6 +686,7 @@ function buildSystemPrompt(
     '  - web_search: Search the web',
     '',
     'IMPORTANT: If user activates MCP tools (hackernews, get_weather, etc), USE THEM instead of fetch_url!',
+    '',
     '',
     '📝 CRITICAL - FILE EDITING RULES:',
     'When editing existing files:',
@@ -684,6 +713,11 @@ function buildSystemPrompt(
     '- Always read existing files before editing.',
     '- After editing, confirm what was changed.',
   ];
+
+  // Add active skills section
+  if (skillsSection) {
+    parts.push(skillsSection);
+  }
 
   // Add AGENTS.md content if present
   if (agentsContent) {

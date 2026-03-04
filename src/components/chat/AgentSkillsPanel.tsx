@@ -3,8 +3,9 @@
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
-import { Sparkles, X, Check, Zap, Settings, ChevronRight } from 'lucide-react';
+import { Sparkles, X, Check, Zap, Settings, ChevronRight, ArrowRight } from 'lucide-react';
 import { useAgentSkillsStore, type AgentSkill } from '../../stores/agent-skills-store.js';
+import { getToolsForSkill } from '../../stores/skill-tool-map.js';
 
 interface Props {
   className?: string;
@@ -68,36 +69,45 @@ export function AgentSkillsPanel({ className = '' }: Props) {
               </div>
             ) : (
               <div className="space-y-1">
-                {installedSkills.map((skill) => (
-                  <button
-                    key={skill.id}
-                    onClick={() => handleToggle(skill)}
-                    disabled={!skill.configured}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
-                      skill.active
-                        ? 'bg-cyan-500/30 border border-cyan-500/50'
-                        : skill.configured
-                          ? 'bg-base-200/50 border border-transparent hover:bg-base-200'
-                          : 'bg-base-200/30 border border-transparent opacity-50 cursor-not-allowed'
-                    }`}
-                  >
-                    <div className={`w-5 h-5 rounded flex items-center justify-center ${
-                      skill.active ? 'bg-cyan-500 text-white' : 'bg-base-300 text-base-content/50'
-                    }`}>
-                      {skill.active ? <Check className="w-3 h-3" /> : null}
-                    </div>
-                    <span className="text-lg">{skill.icon}</span>
-                    <div className="text-left flex-1">
-                      <div className="text-sm font-medium text-base-content">{skill.name}</div>
-                      <div className="text-xs text-base-content/50">
-                        {!skill.configured ? 'Requires API Key' : skill.active ? 'Activo' : 'Inactivo'}
+                {installedSkills.map((skill) => {
+                  const mappedTools = getToolsForSkill(skill.id);
+                  return (
+                    <button
+                      key={skill.id}
+                      onClick={() => handleToggle(skill)}
+                      disabled={!skill.configured}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
+                        skill.active
+                          ? 'bg-cyan-500/30 border border-cyan-500/50'
+                          : skill.configured
+                            ? 'bg-base-200/50 border border-transparent hover:bg-base-200'
+                            : 'bg-base-200/30 border border-transparent opacity-50 cursor-not-allowed'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded flex items-center justify-center ${
+                        skill.active ? 'bg-cyan-500 text-white' : 'bg-base-300 text-base-content/50'
+                      }`}>
+                        {skill.active ? <Check className="w-3 h-3" /> : null}
                       </div>
-                    </div>
-                    {skill.active && (
-                      <Zap className="w-4 h-4 text-yellow-400" />
-                    )}
-                  </button>
-                ))}
+                      <span className="text-lg">{skill.icon}</span>
+                      <div className="text-left flex-1">
+                        <div className="text-sm font-medium text-base-content">{skill.name}</div>
+                        <div className="text-xs text-base-content/50">
+                          {!skill.configured ? 'Requires API Key' : skill.active ? 'Activo' : 'Inactivo'}
+                        </div>
+                        {skill.active && mappedTools.length > 0 && (
+                          <div className="text-xs text-cyan-400 flex items-center gap-1 mt-0.5">
+                            <ArrowRight className="w-2.5 h-2.5" />
+                            {mappedTools.join(', ')}
+                          </div>
+                        )}
+                      </div>
+                      {skill.active && (
+                        <Zap className="w-4 h-4 text-yellow-400" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
