@@ -29,8 +29,8 @@ import {
   DEFAULT_MODEL,
   buildTriggerPattern,
 } from './config.js';
-import { SKILL_DESCRIPTIONS } from './stores/skill-tool-map.js';
-import { useAgentSkillsStore } from './stores/agent-skills-store.js';
+import { SKILL_DESCRIPTIONS, getSkillDescriptions } from './stores/skill-tool-map.js';
+import { useCatalogSkillsStore } from './stores/catalog-skills-store.js';
 import {
   openDatabase,
   saveMessage,
@@ -344,8 +344,8 @@ export class Orchestrator {
     // Load custom system prompt
     const customSystemPrompt = await getConfig(CONFIG_KEYS.SYSTEM_PROMPT);
 
-    // Get active skills
-    const skillsStore = useAgentSkillsStore.getState();
+    // Get active skills from catalog
+    const skillsStore = useCatalogSkillsStore.getState();
     const activeSkills = skillsStore.activeSkills;
 
     const messages = await buildConversationMessages(groupId, CONTEXT_WINDOW_SIZE);
@@ -488,15 +488,13 @@ export class Orchestrator {
     // Load custom system prompt
     const customSystemPrompt = await getConfig(CONFIG_KEYS.SYSTEM_PROMPT);
 
-    // Get active skills and convert to tools
-    const skillsStore = useAgentSkillsStore.getState();
+    // Get active skills from catalog
+    const skillsStore = useCatalogSkillsStore.getState();
     const activeSkills = skillsStore.activeSkills;
-    const { getToolsForSkills } = await import('./stores/skill-tool-map.js');
-    const skillTools = getToolsForSkills(activeSkills);
     
-    // Skill tools have PRIORITY over user-selected tools
-    // If a skill is active, use its tools instead of user-selected tools
-    const allTools = skillTools.length > 0 ? skillTools : (tools || []);
+    // Catalog skills don't map to tools - they add instructions to system prompt
+    // User-selected tools are still available
+    const allTools = tools || [];
 
     // Build conversation context
     const messages = await buildConversationMessages(groupId, CONTEXT_WINDOW_SIZE);
@@ -663,17 +661,14 @@ function buildSystemPrompt(
     return parts.join('\n');
   }
 
-  // Build skills section for system prompt
+  // Build skills section for system prompt - catalog skills add context
   let skillsSection = '';
   if (activeSkills.length > 0) {
-    const skillDescriptions = activeSkills
-      .map(skillId => SKILL_DESCRIPTIONS[skillId])
-      .filter(Boolean);
+    const skillDescriptions = getSkillDescriptions(activeSkills);
     
     if (skillDescriptions.length > 0) {
-      skillsSection = '\n\n🎯 ACTIVE SKILLS - YOU MUST USE THESE TOOLS WHEN THE SKILL IS ACTIVE:\n' +
-        skillDescriptions.map(s => `- ${s}`).join('\n') +
-        '\n\n🚨 CRITICAL: When DuckDuckGo skill is active, you MUST call web_search tool with {query: "your search term"} to search the web! Do NOT explain that you would search - actually call the tool!';
+      skillsSection = '\n\n🎯 ACTIVE SKILLS (follow these guidelines):\n' +
+        skillDescriptions.map(s => `- ${s}`).join('\n');
     }
   }
 
