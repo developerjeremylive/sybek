@@ -200,10 +200,12 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
         return JSON.stringify(data);
       }
       case 'web_search': {
+        // Model may send 'q' but API expects 'query' - normalize it
+        const searchQuery = input?.query || input?.q || '';
         const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tool: 'web_search', args: input || {} }),
+          body: JSON.stringify({ tool: 'web_search', args: { query: searchQuery } }),
         });
         const data = await res.json();
         return JSON.stringify(data);
