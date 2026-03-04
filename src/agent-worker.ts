@@ -354,10 +354,14 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       let toolCalls: any[] = [];
       
       // Handle Workers AI response format with tool_calls
-      if (result.response !== undefined && result.response !== null) {
+      // Check for tool_calls at top level first
+      if (result.tool_calls && Array.isArray(result.tool_calls)) {
+        toolCalls = result.tool_calls;
+        responseContent = '';
+      } else if (result.response !== undefined && result.response !== null) {
         responseContent = typeof result.response === 'string' ? result.response : JSON.stringify(result.response);
         // Check for tool_calls in response
-        if (result.response.tool_calls) {
+        if (result.response?.tool_calls) {
           toolCalls = result.response.tool_calls;
         }
       } else if (result.result !== undefined && result.result !== null) {
@@ -376,7 +380,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         }
       } else if (typeof result === 'string') {
         responseContent = result;
-      } else {
+      }
         // Only stringify if there's no response at all
         const str = JSON.stringify(result);
         // Don't show raw JSON if it contains tool_calls
