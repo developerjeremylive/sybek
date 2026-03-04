@@ -665,9 +665,9 @@ function buildSystemPrompt(
       .filter(Boolean);
     
     if (skillDescriptions.length > 0) {
-      skillsSection = '\n\n🎯 ACTIVE SKILLS (use these instead of fetch_url when available):\n' +
+      skillsSection = '\n\n🎯 ACTIVE SKILLS - YOU MUST USE THESE TOOLS WHEN THE SKILL IS ACTIVE:\n' +
         skillDescriptions.map(s => `- ${s}`).join('\n') +
-        '\n\nIMPORTANT: When a skill is active, use its corresponding tool instead of fetch_url!';
+        '\n\n🚨 CRITICAL: When DuckDuckGo skill is active, you MUST call web_search tool with {query: "your search term"} to search the web! Do NOT explain that you would search - actually call the tool!';
     }
   }
 

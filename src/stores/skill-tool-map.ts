@@ -37,8 +37,8 @@ export function getToolsForSkills(skillIds: string[]): string[] {
 
 // Skill descriptions for system prompt
 export const SKILL_DESCRIPTIONS: Record<string, string> = {
-  'ddg_search': 'DuckDuckGo Search (PREFERRED) - Use web_search tool for web searches',
-  'brave_search': 'Brave Search (PREFERRED) - Use web_search tool for web searches',
+  'ddg_search': 'DuckDuckGo: ALWAYS call web_search({query: "your search"}) to search the web!',
+  'brave_search': 'Brave Search: ALWAYS call web_search({query: "your search"}) to search the web!',
   'wikipedia': 'Wikipedia - Search and read Wikipedia articles',
   'weather': 'Weather - Get current weather for any city',
   'newsapi': 'News API - Get latest news headlines',
