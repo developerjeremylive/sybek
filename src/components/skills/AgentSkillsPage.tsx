@@ -103,8 +103,8 @@ export function AgentSkillsPage() {
         </select>
       </div>
 
-      {/* Skills Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Skills Grid - with vertical scroll */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[calc(100vh-350px)] overflow-y-auto pr-2">
         {filteredSkills.map((skill) => {
           const isInstalled = installedSkills.includes(skill.id);
           const isActive = activeSkills.includes(skill.id);

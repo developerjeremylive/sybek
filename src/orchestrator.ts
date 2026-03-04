@@ -661,14 +661,19 @@ function buildSystemPrompt(
     return parts.join('\n');
   }
 
-  // Build skills section for system prompt - catalog skills add context
+  // Build skills section - include full skill content for active skills (Agent Skills protocol)
   let skillsSection = '';
   if (activeSkills.length > 0) {
-    const skillDescriptions = getSkillDescriptions(activeSkills);
+    // Get full skill contents from files
+    const { useCatalogSkillsStore } = await import('./stores/catalog-skills-store.js');
+    const skillsStore = useCatalogSkillsStore.getState();
+    const skillContents = await skillsStore.getAllActiveSkillContents();
     
-    if (skillDescriptions.length > 0) {
-      skillsSection = '\n\n🎯 ACTIVE SKILLS (follow these guidelines):\n' +
-        skillDescriptions.map(s => `- ${s}`).join('\n');
+    if (skillContents.length > 0) {
+      skillsSection = '\n\n🎯 ACTIVE SKILLS (follow their instructions):\n' +
+        skillContents.map((content, idx) => 
+          `\n--- Skill ${idx + 1} ---\n${content}`
+        ).join('\n');
     }
   }
 
