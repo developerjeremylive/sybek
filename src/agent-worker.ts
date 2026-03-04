@@ -63,6 +63,74 @@ const TOOLS = [
         path: { type: 'string', description: 'Directory path (empty for root)' }
       }
     }
+  },
+  {
+    name: 'fetch_url',
+    description: 'Fetch content from a URL via HTTP. Use for getting web page content.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL to fetch' },
+        method: { type: 'string', description: 'HTTP method (GET, POST, etc.)' }
+      },
+      required: ['url']
+    }
+  },
+  {
+    name: 'web_search',
+    description: 'Search the web for information',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query' }
+      },
+      required: ['query']
+    }
+  },
+  {
+    name: 'get_weather',
+    description: 'Get weather information for a city',
+    input_schema: {
+      type: 'object',
+      properties: {
+        city: { type: 'string', description: 'City name' }
+      },
+      required: ['city']
+    }
+  },
+  {
+    name: 'get_current_time',
+    description: 'Get current date and time',
+    input_schema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+  {
+    name: 'joke',
+    description: 'Get a random joke',
+    input_schema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+  {
+    name: 'cat_fact',
+    description: 'Get a random cat fact',
+    input_schema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+  {
+    name: 'hackernews',
+    description: 'Get top stories from Hacker News',
+    input_schema: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number', description: 'Number of stories (default 10)' }
+      }
+    }
   }
 ];
 
@@ -208,6 +276,15 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ tool: 'get_ip', args: {} }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
+      case 'fetch_url': {
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'fetch_url', args: input || {} }),
         });
         const data = await res.json();
         return JSON.stringify(data);
