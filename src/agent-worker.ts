@@ -88,6 +88,17 @@ const TOOLS = [
     }
   },
   {
+    name: 'duckduckgo',
+    description: 'Search DuckDuckGo for web results - use this for web searches',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query' }
+      },
+      required: ['query']
+    }
+  },
+  {
     name: 'get_weather',
     description: 'Get weather information for a city',
     input_schema: {
@@ -206,6 +217,17 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ tool: 'web_search', args: { query: searchQuery } }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
+      case 'duckduckgo': {
+        // Use the new duckduckgo tool
+        const searchQuery = input?.query || input?.q || '';
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'duckduckgo', args: { query: searchQuery } }),
         });
         const data = await res.json();
         return JSON.stringify(data);

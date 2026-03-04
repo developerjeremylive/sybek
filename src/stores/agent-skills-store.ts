@@ -46,7 +46,7 @@ const DEFAULT_SKILLS: AgentSkill[] = [
   {
     id: 'ddg_search',
     name: 'DuckDuckGo',
-    description: 'Web search using DuckDuckGo (no API key needed)',
+    description: 'Web search using DuckDuckGo (no API key needed) - Uses duckduckgo tool',
     icon: '🦆',
     category: 'search',
     requiresApiKey: false,

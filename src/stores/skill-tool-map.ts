@@ -4,8 +4,8 @@
 
 // Maps Agent Skills to their corresponding MCP tools
 export const SKILL_TOOL_MAP: Record<string, string[]> = {
-  'ddg_search': ['web_search'],
-  'brave_search': ['web_search'],
+  'ddg_search': ['duckduckgo'],  // Uses the new duckduckgo tool
+  'brave_search': ['duckduckgo'],
   'wikipedia': ['wikipedia'],
   'weather': ['get_weather'],
   'newsapi': ['web_search'], // News uses web search
