@@ -85,6 +85,61 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
         const files = await listGroupFiles(groupId, input.path || '.');
         return `Files in ${input.path || '/'}: ${files.join(', ')}`;
       }
+      // MCP Tools - call the proxy API
+      case 'hackernews': {
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'hackernews', args: input || {} }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
+      case 'get_weather': {
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'get_weather', args: input || {} }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
+      case 'joke': {
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'joke', args: {} }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
+      case 'cat_fact': {
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'cat_fact', args: {} }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
+      case 'get_current_time': {
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'get_current_time', args: {} }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
+      case 'web_search': {
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'web_search', args: input || {} }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
       default:
         return `Unknown tool: ${name}`;
     }
