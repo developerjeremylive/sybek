@@ -31,6 +31,7 @@ import {
 } from './config.js';
 import { SKILL_DESCRIPTIONS, getSkillDescriptions } from './stores/skill-tool-map.js';
 import { useCatalogSkillsStore } from './stores/catalog-skills-store.js';
+import { getSkillContent } from './skills-catalog-content.js';
 import {
   openDatabase,
   saveMessage,
@@ -665,8 +666,6 @@ function buildSystemPrompt(
   let skillsSection = '';
   if (activeSkills.length > 0) {
     // Get skill content from catalog
-    const { getSkillContent, CATALOG_SKILLS_CONTENT } = await import('./skills-catalog-content.js');
-    
     const skillContents = activeSkills.map(skillId => {
       const content = getSkillContent(skillId);
       return content || `Skill: ${skillId}\n\nThis skill is installed. Follow its instructions.`;
