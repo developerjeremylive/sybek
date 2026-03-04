@@ -494,8 +494,9 @@ export class Orchestrator {
     const { getToolsForSkills } = await import('./stores/skill-tool-map.js');
     const skillTools = getToolsForSkills(activeSkills);
     
-    // Combine user-selected tools with skill tools (avoid duplicates)
-    const allTools = tools ? [...new Set([...tools, ...skillTools])] : skillTools;
+    // Skill tools have PRIORITY over user-selected tools
+    // If a skill is active, use its tools instead of user-selected tools
+    const allTools = skillTools.length > 0 ? skillTools : (tools || []);
 
     // Build conversation context
     const messages = await buildConversationMessages(groupId, CONTEXT_WINDOW_SIZE);
