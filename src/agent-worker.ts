@@ -402,6 +402,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       }
 
       // Already extracted toolCalls above
+      log(groupId, 'info', 'Tool calls found', `${toolCalls.length}`);
 
       if (toolCalls.length > 0) {
         for (const toolCall of toolCalls) {
