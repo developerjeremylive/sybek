@@ -92,10 +92,51 @@ export const useCatalogSkillsStore = create<CatalogSkillsState>()(
       installedSkills: [],
       activeSkills: [],
 
-      installSkill: (skillId: string) => set((state) => {
-        if (state.installedSkills.includes(skillId)) return state;
-        return { installedSkills: [...state.installedSkills, skillId] };
-      }),
+      // Install skill - creates the SKILL.md file in the workspace
+      installSkill: async (skillId: string) => {
+        const skill = get().catalogSkills.find(s => s.id === skillId);
+        if (!skill || get().installedSkills.includes(skillId)) return;
+        
+        const filePath = get().getSkillFilePath(skillId);
+        
+        // Create default SKILL.md content
+        const skillContent = `---
+name: ${skill.name}
+description: ${skill.description}
+---
+
+# ${skill.name}
+
+${skill.description}
+
+## Overview
+
+This skill was installed from the skills-catalog.
+
+## Usage
+
+Follow the instructions in this file when performing tasks related to ${skill.name}.
+
+## Notes
+
+- Category: ${skill.category}
+- Original path: ${skill.path}
+`;
+
+        try {
+          const { writeGroupFile } = await import('../storage.js');
+          await writeGroupFile('default', filePath, skillContent);
+          
+          // Only update state if file was created successfully
+          set((state) => {
+            if (state.installedSkills.includes(skillId)) return state;
+            return { installedSkills: [...state.installedSkills, skillId] };
+          });
+        } catch (e) {
+          console.error('Failed to install skill:', e);
+          throw e;
+        }
+      },
 
       uninstallSkill: (skillId: string) => set((state) => ({
         installedSkills: state.installedSkills.filter(id => id !== skillId),

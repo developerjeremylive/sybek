@@ -19,8 +19,12 @@ export function AgentSkillsPanel({ className = '' }: Props) {
   // Group skills by category
   const categories = [...new Set(catalogSkills.map(s => s.category))];
   
-  const handleInstall = (skill: CatalogSkill) => {
-    installSkill(skill.id);
+  const handleInstall = async (skill: CatalogSkill) => {
+    try {
+      await installSkill(skill.id);
+    } catch (e) {
+      console.error('Failed to install skill:', e);
+    }
   };
   
   const handleActivate = (skill: CatalogSkill) => {

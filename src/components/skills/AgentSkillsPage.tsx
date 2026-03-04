@@ -34,8 +34,12 @@ export function AgentSkillsPage() {
     return matchesSearch && matchesCategory;
   });
 
-  const handleInstall = (skill: CatalogSkill) => {
-    installSkill(skill.id);
+  const handleInstall = async (skill: CatalogSkill) => {
+    try {
+      await installSkill(skill.id);
+    } catch (e) {
+      console.error('Failed to install skill:', e);
+    }
   };
 
   const handleUninstall = (skill: CatalogSkill) => {
