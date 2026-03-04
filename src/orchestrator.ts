@@ -665,8 +665,9 @@ function buildSystemPrompt(
   // Skills are loaded from skills/ folder when needed
   let skillsSection = '';
   if (activeSkills.length > 0) {
+    console.log('[Orchestrator] Active skills:', activeSkills);
     const skillList = activeSkills.join(', ');
-    skillsSection = `\n\n🎯 Active skills: ${skillList}\nYou have skills loaded. Use them to help with the user's request.`;
+    skillsSection = `\n\n[SKILLS] You have these skills active: ${skillList}. Use them when relevant to help the user.`;
   }
 
   const parts = [
