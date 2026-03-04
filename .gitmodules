@@ -1,0 +1,3 @@
+[submodule "src/skills-catalog"]
+	path = src/skills-catalog
+	url = https://github.com/All-The-Vibes/skills-catalog.git
