@@ -488,9 +488,14 @@ export class Orchestrator {
     // Load custom system prompt
     const customSystemPrompt = await getConfig(CONFIG_KEYS.SYSTEM_PROMPT);
 
-    // Get active skills
+    // Get active skills and convert to tools
     const skillsStore = useAgentSkillsStore.getState();
     const activeSkills = skillsStore.activeSkills;
+    const { getToolsForSkills } = await import('./stores/skill-tool-map.js');
+    const skillTools = getToolsForSkills(activeSkills);
+    
+    // Combine user-selected tools with skill tools (avoid duplicates)
+    const allTools = tools ? [...new Set([...tools, ...skillTools])] : skillTools;
 
     // Build conversation context
     const messages = await buildConversationMessages(groupId, CONTEXT_WINDOW_SIZE);
@@ -522,7 +527,7 @@ export class Orchestrator {
         sessionFolder,
         contextFolders,
         fileContext,
-        tools,
+        tools: allTools,
       },
     });
   }
