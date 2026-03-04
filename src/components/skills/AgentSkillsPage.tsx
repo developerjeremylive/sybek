@@ -117,8 +117,8 @@ export function AgentSkillsPage() {
           </div>
         </div>
 
-        {/* Skills Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Skills Grid - with vertical scroll */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
           {filteredSkills.map(skill => (
             <SkillCard
               key={skill.id}

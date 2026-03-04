@@ -5,6 +5,7 @@
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { Send } from 'lucide-react';
 import { ToolsToggle } from './ToolsToggle.js';
+import { AgentSkillsPanel } from './AgentSkillsPanel.js';
 import { useActiveToolsStore } from '../../stores/active-tools-store.js';
 
 interface Props {
@@ -62,6 +63,7 @@ export function ChatInput({ onSend, disabled, initialValue }: Props) {
         />
       </div>
       <div className="flex items-center gap-2">
+        <AgentSkillsPanel />
         <ToolsToggle activeTools={activeTools} onToggle={toggleTool} />
         <button
           className="btn btn-primary btn-circle"
