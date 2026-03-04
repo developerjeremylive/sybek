@@ -667,7 +667,13 @@ function buildSystemPrompt(
   if (activeSkills.length > 0) {
     console.log('[Orchestrator] Active skills:', activeSkills);
     const skillList = activeSkills.join(', ');
-    skillsSection = `\n\n[SKILLS] You have these skills active: ${skillList}. Use them when relevant to help the user.`;
+    // Include actual skill content
+    const skillContent = activeSkills.map(skillId => {
+      const content = getSkillContent(skillId);
+      return content ? `\n\n=== ${skillId.toUpperCase()} ===\n${content}` : '';
+    }).join('');
+    skillsSection = `\n\n[SKILLS] You have these skills active: ${skillList}.${skillContent}\nUse these skills to help the user!`;
+    console.log('[Orchestrator] Skills section length:', skillsSection.length);
   }
 
   const parts = [
