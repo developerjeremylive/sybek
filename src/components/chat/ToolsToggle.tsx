@@ -43,12 +43,26 @@ export function ToolsToggle({ activeTools, onToggle, alwaysActiveTools = ['fetch
       .catch(() => {
         // Fallback tools
         setTools([
+          // Time & Weather
           { id: 'get_current_time', name: 'Get Current Time', description: 'Get current date and time', type: 'mcp' },
           { id: 'get_weather', name: 'Get Weather', description: 'Get weather for a city', type: 'mcp' },
+          // News & Tech
           { id: 'hackernews', name: 'Hacker News', description: 'Top stories from Hacker News', type: 'mcp' },
+          { id: 'reddit', name: 'Reddit Top Posts', description: 'Top posts from a subreddit', type: 'mcp' },
+          // Fun
           { id: 'joke', name: 'Random Joke', description: 'Get a random joke', type: 'mcp' },
           { id: 'cat_fact', name: 'Cat Facts', description: 'Random cat fact', type: 'mcp' },
+          { id: 'dog_fact', name: 'Dog Facts', description: 'Random dog fact', type: 'mcp' },
+          { id: 'quote', name: 'Random Quote', description: 'Inspirational quote', type: 'mcp' },
+          // Knowledge
+          { id: 'wikipedia', name: 'Wikipedia Search', description: 'Search Wikipedia', type: 'mcp' },
+          { id: 'word_of_day', name: 'Word of the Day', description: 'Daily word', type: 'mcp' },
+          { id: 'define_word', name: 'Define Word', description: 'Define a word', type: 'mcp' },
+          // Utilities
           { id: 'web_search', name: 'Web Search', description: 'Search the web', type: 'mcp' },
+          { id: 'convert_currency', name: 'Currency Converter', description: 'Convert currency', type: 'mcp' },
+          { id: 'get_ip', name: 'Get My IP', description: 'Your IP address', type: 'mcp' },
+          // Native
           { id: 'fetch_url', name: 'Fetch URL', description: 'Native Workers AI tool', type: 'native' },
           { id: 'browser', name: 'Browser', description: 'Browser automation', type: 'native' },
         ]);

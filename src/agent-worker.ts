@@ -140,6 +140,78 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
         const data = await res.json();
         return JSON.stringify(data);
       }
+      case 'reddit': {
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'reddit', args: input || {} }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
+      case 'dog_fact': {
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'dog_fact', args: {} }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
+      case 'quote': {
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'quote', args: {} }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
+      case 'wikipedia': {
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'wikipedia', args: input || {} }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
+      case 'word_of_day': {
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'word_of_day', args: {} }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
+      case 'define_word': {
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'define_word', args: input || {} }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
+      case 'convert_currency': {
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'convert_currency', args: input || {} }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
+      case 'get_ip': {
+        const res = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/api/execute-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: 'get_ip', args: {} }),
+        });
+        const data = await res.json();
+        return JSON.stringify(data);
+      }
       default:
         return `Unknown tool: ${name}`;
     }
@@ -198,12 +270,26 @@ function parsePath(filePath: string): { dirs: string[]; filename: string } {
 
 function getToolDescription(toolId: string): string {
   const TOOL_DESCRIPTIONS: Record<string, string> = {
+    // Time & Weather
     'get_current_time': 'Get the current date and time',
     'get_weather': 'Get weather for a city - accepts {city: "CityName"}',
+    // News & Tech
     'hackernews': 'Get top stories from Hacker News',
+    'reddit': 'Get top posts from a subreddit - accepts {subreddit: "technology"}',
+    // Fun
     'joke': 'Get a random joke',
     'cat_fact': 'Get a random cat fact',
+    'dog_fact': 'Get a random dog fact',
+    'quote': 'Get an inspirational quote',
+    // Knowledge
+    'wikipedia': 'Search Wikipedia - accepts {query: "search term"}',
+    'word_of_day': 'Get the Word of the Day',
+    'define_word': 'Define a word - accepts {word: "example"}',
+    // Utilities
     'web_search': 'Search the web - accepts {query: "search term"}',
+    'convert_currency': 'Convert currency - accepts {from: "USD", to: "EUR", amount: 100}',
+    'get_ip': 'Get your current IP address',
+    // Native
     'fetch_url': 'Fetch content from a URL - native Workers AI tool',
     'browser': 'Browser automation - native Workers AI tool',
   };
