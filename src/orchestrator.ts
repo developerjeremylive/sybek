@@ -303,14 +303,6 @@ export class Orchestrator {
    * Asks Claude to produce a summary, then replaces the history with it.
    */
   async compactContext(groupId: string = DEFAULT_GROUP_ID): Promise<void> {
-    if (!this.apiKey) {
-      this.events.emit('error', {
-        groupId,
-        error: 'API key not configured. Cannot compact context.',
-      });
-      return;
-    }
-
     if (this.state !== 'idle') {
       this.events.emit('error', {
         groupId,
@@ -417,15 +409,6 @@ export class Orchestrator {
   private async processQueue(): Promise<void> {
     if (this.processing) return;
     if (this.messageQueue.length === 0) return;
-    if (!this.apiKey) {
-      // Can't process without API key
-      const msg = this.messageQueue.shift()!;
-      this.events.emit('error', {
-        groupId: msg.groupId,
-        error: 'API key not configured. Go to Settings to add your Anthropic API key.',
-      });
-      return;
-    }
 
     this.processing = true;
     const msg = this.messageQueue.shift()!;
