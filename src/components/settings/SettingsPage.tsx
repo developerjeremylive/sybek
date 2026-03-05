@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import {
   Palette, KeyRound, Eye, EyeOff, Bot, MessageSquare,
-  Smartphone, HardDrive, Lock, Check,
+  Smartphone, HardDrive, Lock, Check, Zap,
 } from 'lucide-react';
 import { getConfig, setConfig } from '../../db.js';
 import { CONFIG_KEYS, MODELS } from '../../config.js';
@@ -30,6 +30,7 @@ export function SettingsPage() {
   const [apiKey, setApiKey] = useState('');
   const [apiKeyMasked, setApiKeyMasked] = useState(true);
   const [apiKeySaved, setApiKeySaved] = useState(false);
+  const [showV2Notification, setShowV2Notification] = useState(false);
 
   // Model
   const [model, setModel] = useState(orch.getModel());
@@ -88,9 +89,12 @@ export function SettingsPage() {
   }, []);
 
   async function handleSaveApiKey() {
-    await orch.setApiKey(apiKey.trim());
-    setApiKeySaved(true);
-    setTimeout(() => setApiKeySaved(false), 2000);
+    // Show V2 notification - API key feature coming in v2
+    setShowV2Notification(true);
+    setTimeout(() => setShowV2Notification(false), 3000);
+    // Note: API key is optional now, so we don't actually save it
+    // setApiKeySaved(true);
+    // setTimeout(() => setApiKeySaved(false), 2000);
   }
 
   async function handleModelChange(value: string) {
@@ -121,6 +125,16 @@ export function SettingsPage() {
 
   return (
     <div className="h-full overflow-y-auto p-4 sm:p-6 max-w-3xl mx-auto space-y-4">
+      {/* V2 Notification Toast */}
+      {showV2Notification && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in">
+          <div className="bg-gradient-to-r from-amber-500/90 to-orange-500/90 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <Zap className="w-5 h-5" />
+            <span className="font-medium">Anthropic API key feature coming in version 2.0</span>
+          </div>
+        </div>
+      )}
+
       <h2 className="text-xl font-bold mb-4">Settings</h2>
 
       {/* ---- Theme ---- */}

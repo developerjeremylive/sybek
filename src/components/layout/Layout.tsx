@@ -135,9 +135,9 @@ export function Layout() {
           ))}
         </div>
 
-        {/* Desktop tabs - only show in 1 column mode */}
+        {/* Desktop tabs - only show in 1 column mode, hidden on mobile */}
         {showTabs && (
-          <div className="navbar-end sm:flex">
+          <div className="navbar-end hidden sm:flex">
             <div role="tablist" className="tabs tabs-box">
               {navItems.map(({ to, label, icon: Icon }) => (
                 <NavLink
@@ -156,10 +156,14 @@ export function Layout() {
           </div>
         )}
 
-        {/* Mobile theme toggle */}
-        <div className="navbar-end sm:hidden">
-          <ThemeToggle />
-        </div>
+        {/* Mobile: hide everything in 1 column mode, show theme toggle only in multi-column */}
+        {columns === 1 ? (
+          <div className="navbar-end sm:hidden" />
+        ) : (
+          <div className="navbar-end sm:hidden">
+            <ThemeToggle />
+          </div>
+        )}
       </div>
 
       {/* ---- Page content ---- */}
