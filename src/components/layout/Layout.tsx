@@ -120,7 +120,7 @@ export function Layout() {
           </span>
         </div>
 
-        {/* Column layout buttons - always show */}
+        {/* Column layout buttons */}
         <div className="navbar-center flex gap-1">
           {columnButtons.map(({ cols, icon: Icon, label, color }) => (
             <button
@@ -136,24 +136,27 @@ export function Layout() {
         </div>
 
         {/* Desktop tabs - only show in 1 column mode */}
-        <div className={`navbar-end ${showTabs ? '' : 'hidden'} sm:flex`}>
-          <div role="tablist" className="tabs tabs-box">
-            {navItems.map(({ to, label, icon: Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                role="tab"
-                className={({ isActive }: { isActive: boolean }) =>
-                  `tab gap-1.5 ${isActive ? 'tab-active' : ''}`
-                }
-              >
-                <Icon className="w-4 h-4" />
-                {label}
-              </NavLink>
-            ))}
+        {showTabs && (
+          <div className="navbar-end sm:flex">
+            <div role="tablist" className="tabs tabs-box">
+              {navItems.map(({ to, label, icon: Icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  role="tab"
+                  className={({ isActive }: { isActive: boolean }) =>
+                    `tab gap-1.5 ${isActive ? 'tab-active' : ''}`
+                  }
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </NavLink>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
+        {/* Mobile theme toggle */}
         <div className="navbar-end sm:hidden">
           <ThemeToggle />
         </div>
