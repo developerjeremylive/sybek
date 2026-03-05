@@ -100,12 +100,23 @@ export function ChatPage() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
+  const [toolResultsOpen, setToolResultsOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
+
+  // When loading (not idle), maximize tool results panel
+  useEffect(() => {
+    if (orchState === 'thinking') {
+      setToolResultsOpen(true);
+    } else if (orchState === 'idle' && toolResults.length > 0) {
+      // When response arrives, minimize the panel
+      setToolResultsOpen(false);
+    }
+  }, [orchState, toolResults.length]);
 
   // Clear tool results when state returns to idle
   useEffect(() => {
@@ -244,7 +255,9 @@ export function ChatPage() {
         {(toolResults.length > 0 || apiResponse) && (
           <ToolResultsPanel 
             apiResponse={apiResponse} 
-            toolResults={toolResults} 
+            toolResults={toolResults}
+            isOpen={toolResultsOpen}
+            onToggle={() => setToolResultsOpen(!toolResultsOpen)}
           />
         )}
 

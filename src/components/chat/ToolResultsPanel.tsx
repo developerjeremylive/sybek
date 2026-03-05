@@ -13,11 +13,16 @@ interface ToolResult {
 interface Props {
   apiResponse?: string;
   toolResults: ToolResult[];
+  isOpen?: boolean;
+  onToggle?: () => void;
 }
 
-export function ToolResultsPanel({ apiResponse, toolResults }: Props) {
-  const [isOpen, setIsOpen] = useState(false);
+export function ToolResultsPanel({ apiResponse, toolResults, isOpen: externalIsOpen, onToggle: externalOnToggle }: Props) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [expandedTools, setExpandedTools] = useState<Set<number>>(new Set());
+
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = externalOnToggle ? () => externalOnToggle() : setInternalIsOpen;
 
   if (!apiResponse && toolResults.length === 0) return null;
 
