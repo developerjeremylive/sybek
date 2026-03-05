@@ -542,9 +542,24 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
   const folderContext = fileContext || '';
   
   // Add context to system prompt
+  // Build tools description for system prompt
+  let toolsSection = '';
+  if (activeTools.length > 0) {
+    const toolDescriptions = activeTools.map((id: string) => {
+      const tool = TOOLS.find(t => t.name === id);
+      if (!tool) return null;
+      const params = Object.entries(tool.input_schema.properties || {})
+        .map(([k, v]) => `${k}: ${(v as any).description || k}`)
+        .join(', ');
+      return `- ${tool.name}(${params}): ${tool.description}`;
+    }).filter(Boolean).join('\n');
+    
+    toolsSection = `\n\n## Herramientas disponibles:\n${toolDescriptions}\n\nCuando necesites usar una herramienta, responde usando el formato:\n[TOOL_CALL] tool_name | {"param1": "value1"} [/TOOL_CALL]`;
+  }
+  
   const fullSystemPrompt = folderContext 
-    ? systemPrompt + '\n\n## Archivos existentes:\n' + folderContext
-    : systemPrompt;
+    ? systemPrompt + '\n\n## Archivos existentes:\n' + folderContext + toolsSection
+    : systemPrompt + toolsSection;
 
   post({ type: 'typing', payload: { groupId } });
   log(groupId, 'info', 'Starting', `Model: ${model}, Folder: ${currentSessionFolder}`);
@@ -570,19 +585,9 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         max_tokens: maxTokens,
       };
 
-      // Add tools if provided - Workers AI uses @cfmeta/llama function calling
+      // Add tools descriptions to system prompt instead of using function calling
+      // This avoids the function calling format issues with Workers AI
       const activeTools = tools || [];
-      if (activeTools.length > 0) {
-        // Use simple format that Workers AI accepts
-        const toolsForAI = activeTools.map((id: string) => {
-          const tool = TOOLS.find(t => t.name === id);
-          return tool || null;
-        }).filter(Boolean);
-        
-        if (toolsForAI.length > 0) {
-          requestBody.tools = toolsForAI;
-        }
-      }
 
       const res = await fetch(CHAT_URL, {
         method: 'POST',
@@ -642,6 +647,38 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       }
       
       log(groupId, 'text', 'Response', responseContent.slice(0, 200));
+
+      // Extract tool calls from text response if none from function calling
+      if (toolCalls.length === 0 && activeTools.length > 0) {
+        const toolCallRegex = /\[TOOL_CALL\]\s*(\w+)\s*\|\s*(\{[^}]*\})\s*\[\/TOOL_CALL\]/g;
+        let match;
+        while ((match = toolCallRegex.exec(responseContent)) !== null) {
+          const toolName = match[1];
+          const argsStr = match[2];
+          try {
+            const toolInput = JSON.parse(argsStr);
+            toolCalls.push({ name: toolName, arguments: toolInput });
+          } catch {
+            // Invalid JSON, skip
+          }
+        }
+        // Also try simpler format: "tool_name: {args}" or "Use tool_name"
+        if (toolCalls.length === 0) {
+          for (const toolId of activeTools) {
+            const tool = TOOLS.find(t => t.name === toolId);
+            if (tool && responseContent.toLowerCase().includes(tool.name.toLowerCase())) {
+              // Try to extract arguments from the text
+              const argMatch = responseContent.match(new RegExp(`${tool.name}\\s*[,:]\\s*(\\{[^}]+\\})`));
+              if (argMatch) {
+                try {
+                  const toolInput = JSON.parse(argMatch[1]);
+                  toolCalls.push({ name: tool.name, arguments: toolInput });
+                } catch {}
+              }
+            }
+          }
+        }
+      }
 
       // Auto-save code files from response
       const savedFiles = await autoSaveCodeFiles(groupId, responseContent);
