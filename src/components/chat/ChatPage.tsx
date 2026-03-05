@@ -112,18 +112,15 @@ export function ChatPage() {
   useEffect(() => {
     if (orchState === 'thinking') {
       setToolResultsOpen(true);
-    } else if (orchState === 'idle' && toolResults.length > 0) {
-      // When response arrives, minimize the panel
+    }
+  }, [orchState]);
+
+  // When response arrives (idle), minimize the panel but keep it visible
+  useEffect(() => {
+    if (orchState === 'idle' && toolResults.length > 0) {
       setToolResultsOpen(false);
     }
   }, [orchState, toolResults.length]);
-
-  // Clear tool results when state returns to idle
-  useEffect(() => {
-    if (orchState === 'idle' && (toolResults.length > 0 || apiResponse)) {
-      clearToolResults();
-    }
-  }, [orchState]);
 
   // Load history on mount
   useEffect(() => {
