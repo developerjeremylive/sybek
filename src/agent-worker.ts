@@ -592,6 +592,9 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
 
       const result = await res.json();
       
+      // Debug: log full API response
+      log(groupId, 'info', 'API response', JSON.stringify(result).slice(0, 500));
+      
       let responseContent = '';
       let toolCalls: any[] = [];
       
