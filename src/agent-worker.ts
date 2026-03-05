@@ -599,8 +599,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       let toolCalls: any[] = [];
       
       // Handle Workers AI response format with tool_calls
-      // Check for tool_calls at top level first
-      if (result.tool_calls && Array.isArray(result.tool_calls)) {
+      // Check for tool_calls at top level first (but only if it has items)
+      if (result.tool_calls && Array.isArray(result.tool_calls) && result.tool_calls.length > 0) {
         toolCalls = result.tool_calls;
         responseContent = '';
       } else if (result.response !== undefined && result.response !== null) {
