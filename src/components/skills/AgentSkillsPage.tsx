@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useCatalogSkillsStore, type CatalogSkill } from '../../stores/catalog-skills-store.js';
 import { 
   Search, Download, Trash2, Check, X, Settings, 
-  Zap, FolderOpen, ChevronRight, BookOpen
+  Zap, FolderOpen, ChevronRight, BookOpen, Info
 } from 'lucide-react';
 
 export function AgentSkillsPage() {
@@ -22,6 +22,12 @@ export function AgentSkillsPage() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showV2Notification, setShowV2Notification] = useState(false);
+
+  const showV2Toast = () => {
+    setShowV2Notification(true);
+    setTimeout(() => setShowV2Notification(false), 3000);
+  };
 
   // Get unique categories
   const categories = [...new Set(catalogSkills.map(s => s.category))];
@@ -47,15 +53,22 @@ export function AgentSkillsPage() {
   };
 
   const handleToggleActive = (skill: CatalogSkill) => {
-    if (activeSkills.includes(skill.id)) {
-      deactivateSkill(skill.id);
-    } else {
-      activateSkill(skill.id);
-    }
+    // Skills v2 coming soon - show notification
+    showV2Toast();
   };
 
   return (
     <div className="min-h-screen bg-base-100 p-6">
+      {/* V2 Notification Toast */}
+      {showV2Notification && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in">
+          <div className="bg-gradient-to-r from-amber-500/90 to-orange-500/90 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <Zap className="w-5 h-5" />
+            <span className="font-medium">Skills implementation coming in version 2.0</span>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">

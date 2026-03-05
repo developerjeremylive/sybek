@@ -15,6 +15,12 @@ export function AgentSkillsPanel({ className = '' }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showV2Notification, setShowV2Notification] = useState(false);
+
+  const showV2Toast = () => {
+    setShowV2Notification(true);
+    setTimeout(() => setShowV2Notification(false), 3000);
+  };
 
   // Group skills by category
   const categories = [...new Set(catalogSkills.map(s => s.category))];
@@ -28,15 +34,22 @@ export function AgentSkillsPanel({ className = '' }: Props) {
   };
   
   const handleActivate = (skill: CatalogSkill) => {
-    if (activeSkills.includes(skill.id)) {
-      deactivateSkill(skill.id);
-    } else {
-      activateSkill(skill.id);
-    }
+    // Skills v2 coming soon - show notification
+    showV2Toast();
   };
 
   return (
     <div className={`relative ${className}`}>
+      {/* V2 Notification Toast */}
+      {showV2Notification && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 animate-slide-in">
+          <div className="bg-gradient-to-r from-amber-500/90 to-orange-500/90 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <Zap className="w-5 h-5" />
+            <span className="font-medium">Skills implementation coming in version 2.0</span>
+          </div>
+        </div>
+      )}
+
       {/* Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
