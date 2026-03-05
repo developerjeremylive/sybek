@@ -120,8 +120,8 @@ export function Layout() {
           </span>
         </div>
 
-        {/* Column layout buttons */}
-        <div className="navbar-center flex gap-1">
+        {/* Column layout buttons - hidden on mobile */}
+        <div className="navbar-center hidden sm:flex gap-1">
           {columnButtons.map(({ cols, icon: Icon, label, color }) => (
             <button
               key={cols}
