@@ -2,8 +2,8 @@
 // OpenBrowserClaw — Layout shell
 // ---------------------------------------------------------------------------
 
-import { Outlet, NavLink } from 'react-router';
-import { MessageSquare, FolderOpen, Clock, Settings, LayoutGrid } from 'lucide-react';
+import { useState, useRef, useEffect, Outlet, NavLink } from 'react';
+import { MessageSquare, FolderOpen, Clock, Settings, LayoutGrid, Wrench, GripVertical } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle.js';
 import { FileViewerModal } from '../files/FileViewerModal.js';
 import { useFileViewerStore } from '../../stores/file-viewer-store.js';
@@ -16,6 +16,7 @@ const navItems = [
   { to: '/chat', label: 'Chat', icon: MessageSquare },
   { to: '/files', label: 'Files', icon: FolderOpen },
   { to: '/tasks', label: 'Tasks', icon: Clock },
+  { to: '/skills', label: 'Skills', icon: Wrench },
   { to: '/settings', label: 'Settings', icon: Settings },
 ] as const;
 
@@ -25,10 +26,87 @@ const columnButtons: { cols: ColumnLayout; icon: typeof LayoutGrid; label: strin
   { cols: 3, icon: LayoutGrid, label: '3', color: 'bg-green-500' },
 ];
 
+// ResizeHandle component for dragging column dividers
+function ResizeHandle({ onResize, index }: { onResize: (delta: number) => void; index: number }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      const delta = e.clientX - startX.current;
+      startX.current = e.clientX;
+      onResize(delta);
+    };
+
+    const handleMouseUp = () => {
+      isDragging.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [onResize]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    startX.current = e.clientX;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="w-1 hover:w-1.5 bg-base-300 hover:bg-primary cursor-col-resize transition-colors flex-shrink-0 relative group"
+      onMouseDown={handleMouseDown}
+    >
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 bg-primary text-primary-content rounded p-0.5">
+        <GripVertical className="w-3 h-3" />
+      </div>
+    </div>
+  );
+}
+
 export function Layout() {
   const viewerFile = useFileViewerStore((s) => s.file);
   const closeFile = useFileViewerStore((s) => s.closeFile);
-  const { columns, setColumns } = useLayoutStore();
+  const { columns, columnWidths, setColumns, setColumnWidths } = useLayoutStore();
+
+  // Handle column resize
+  const handleResize = (index: number, delta: number) => {
+    const container = document.getElementById('columns-container');
+    if (!container) return;
+    
+    const containerWidth = container.offsetWidth;
+    const deltaPercent = (delta / containerWidth) * 100;
+    
+    const newWidths = [...columnWidths];
+    
+    // Adjust the column being resized and its neighbor
+    if (index > 0) {
+      newWidths[index - 1] = Math.max(20, Math.min(80, newWidths[index - 1] + deltaPercent));
+    }
+    if (index < newWidths.length - 1) {
+      newWidths[index] = Math.max(20, Math.min(80, newWidths[index] - deltaPercent));
+    }
+    
+    // Normalize to 100%
+    const total = newWidths.reduce((a, b) => a + b, 0);
+    const normalized = newWidths.map(w => (w / total) * 100);
+    
+    setColumnWidths(normalized);
+  };
+
+  const showColumnButtons = columns === 1;
 
   return (
     <div className="flex flex-col h-screen h-[100dvh]">
@@ -37,27 +115,29 @@ export function Layout() {
         <div className="navbar-start">
           <span className="text-xl font-bold select-none flex items-center gap-1.5">
             <span className="text-lg">🦀</span>
-            <span className="hidden sm:inline">OpenBrowserClaw</span>
+            <span className="hidden sm:inline">BuilderLiveApp</span>
           </span>
         </div>
 
-        {/* Column layout buttons */}
-        <div className="navbar-center flex gap-1">
-          {columnButtons.map(({ cols, icon: Icon, label, color }) => (
-            <button
-              key={cols}
-              onClick={() => setColumns(cols)}
-              className={`btn btn-sm gap-1 ${columns === cols ? color + ' text-white' : 'btn-ghost'}`}
-              title={`${cols} columna${cols > 1 ? 's' : ''}`}
-            >
-              <Icon className="w-4 h-4" />
-              <span className="text-xs">{label}</span>
-            </button>
-          ))}
-        </div>
+        {/* Column layout buttons - only show in 1 column mode */}
+        {showColumnButtons && (
+          <div className="navbar-center flex gap-1">
+            {columnButtons.map(({ cols, icon: Icon, label, color }) => (
+              <button
+                key={cols}
+                onClick={() => setColumns(cols)}
+                className={`btn btn-sm gap-1 ${columns === cols ? color + ' text-white' : 'btn-ghost'}`}
+                title={`${cols} columna${cols > 1 ? 's' : ''}`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="text-xs">{label}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Desktop tabs */}
-        <div className="navbar-end hidden sm:flex">
+        <div className={`navbar-end ${showColumnButtons ? 'hidden' : ''} sm:flex`}>
           <div role="tablist" className="tabs tabs-box">
             {navItems.map(({ to, label, icon: Icon }) => (
               <NavLink
@@ -81,27 +161,30 @@ export function Layout() {
       </div>
 
       {/* ---- Page content ---- */}
-      <main className="flex-1 overflow-hidden pb-16 sm:pb-0">
+      <main id="columns-container" className="flex-1 overflow-hidden pb-16 sm:pb-0">
         {columns === 1 ? (
           <Outlet />
         ) : columns === 2 ? (
           <div className="flex h-full">
-            <div className="w-1/2 border-r border-base-300">
+            <div style={{ width: `${columnWidths[0]}%` }} className="h-full overflow-hidden">
               <ChatPage />
             </div>
-            <div className="w-1/2">
+            <ResizeHandle onResize={(delta) => handleResize(0, delta)} index={0} />
+            <div style={{ width: `${columnWidths[1]}%` }} className="h-full overflow-hidden">
               <FilesPage />
             </div>
           </div>
         ) : (
           <div className="flex h-full">
-            <div className="w-1/3 border-r border-base-300">
+            <div style={{ width: `${columnWidths[0]}%` }} className="h-full overflow-hidden">
               <ChatPage />
             </div>
-            <div className="w-1/3 border-r border-base-300">
+            <ResizeHandle onResize={(delta) => handleResize(0, delta)} index={0} />
+            <div style={{ width: `${columnWidths[1]}%` }} className="h-full overflow-hidden">
               <FilesPage />
             </div>
-            <div className="w-1/3">
+            <ResizeHandle onResize={(delta) => handleResize(1, delta)} index={1} />
+            <div style={{ width: `${columnWidths[2]}%` }} className="h-full overflow-hidden">
               <AgentsPage />
             </div>
           </div>
