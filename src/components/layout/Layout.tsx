@@ -107,7 +107,7 @@ export function Layout() {
     setColumnWidths(normalized);
   };
 
-  const showColumnButtons = columns === 1;
+  const showTabs = columns === 1;
 
   return (
     <div className="flex flex-col h-screen h-[100dvh]">
@@ -120,25 +120,23 @@ export function Layout() {
           </span>
         </div>
 
-        {/* Column layout buttons - only show in 1 column mode */}
-        {showColumnButtons && (
-          <div className="navbar-center flex gap-1">
-            {columnButtons.map(({ cols, icon: Icon, label, color }) => (
-              <button
-                key={cols}
-                onClick={() => setColumns(cols)}
-                className={`btn btn-sm gap-1 ${columns === cols ? color + ' text-white' : 'btn-ghost'}`}
-                title={`${cols} columna${cols > 1 ? 's' : ''}`}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="text-xs">{label}</span>
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Column layout buttons - always show */}
+        <div className="navbar-center flex gap-1">
+          {columnButtons.map(({ cols, icon: Icon, label, color }) => (
+            <button
+              key={cols}
+              onClick={() => setColumns(cols)}
+              className={`btn btn-sm gap-1 ${columns === cols ? color + ' text-white' : 'btn-ghost'}`}
+              title={`${cols} columna${cols > 1 ? 's' : ''}`}
+            >
+              <Icon className="w-4 h-4" />
+              <span className="text-xs">{label}</span>
+            </button>
+          ))}
+        </div>
 
-        {/* Desktop tabs */}
-        <div className={`navbar-end ${showColumnButtons ? 'hidden' : ''} sm:flex`}>
+        {/* Desktop tabs - only show in 1 column mode */}
+        <div className={`navbar-end ${showTabs ? '' : 'hidden'} sm:flex`}>
           <div role="tablist" className="tabs tabs-box">
             {navItems.map(({ to, label, icon: Icon }) => (
               <NavLink
