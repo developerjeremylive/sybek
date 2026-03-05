@@ -70,9 +70,8 @@ export function ToolResultsPanel({ apiResponse, toolResults, isOpen: externalIsO
                 <span className="text-xs font-medium text-primary">API Response</span>
               </div>
               <div className="p-3">
-                <pre className="text-xs font-mono text-base-content/70 whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
-                  {apiResponse.slice(0, 1000)}
-                  {apiResponse.length > 1000 && '...'}
+                <pre className="text-sm font-mono text-base-content/80 whitespace-pre-wrap break-all max-h-96 overflow-y-auto">
+                  {apiResponse}
                 </pre>
               </div>
             </div>
