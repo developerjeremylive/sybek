@@ -556,7 +556,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       return `- ${tool.name}(${params}): ${tool.description}`;
     }).filter(Boolean).join('\n');
     
-    toolsSection = `\n\n## Herramientas disponibles:\n${toolDescriptions}\n\nCuando necesites usar una herramienta, responde usando el formato:\n[TOOL_CALL] tool_name | {"param1": "value1"} [/TOOL_CALL]`;
+    toolsSection = `\n\n## Herramientas disponibles:\n${toolDescriptions}\n\nCuando necesites usar una herramienta, responde usando el formato:\n[toolname] tool_name | {"param1": "value1"} [/toolname]\n\nEjemplo: [hackernews] hackernews | {"limit": 10} [/hackernews]`;
   }
   
   const fullSystemPrompt = folderContext 
@@ -648,32 +648,30 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
 
       // Extract tool calls from text response if none from function calling
       if (toolCalls.length === 0 && activeTools.length > 0) {
-        const toolCallRegex = /\[TOOL_CALL\]\s*(\w+)\s*\|\s*(\{[^}]*\})\s*\[\/TOOL_CALL\]/g;
+        // Try format: [toolname] tool_name | {"args"} [/toolname]
+        const toolCallRegex = /\[(\w+)\]\s*(\w+)\s*\|\s*(\{[^}]*\})\s*\[\/\1\]/g;
         let match;
         while ((match = toolCallRegex.exec(responseContent)) !== null) {
-          const toolName = match[1];
-          const argsStr = match[2];
+          const toolName = match[2];
+          const argsStr = match[3];
           try {
             const toolInput = JSON.parse(argsStr);
             toolCalls.push({ name: toolName, arguments: toolInput });
+            log(groupId, 'info', 'Extracted tool from text', `${toolName}: ${argsStr}`);
           } catch {
             // Invalid JSON, skip
           }
         }
-        // Also try simpler format: "tool_name: {args}" or "Use tool_name"
+        // Also try format: [TOOL_CALL] tool_name | {"args"} [/TOOL_CALL]
         if (toolCalls.length === 0) {
-          for (const toolId of activeTools) {
-            const tool = TOOLS.find(t => t.name === toolId);
-            if (tool && responseContent.toLowerCase().includes(tool.name.toLowerCase())) {
-              // Try to extract arguments from the text
-              const argMatch = responseContent.match(new RegExp(`${tool.name}\\s*[,:]\\s*(\\{[^}]+\\})`));
-              if (argMatch) {
-                try {
-                  const toolInput = JSON.parse(argMatch[1]);
-                  toolCalls.push({ name: tool.name, arguments: toolInput });
-                } catch {}
-              }
-            }
+          const altRegex = /\[TOOL_CALL\]\s*(\w+)\s*\|\s*(\{[^}]*\})\s*\[\/TOOL_CALL\]/g;
+          while ((match = altRegex.exec(responseContent)) !== null) {
+            const toolName = match[1];
+            const argsStr = match[2];
+            try {
+              const toolInput = JSON.parse(argsStr);
+              toolCalls.push({ name: toolName, arguments: toolInput });
+            } catch {}
           }
         }
       }
