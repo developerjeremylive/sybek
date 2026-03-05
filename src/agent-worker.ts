@@ -541,7 +541,9 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
   // Use fileContext from payload if available
   const folderContext = fileContext || '';
   
-  // Add context to system prompt
+  // Get active tools from payload
+  const activeTools = tools || [];
+  
   // Build tools description for system prompt
   let toolsSection = '';
   if (activeTools.length > 0) {
@@ -584,10 +586,6 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         model,
         max_tokens: maxTokens,
       };
-
-      // Add tools descriptions to system prompt instead of using function calling
-      // This avoids the function calling format issues with Workers AI
-      const activeTools = tools || [];
 
       const res = await fetch(CHAT_URL, {
         method: 'POST',
