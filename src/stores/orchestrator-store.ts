@@ -24,6 +24,8 @@ interface OrchestratorStoreState {
   error: string | null;
   activeGroupId: string;
   ready: boolean;
+  toolResults: { tool: string; result: string }[];
+  apiResponse: string;
 
   // --- actions ---
   sendMessage: (text: string, tools?: string[]) => void;
@@ -31,6 +33,7 @@ interface OrchestratorStoreState {
   compactContext: () => Promise<void>;
   clearError: () => void;
   loadHistory: () => Promise<void>;
+  clearToolResults: () => void;
 }
 
 let orchestratorInstance: Orchestrator | null = null;
@@ -50,6 +53,8 @@ export const useOrchestratorStore = create<OrchestratorStoreState>((set, get) =>
   error: null,
   activeGroupId: DEFAULT_GROUP_ID,
   ready: false,
+  toolResults: [],
+  apiResponse: '',
 
   sendMessage: (text, tools) => {
     const orch = getOrchestrator();
@@ -67,6 +72,8 @@ export const useOrchestratorStore = create<OrchestratorStoreState>((set, get) =>
   },
 
   clearError: () => set({ error: null }),
+
+  clearToolResults: () => set({ toolResults: [], apiResponse: '' }),
 
   loadHistory: async () => {
     const msgs = await getRecentMessages(get().activeGroupId, 200);
@@ -118,6 +125,14 @@ export async function initOrchestratorStore(orch: Orchestrator): Promise<void> {
     store.setState({ error });
   });
 
+  orch.events.on('tool-result', ({ tool, result }) => {
+    store.setState((s) => ({ toolResults: [...s.toolResults, { tool, result }] }));
+  });
+
+  orch.events.on('api-response', ({ response }) => {
+    store.setState({ apiResponse: response });
+  });
+
   orch.events.on('session-reset', () => {
     store.setState({
       messages: [],
@@ -125,6 +140,8 @@ export async function initOrchestratorStore(orch: Orchestrator): Promise<void> {
       tokenUsage: null,
       toolActivity: null,
       isTyping: false,
+      toolResults: [],
+      apiResponse: '',
     });
   });
 

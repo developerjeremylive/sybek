@@ -645,6 +645,9 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       }
       
       log(groupId, 'text', 'Response', responseContent.slice(0, 200));
+      
+      // Send API response to store for UI display
+      post({ type: 'api-response', payload: { groupId, response: responseContent.slice(0, 2000) } });
 
       // Extract tool calls from text response if none from function calling
       if (toolCalls.length === 0 && activeTools.length > 0) {
@@ -724,6 +727,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
           
           log(groupId, 'tool-result', `Result: ${toolName}`, toolResult.slice(0, 200));
           post({ type: 'tool-activity', payload: { groupId, tool: toolName, status: 'done' } });
+          post({ type: 'tool-result', payload: { groupId, tool: toolName, result: toolResult } });
 
           currentMessages.push({ role: 'assistant', content: responseContent });
           currentMessages.push({ role: 'user', content: `Tool result: ${toolResult}` });

@@ -104,7 +104,9 @@ export type WorkerOutbound =
   | { type: 'thinking-log'; payload: ThinkingLogEntry }
   | { type: 'compact-done'; payload: { groupId: string; summary: string } }
   | { type: 'token-usage'; payload: TokenUsage }
-  | { type: 'task-created'; payload: { task: Task } };
+  | { type: 'task-created'; payload: { task: Task } }
+  | { type: 'tool-result'; payload: { groupId: string; tool: string; result: string } }
+  | { type: 'api-response'; payload: { groupId: string; response: string } };
 
 /** Token usage info from the API */
 export interface TokenUsage {

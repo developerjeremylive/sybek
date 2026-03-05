@@ -13,6 +13,7 @@ import { ActivityLog } from './ActivityLog.js';
 import { ContextBar } from './ContextBar.js';
 import { ChatActions } from './ChatActions.js';
 import { ChatContextIndicator } from './ChatContextIndicator.js';
+import { ToolResultsPanel } from './ToolResultsPanel.js';
 
 const LineGraphIcon = ({ className }: { className?: string }) => (
     <svg
@@ -92,6 +93,9 @@ export function ChatPage() {
   const error = useOrchestratorStore((s) => s.error);
   const sendMessage = useOrchestratorStore((s) => s.sendMessage);
   const loadHistory = useOrchestratorStore((s) => s.loadHistory);
+  const toolResults = useOrchestratorStore((s) => s.toolResults);
+  const apiResponse = useOrchestratorStore((s) => s.apiResponse);
+  const clearToolResults = useOrchestratorStore((s) => s.clearToolResults);
 
   const [activeSlide, setActiveSlide] = useState(0);
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
@@ -102,6 +106,13 @@ export function ChatPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
+
+  // Clear tool results when state returns to idle
+  useEffect(() => {
+    if (orchState === 'idle' && (toolResults.length > 0 || apiResponse)) {
+      clearToolResults();
+    }
+  }, [orchState]);
 
   // Load history on mount
   useEffect(() => {
@@ -228,6 +239,14 @@ export function ChatPage() {
         )}
 
         <MessageList messages={messages} />
+
+        {/* Tool Results Panel - shows API response and tool results above response */}
+        {(toolResults.length > 0 || apiResponse) && (
+          <ToolResultsPanel 
+            apiResponse={apiResponse} 
+            toolResults={toolResults} 
+          />
+        )}
 
         {isTyping && <TypingIndicator />}
         {toolActivity && (

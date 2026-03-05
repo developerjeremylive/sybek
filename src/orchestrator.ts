@@ -104,6 +104,8 @@ type EventMap = {
   'session-reset': { groupId: string };
   'context-compacted': { groupId: string; summary: string };
   'token-usage': import('./types.js').TokenUsage;
+  'tool-result': { groupId: string; tool: string; result: string };
+  'api-response': { groupId: string; response: string };
 };
 
 type EventCallback<T> = (data: T) => void;
@@ -553,6 +555,16 @@ export class Orchestrator {
 
       case 'thinking-log': {
         this.events.emit('thinking-log', msg.payload);
+        break;
+      }
+
+      case 'tool-result': {
+        this.events.emit('tool-result', msg.payload);
+        break;
+      }
+
+      case 'api-response': {
+        this.events.emit('api-response', msg.payload);
         break;
       }
 
