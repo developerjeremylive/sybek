@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
-import { ChevronUp, ChevronDown, Terminal, Wrench, Zap, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, Terminal, Wrench, Zap, Copy, Check } from 'lucide-react';
 
 interface ToolResult {
   tool: string;
@@ -103,8 +103,25 @@ export function ToolResultsPanel({ apiResponse, toolResults, isOpen: externalIsO
                 </div>
                 {isExpanded && (
                   <div className="p-3">
-                    <pre className="text-xs font-mono text-base-content/70 whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
-                      {tr.result}
+                    {/* Copy button */}
+                    <div className="flex justify-end mb-1">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(tr.result); }}
+                        className="btn btn-xs btn-ghost"
+                        title="Copy JSON"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    </div>
+                    {/* JSON content */}
+                    <pre className="text-xs font-mono text-success whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
+                      {(() => {
+                        try {
+                          return JSON.stringify(JSON.parse(tr.result), null, 2);
+                        } catch {
+                          return tr.result;
+                        }
+                      })()}
                     </pre>
                   </div>
                 )}
