@@ -715,13 +715,35 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
           finalResponseContent = JSON.stringify(finalResult).slice(0, 500);
         }
         
-        const cleaned = finalResponseContent.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
-        post({ type: 'response', payload: { groupId, text: cleaned || '(sin respuesta)' }});
+        let cleaned = finalResponseContent.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
+        // If cleaned is empty, try extracting content from inside <internal> tags
+        if (!cleaned) {
+          const internalMatch = finalResponseContent.match(/<internal>([\s\S]*?)<\/internal>/);
+          if (internalMatch && internalMatch[1]) {
+            cleaned = internalMatch[1].trim();
+          }
+        }
+        // If still empty, show raw response for debugging
+        if (!cleaned) {
+          cleaned = finalResponseContent.trim() || '(sin respuesta - response vacía)';
+        }
+        post({ type: 'response', payload: { groupId, text: cleaned } });
         return;
       } else {
-        // Final response
-        const cleaned = finalText.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
-        post({ type: 'response', payload: { groupId, text: cleaned || '(sin respuesta)' } });
+        // Final response - extract content from <internal> tags if response is empty
+        let cleaned = finalText.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
+        // If cleaned is empty, try extracting content from inside <internal> tags
+        if (!cleaned) {
+          const internalMatch = finalText.match(/<internal>([\s\S]*?)<\/internal>/);
+          if (internalMatch && internalMatch[1]) {
+            cleaned = internalMatch[1].trim();
+          }
+        }
+        // If still empty, show raw response for debugging
+        if (!cleaned) {
+          cleaned = finalText.trim() || '(sin respuesta - response vacía)';
+        }
+        post({ type: 'response', payload: { groupId, text: cleaned } });
         return;
       }
     }
