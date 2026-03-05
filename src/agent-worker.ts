@@ -570,13 +570,27 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         max_tokens: maxTokens,
       };
 
-      // Add tools if provided - Workers AI expects {id, desc}
+      // Add tools if provided - Workers AI expects OpenAI function calling format
       const activeTools = tools || [];
       if (activeTools.length > 0) {
-        requestBody.tools = activeTools.map((id: string) => ({
-          id,
-          desc: getToolDescription(id),
-        }));
+        const toolsForAI = activeTools.map((id: string) => {
+          const tool = TOOLS.find(t => t.name === id);
+          if (tool) {
+            return {
+              type: 'function' as const,
+              function: {
+                name: tool.name,
+                description: tool.description,
+                parameters: tool.input_schema,
+              }
+            };
+          }
+          return null;
+        }).filter(Boolean);
+        
+        if (toolsForAI.length > 0) {
+          requestBody.tools = toolsForAI;
+        }
       }
 
       const res = await fetch(CHAT_URL, {
