@@ -2,7 +2,8 @@
 // OpenBrowserClaw — Layout shell
 // ---------------------------------------------------------------------------
 
-import { useState, useRef, useEffect, Outlet, NavLink } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { Outlet, NavLink } from 'react-router';
 import { MessageSquare, FolderOpen, Clock, Settings, LayoutGrid, Wrench, GripVertical } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle.js';
 import { FileViewerModal } from '../files/FileViewerModal.js';
@@ -144,7 +145,7 @@ export function Layout() {
                 key={to}
                 to={to}
                 role="tab"
-                className={({ isActive }) =>
+                className={({ isActive }: { isActive: boolean }) =>
                   `tab gap-1.5 ${isActive ? 'tab-active' : ''}`
                 }
               >
@@ -197,7 +198,7 @@ export function Layout() {
           <NavLink
             key={to}
             to={to}
-            className={({ isActive }) => (isActive ? 'dock-active' : '')}
+            className={({ isActive }: { isActive: boolean }) => (isActive ? 'dock-active' : '')}
           >
             <Icon className="w-5 h-5" />
             <span className="dock-label">{label}</span>
