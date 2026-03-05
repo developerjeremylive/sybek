@@ -449,51 +449,55 @@ export function FilesPage() {
         )}
       </div>
 
-      {/* Mobile: preview shows as a bottom sheet / full modal */}
+      {/* Mobile: preview shows as bottom half (two rows) */}
       {previewFile && previewContent !== null && (
-        <div className="md:hidden fixed inset-0 z-50 bg-base-100 flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-base-300">
-            <span className="font-medium truncate flex items-center gap-1.5">
+        <div className="md:hidden flex flex-col h-1/2 border-t border-base-300 bg-base-200">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-base-300 bg-base-100">
+            <span className="font-medium text-sm truncate flex items-center gap-1.5">
               {(() => { const Icon = getFileIcon(previewFile, false); return <Icon className="w-4 h-4" />; })()}
               {previewFile}
             </span>
             <div className="flex gap-1">
               <button
-                className="btn btn-ghost btn-sm"
+                className="btn btn-ghost btn-xs"
                 onClick={() => handleOpenViewer(previewFile, previewContent)}
+                title="Open in viewer"
               >
                 <Search className="w-4 h-4" />
               </button>
               <button
-                className="btn btn-ghost btn-sm"
+                className="btn btn-ghost btn-xs"
                 onClick={() => handleDownload(previewFile, previewContent)}
+                title="Download"
               >
                 <Download className="w-4 h-4" />
               </button>
               <button
-                className="btn btn-ghost btn-sm text-error"
+                className="btn btn-ghost btn-xs text-error"
                 onClick={() => setDeleteConfirm(previewFile)}
+                title="Delete"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
               <button
-                className="btn btn-ghost btn-sm"
+                className="btn btn-ghost btn-xs"
                 onClick={() => {
                   setPreviewFile(null);
                   setPreviewContent(null);
                 }}
+                title="Close"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
-          <div className="flex-1 overflow-auto p-4">
+          <div className="flex-1 overflow-auto p-2">
             {isRenderable(previewFile) ? (
               <iframe
                 srcDoc={previewContent}
                 className="w-full h-full border-0 rounded bg-white"
-                sandbox="allow-scripts"
-                title="File preview"
+                sandbox="allow-scripts allow-same-origin allow-modals"
+                title={`Preview: ${previewFile}`}
               />
             ) : (
               <pre className="text-xs font-mono whitespace-pre-wrap break-all">
