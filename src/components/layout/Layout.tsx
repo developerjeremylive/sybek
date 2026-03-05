@@ -111,8 +111,8 @@ export function Layout() {
 
   return (
     <div className="flex flex-col h-screen h-[100dvh]">
-      {/* ---- Top navbar ---- */}
-      <div className="navbar bg-base-200 border-b border-base-300 safe-area-top px-4 min-h-14">
+      {/* Desktop Top navbar - hidden on mobile */}
+      <div className="navbar bg-base-200 border-b border-base-300 safe-area-top px-4 min-h-14 hidden sm:flex">
         <div className="navbar-start">
           <span className="text-xl font-bold select-none flex items-center gap-1.5">
             <span className="text-lg">🦀</span>
@@ -120,8 +120,8 @@ export function Layout() {
           </span>
         </div>
 
-        {/* Column layout buttons - hidden on mobile */}
-        <div className="navbar-center hidden sm:flex gap-1">
+        {/* Column layout buttons */}
+        <div className="navbar-center flex gap-1">
           {columnButtons.map(({ cols, icon: Icon, label, color }) => (
             <button
               key={cols}
@@ -135,9 +135,9 @@ export function Layout() {
           ))}
         </div>
 
-        {/* Desktop tabs - only show in 1 column mode, hidden on mobile */}
+        {/* Desktop tabs - only show in 1 column mode */}
         {showTabs && (
-          <div className="navbar-end hidden sm:flex">
+          <div className="navbar-end flex">
             <div role="tablist" className="tabs tabs-box">
               {navItems.map(({ to, label, icon: Icon }) => (
                 <NavLink
@@ -156,14 +156,17 @@ export function Layout() {
           </div>
         )}
 
-        {/* Mobile: hide everything in 1 column mode, show theme toggle only in multi-column */}
-        {columns === 1 ? (
-          <div className="navbar-end sm:hidden" />
-        ) : (
-          <div className="navbar-end sm:hidden">
-            <ThemeToggle />
-          </div>
-        )}
+        {/* Theme toggle for desktop */}
+        <div className="navbar-end">
+          <ThemeToggle />
+        </div>
+      </div>
+
+      {/* Mobile floating icon - only visible on mobile */}
+      <div className="sm:hidden fixed top-2 left-2 z-50">
+        <div className="w-10 h-10 bg-base-200 rounded-full flex items-center justify-center shadow-lg border border-base-300">
+          <span className="text-xl">🦀</span>
+        </div>
       </div>
 
       {/* ---- Page content ---- */}
