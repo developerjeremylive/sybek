@@ -28,16 +28,23 @@ export default {
       const endpoint = modelEndpoints[model] || '/ai/run/' + model;
       const workersAiUrl = 'https://api.cloudflare.com/client/v4/accounts/' + accountId + endpoint;
       
+      const requestBody: any = {
+        messages: jsonBody.messages,
+        max_tokens: jsonBody.max_tokens || 1024,
+      };
+      
+      // Add tools if provided
+      if (jsonBody.tools && jsonBody.tools.length > 0) {
+        requestBody.tools = jsonBody.tools;
+      }
+      
       const response = await fetch(workersAiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + apiToken,
         },
-        body: JSON.stringify({
-          messages: jsonBody.messages,
-          max_tokens: jsonBody.max_tokens || 1024,
-        }),
+        body: JSON.stringify(requestBody),
       });
       
       const responseData = await response.json();

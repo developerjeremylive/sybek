@@ -570,22 +570,13 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         max_tokens: maxTokens,
       };
 
-      // Add tools if provided - Workers AI expects OpenAI function calling format
+      // Add tools if provided - Workers AI uses @cfmeta/llama function calling
       const activeTools = tools || [];
       if (activeTools.length > 0) {
+        // Use simple format that Workers AI accepts
         const toolsForAI = activeTools.map((id: string) => {
           const tool = TOOLS.find(t => t.name === id);
-          if (tool) {
-            return {
-              type: 'function' as const,
-              function: {
-                name: tool.name,
-                description: tool.description,
-                parameters: tool.input_schema,
-              }
-            };
-          }
-          return null;
+          return tool || null;
         }).filter(Boolean);
         
         if (toolsForAI.length > 0) {
