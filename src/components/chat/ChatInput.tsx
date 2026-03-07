@@ -15,17 +15,29 @@ interface Props {
   initialValue?: string;
 }
 
-// MCP tools available by default in Workers AI
-const AVAILABLE_TOOLS = [
+// Native agent tools available
+const NATIVE_TOOLS = [
+  { id: 'read_file', name: 'read_file', description: 'Lee archivos del sistema de archivos OPFS', icon: '📄' },
+  { id: 'write_file', name: 'write_file', description: 'Crea o modifica archivos en OPFS', icon: '💾' },
+  { id: 'list_files', name: 'list_files', description: 'Lista archivos y carpetas', icon: '📁' },
+  { id: 'bash', name: 'bash', description: 'Ejecuta comandos en terminal Linux (Alpine WASM)', icon: '🖥️' },
+  { id: 'javascript', name: 'javascript', description: 'Ejecuta código JavaScript en entorno aislado', icon: '⚡' },
+  { id: 'fetch_url', name: 'fetch_url', description: 'Realiza peticiones HTTP (sujeto a CORS)', icon: '🌐' },
+  { id: 'update_memory', name: 'update_memory', description: 'Guarda contexto en CLAUDE.md', icon: '🧠' },
+  { id: 'create_task', name: 'create_task', description: 'Programa tareas con expresiones cron', icon: '⏰' },
+];
+
+// Workers AI tools
+const WORKERS_AI_TOOLS = [
   { id: 'get_current_time', name: 'Hora actual', description: 'Obtiene la fecha y hora actual', icon: '🕐' },
   { id: 'get_weather', name: 'Clima', description: 'Obtiene el clima de una ciudad', icon: '🌤️' },
   { id: 'joke', name: 'Chiste', description: 'Chiste aleatorio', icon: '😂' },
   { id: 'cat_fact', name: 'Dato gato', description: 'Dato curioso de gatos', icon: '🐱' },
   { id: 'hackernews', name: 'HN News', description: 'Top noticias de Hacker News', icon: '📰' },
-  // Native agent tools
-  { id: 'web_search', name: 'Web Search', description: 'Búsqueda web (herramienta nativa)', icon: '🔍' },
-  { id: 'fetch_url', name: 'Fetch URL', description: 'Obtener contenido de URL (herramienta nativa)', icon: '📄' },
+  { id: 'web_search', name: 'Web Search', description: 'Búsqueda web general', icon: '🔍' },
 ];
+
+const ALL_TOOLS = [...NATIVE_TOOLS, ...WORKERS_AI_TOOLS];
 
 // Model selector component
 export function ModelSelector() {
@@ -102,9 +114,9 @@ function ToolsModal({ onClose }: { onClose: () => void }) {
       />
       
       {/* Modal */}
-      <div className="relative bg-base-100 border border-purple-500/30 rounded-xl shadow-2xl shadow-purple-500/20 max-w-md w-full mx-4 overflow-hidden">
+      <div className="relative bg-base-100 border border-purple-500/30 rounded-xl shadow-2xl shadow-purple-500/20 max-w-lg w-full mx-4 overflow-hidden max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border-b border-purple-500/30">
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border-b border-purple-500/30 shrink-0">
           <div className="flex items-center gap-2">
             <Wrench className="w-5 h-5 text-purple-400" />
             <span className="font-bold text-purple-200">Herramientas Disponibles</span>
@@ -118,33 +130,53 @@ function ToolsModal({ onClose }: { onClose: () => void }) {
         </div>
         
         {/* Content */}
-        <div className="p-4">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-purple-300 border-b border-purple-500/20">
-                <th className="pb-2 font-medium">Tool</th>
-                <th className="pb-2 font-medium">Descripción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {AVAILABLE_TOOLS.map((tool) => (
-                <tr key={tool.id} className="border-b border-purple-500/10">
-                  <td className="py-2 pr-4">
-                    <div className="flex items-center gap-2">
-                      <span>{tool.icon}</span>
-                      <span className="font-mono text-purple-300">{tool.id}</span>
-                    </div>
-                  </td>
-                  <td className="py-2 text-base-content/70">{tool.description}</td>
-                </tr>
+        <div className="p-4 overflow-y-auto">
+          {/* Native Agent Tools */}
+          <div className="mb-4">
+            <h3 className="text-sm font-bold text-cyan-400 mb-2 flex items-center gap-2">
+              ⚡ Herramientas del Agente
+            </h3>
+            <p className="text-xs text-base-content/60 mb-3">
+              Herramientas nativas disponibles para todas las conversaciones
+            </p>
+            <div className="space-y-2">
+              {NATIVE_TOOLS.map((tool) => (
+                <div key={tool.id} className="flex items-start gap-3 p-2 bg-base-200/50 rounded-lg">
+                  <span className="text-lg">{tool.icon}</span>
+                  <div>
+                    <div className="font-mono text-xs text-cyan-300">{tool.name}</div>
+                    <div className="text-xs text-base-content/60">{tool.description}</div>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
+          
+          {/* Workers AI Tools */}
+          <div>
+            <h3 className="text-sm font-bold text-purple-400 mb-2 flex items-center gap-2">
+              ☁️ Workers AI Tools
+            </h3>
+            <p className="text-xs text-base-content/60 mb-3">
+              Herramientas adicionales disponibles a través de Workers AI
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {WORKERS_AI_TOOLS.map((tool) => (
+                <div key={tool.id} className="flex items-center gap-2 p-2 bg-base-200/30 rounded-lg">
+                  <span>{tool.icon}</span>
+                  <div>
+                    <div className="font-medium text-xs">{tool.name}</div>
+                    <div className="text-[10px] text-base-content/50">{tool.description}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
         
         {/* Footer */}
-        <div className="px-4 py-2 bg-base-200/50 text-center text-xs text-base-content/50">
-          Estas herramientas están disponibles por defecto en Workers AI
+        <div className="px-4 py-3 bg-base-200/50 text-center text-xs text-base-content/50 shrink-0 border-t border-base-300">
+          Las herramientas del agente siempre están disponibles. Workers AI proporciona herramientas adicionales.
         </div>
       </div>
     </div>
@@ -193,7 +225,7 @@ export function ChatInput({ onSend, disabled, initialValue }: Props) {
         >
           <Wrench className="w-3.5 h-3.5 text-purple-400" />
           <span className="text-base-content/60">Disponibles:</span>
-          {AVAILABLE_TOOLS.map((tool) => (
+          {ALL_TOOLS.map((tool) => (
             <span key={tool.id} className="flex items-center gap-0.5 text-purple-300" title={tool.name}>
               {tool.icon}
             </span>
