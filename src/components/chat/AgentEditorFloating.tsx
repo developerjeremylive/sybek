@@ -211,6 +211,34 @@ export function AgentEditorFloating() {
     }
   }
 
+  // Confirm and save agent change from popup
+  async function confirmAgentChange(agentId: string) {
+    const agent = DEFAULT_AGENTS.find(a => a.id === agentId);
+    if (!agent) return;
+    
+    // Update local state
+    setActiveAgentId(agentId);
+    setSystemPrompt(agent.systemPrompt);
+    setAgentsMd(agent.agentsMd);
+    
+    // Immediately save to DB
+    setSaving(true);
+    try {
+      await setConfig(CONFIG_KEYS.USE_AGENTS_FILE, agentId);
+      await setConfig(CONFIG_KEYS.SYSTEM_PROMPT, agent.systemPrompt);
+      await writeGroupFile(DEFAULT_GROUP_ID, 'AGENTS.md', agent.agentsMd);
+      
+      setSaved(true);
+      setTimeout(() => {
+        setSaved(false);
+        setSaving(false);
+      }, 1500);
+    } catch (err) {
+      console.error('Error saving agent:', err);
+      setSaving(false);
+    }
+  }
+
   // Toggle panel
   function toggleOpen() {
     setIsOpen(!isOpen);
@@ -377,7 +405,7 @@ export function AgentEditorFloating() {
               </button>
               <button
                 onClick={() => {
-                  selectAgent(pendingAgentId);
+                  confirmAgentChange(pendingAgentId);
                   setShowConfirmPopup(false);
                   setPendingAgentId(null);
                 }}
