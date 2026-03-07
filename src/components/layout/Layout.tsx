@@ -4,7 +4,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router';
-import { MessageSquare, FolderOpen, Clock, Settings, LayoutGrid, Wrench, GripVertical } from 'lucide-react';
+import { MessageSquare, FolderOpen, Clock, Settings, LayoutGrid, Wrench, GripVertical, Bot } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle.js';
 import { FileViewerModal } from '../files/FileViewerModal.js';
 import { useFileViewerStore } from '../../stores/file-viewer-store.js';
@@ -17,6 +17,7 @@ const navItems = [
   { to: '/chat', label: 'Chat', icon: MessageSquare },
   { to: '/files', label: 'Files', icon: FolderOpen },
   { to: '/tasks', label: 'Tasks', icon: Clock },
+  { to: '/agents', label: 'Agents', icon: Bot },
   { to: '/skills', label: 'Skills', icon: Wrench },
   { to: '/settings', label: 'Settings', icon: Settings },
 ] as const;

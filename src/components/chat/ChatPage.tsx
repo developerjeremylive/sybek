@@ -13,6 +13,7 @@ import { ContextBar } from './ContextBar.js';
 import { ChatActions } from './ChatActions.js';
 import { ChatContextIndicator } from './ChatContextIndicator.js';
 import { ToolResultsPanel } from './ToolResultsPanel.js';
+import { SystemPromptFloating } from './SystemPromptFloating.js';
 
 // Agent templates for prompt carousel
 const AGENT_TEMPLATES = [
@@ -274,6 +275,9 @@ export function ChatPage() {
         localStorage.removeItem('contextFolders');
         window.location.reload();
       }} />
+
+      {/* System Prompt Floating Component */}
+      <SystemPromptFloating />
     </div>
   );
 }
