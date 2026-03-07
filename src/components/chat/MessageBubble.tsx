@@ -113,7 +113,7 @@ export function MessageBubble({ message }: Props) {
           {senderName}
           <time className="ml-2">{formatTime(message.timestamp)}</time>
         </div>
-        <div className={`chat-bubble ${isAssistant ? 'chat-bubble-neutral' : 'chat-bubble-primary'}`}>
+        <div className={`chat-bubble ${isAssistant ? 'bg-base-200 text-base-content' : 'chat-bubble-primary'}`}>
           <div className="prose prose-sm max-w-none">
             {contentParts.map((part, i) => (
               part.type === 'code' ? (
@@ -146,35 +146,35 @@ export function MessageBubble({ message }: Props) {
       </div>
 
       {/* Futuristic collapsible response */}
-      <div className="bg-gradient-to-r from-slate-900 via-purple-900/50 to-slate-900 border border-purple-500/30 rounded-lg overflow-hidden shadow-lg shadow-purple-500/10">
+      <div className="bg-base-200 border border-primary/30 rounded-lg overflow-hidden shadow-lg">
         {/* Header */}
         <button
           onClick={() => setShowResponse(!showResponse)}
-          className="w-full px-4 py-2 flex items-center justify-between bg-gradient-to-r from-purple-500/20 to-cyan-500/20 hover:from-purple-500/30 hover:to-cyan-500/30 transition-all"
+          className="w-full px-4 py-2 flex items-center justify-between bg-base-300/50 hover:bg-base-300 transition-all"
         >
-          <span className="text-sm font-medium bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+          <span className="text-sm font-medium text-primary">
             Respuesta del Asistente
           </span>
           {showResponse ? (
-            <ChevronUp className="w-4 h-4 text-cyan-400" />
+            <ChevronUp className="w-4 h-4 text-primary" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-cyan-400" />
+            <ChevronDown className="w-4 h-4 text-primary" />
           )}
         </button>
 
         {/* Content with collapsible code blocks */}
         {showResponse && (
           <div className="p-4">
-            <div className="prose prose-invert prose-sm max-w-none">
+            <div className="prose prose-sm max-w-none">
               {contentParts.map((part, i) => (
                 part.type === 'code' ? (
                   <CodeBlock key={i} code={part.content} language={part.language!} />
                 ) : (
                   <div key={i} className="whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{
                     __html: part.content
-                      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-purple-300">$1</strong>')
-                      .replace(/\*(.*?)\*/g, '<em class="text-cyan-300">$1</em>')
-                      .replace(/`(.*?)`/g, '<code class="bg-purple-500/30 px-1.5 py-0.5 rounded text-purple-200 font-mono text-xs">$1</code>')
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                      .replace(/`(.*?)`/g, '<code class="bg-base-300 px-1.5 py-0.5 rounded text-xs font-mono">$1</code>')
                       .replace(/\n/g, '<br/>')
                   }} />
                 )
@@ -186,10 +186,10 @@ export function MessageBubble({ message }: Props) {
 
       {/* Saved Files */}
       {savedFiles.length > 0 && (
-        <div className="mt-2 p-3 bg-gradient-to-r from-emerald-900/50 to-teal-900/50 border border-emerald-500/30 rounded-lg">
+        <div className="mt-2 p-3 bg-base-200 border border-success/30 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-emerald-400">✅</span>
-            <span className="text-sm font-medium bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+            <span className="text-success">✅</span>
+            <span className="text-sm font-medium text-success">
               Archivos guardados
             </span>
           </div>
@@ -197,7 +197,7 @@ export function MessageBubble({ message }: Props) {
             {savedFiles.map((file, i) => (
               <span 
                 key={i}
-                className="px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/40 rounded-full text-xs text-emerald-300 font-mono"
+                className="px-3 py-1.5 bg-base-300 border border-success/40 rounded-full text-xs font-mono"
               >
                 {file}
               </span>
