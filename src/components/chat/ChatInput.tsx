@@ -73,12 +73,14 @@ function ModelSelector() {
           {MODELS.map((model) => (
             <button
               key={model.value}
-              onClick={() => selectModel(model.value)}
-              className={`w-full text-left px-3 py-2 text-xs hover:bg-base-200 transition-colors ${
+              onClick={() => !model.premium && selectModel(model.value)}
+              disabled={model.premium}
+              className={`w-full text-left px-3 py-2 text-xs hover:bg-base-200 transition-colors flex items-center justify-between gap-2 ${
                 selectedModel === model.value ? 'bg-primary/20 text-primary' : ''
-              }`}
+              } ${model.premium ? 'opacity-40 cursor-not-allowed' : ''}`}
             >
-              {model.label}
+              <span className="truncate">{model.label}</span>
+              {model.premium && <span className="badge badge-xs badge-warning shrink-0">Premium</span>}
             </button>
           ))}
         </div>
