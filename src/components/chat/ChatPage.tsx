@@ -251,13 +251,24 @@ export function ChatPage() {
               </div>
 
               {/* Dots indicator */}
-              <div className="flex justify-center gap-2 mt-4">
-                {AGENT_TEMPLATES.map((_, idx) => (
+              <div className="flex justify-center items-center gap-2 mt-4">
+                {AGENT_TEMPLATES.map((agent, idx) => (
                   <button
                     key={idx}
-                    className={`btn btn-xs btn-circle ${idx === activeSlide ? 'btn-primary' : 'btn-ghost'}`}
                     onClick={() => setActiveSlide(idx)}
-                  />
+                    className={`relative group transition-all duration-300 ${
+                      idx === activeSlide ? 'w-8' : 'w-2'
+                    }`}
+                    aria-label={`Go to ${agent.name}`}
+                  >
+                    <span 
+                      className={`block rounded-full transition-all duration-300 ${
+                        idx === activeSlide 
+                          ? 'h-2 bg-primary shadow-md shadow-primary/40' 
+                          : 'h-2 bg-base-content/40 group-hover:bg-base-content/60'
+                      }`}
+                    />
+                  </button>
                 ))}
               </div>
             </div>
