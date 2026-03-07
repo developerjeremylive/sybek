@@ -4,7 +4,7 @@
 
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { Send, Wrench, X, Bot } from 'lucide-react';
-import { MODELS } from '../../config.js';
+import { MODELS, CONFIG_KEYS } from '../../config.js';
 import { getConfig, setConfig } from '../../db.js';
 import type { LucideIcon } from 'lucide-react';
 
@@ -52,7 +52,7 @@ function ModelSelector() {
 
   async function selectModel(model: string) {
     setSelectedModel(model);
-    await setConfig('model', model);
+    await setConfig(CONFIG_KEYS.MODEL, model);
     setShowDropdown(false);
   }
 

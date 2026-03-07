@@ -28,7 +28,7 @@ export const MODELS = [
   { value: '@cf/meta/llama-3.1-8b-instruct', label: 'Llama 3.1 8B' },
   { value: '@cf/meta/llama-3-8b-instruct', label: 'Llama 3 8B' },
   { value: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', label: 'Llama 3.3 70B' },
-  { value: 'llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout 17B' },
+  { value: 'llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout 17B', premium: true },
   // Google (Gemma)
   { value: '@cf/google/gemma-2-2b', label: 'Gemma 2 2B' },
   { value: '@cf/google/gemma-3-12b-it', label: 'Gemma 3 12B' },
@@ -39,7 +39,7 @@ export const MODELS = [
   // Qwen
   { value: 'qwen3-30b-a3b-fp8', label: 'Qwen 3 30B A3B', premium: true },
   // Mistral
-  { value: 'mistral-small-3.1-24b-instruct', label: 'Mistral Small 3.1 24B' },
+  { value: 'mistral-small-3.1-24b-instruct', label: 'Mistral Small 3.1 24B', premium: true },
 ];
 
 /** Anthropic API endpoint */
