@@ -93,6 +93,8 @@ export function ChatPage() {
   }, [loadHistory]);
 
   const hasMessages = messages.length > 0;
+  // Show "Continúa la conversación" only when there are messages AND we're idle (not thinking)
+  const showContinueBanner = hasMessages && orchState === 'idle';
 
   function handleSelectPrompt(prompt: string) {
     setInputValue(prompt);
@@ -112,7 +114,7 @@ export function ChatPage() {
     <div className="flex flex-col h-full">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-1">
-        {hasMessages && (
+        {showContinueBanner && (
           <div className="hero min-h-full">
             <div className="hero-content text-center">
               <div className="max-w-md">
@@ -124,7 +126,7 @@ export function ChatPage() {
           </div>
         )}
 
-        {!hasMessages && (
+        {!showContinueBanner && (
           <div className="space-y-6">
             {/* Welcome message */}
             <div className="text-center py-4">

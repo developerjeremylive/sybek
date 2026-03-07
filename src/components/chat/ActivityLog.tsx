@@ -82,7 +82,7 @@ function getKindBgColor(kind: string): string {
 }
 
 export function ActivityLog({ entries }: Props) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [expandedDetails, setExpandedDetails] = useState<Set<number>>(new Set());
   const [prevLength, setPrevLength] = useState(0);
 
