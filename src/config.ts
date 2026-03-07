@@ -27,11 +27,14 @@ export const MODELS = [
   { value: '@cf/meta/llama-3.1-8b-instruct', label: 'Llama 3.1 8B (Workers AI)' },
   { value: '@cf/meta/llama-3-8b-instruct', label: 'Llama 3 8B (Workers AI)' },
   { value: '@cf/google/gemma-2-2b', label: 'Gemma 2 2B (Workers AI)' },
-  { value: 'glm-4.7-flash', label: 'GLM-4.7 Flash (Kilocode)' },
-  { value: 'hermes-2-pro-mistral-7b', label: 'Hermes 2 Pro Mistral 7B (Kilocode)' },
-  { value: 'qwen3-30b-a3b-fp8', label: 'Qwen 3 30B A3B (Kilocode)' },
-  { value: 'mistral-small-3.1-24b-instruct', label: 'Mistral Small 3.1 24B (Kilocode)' },
-  { value: 'llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout 17B (Kilocode)' },
+  // Kilocode proxy models
+  { value: '@cf/meta/llama-4-scout-17b-16e-instruct', label: '🦙 Llama 4 Scout' },
+  { value: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', label: '🦙 Llama 3.3 70B' },
+  { value: '@cf/mistralai/mistral-small-3.1-24b-instruct', label: '🌊 Mistral Small 3.1' },
+  { value: '@cf/google/gemma-3-4b-it', label: '🔮 Gemma 3 4B' },
+  { value: '@cf/google/gemma-3-12b-it', label: '🔮 Gemma 3 12B' },
+  { value: '@cf/deepseek-ai/deepseek-r1-distill', label: '🧠 DeepSeek R1' },
+  { value: '@cf/qwen/qwen2.5-32b-instruct', label: '🐼 Qwen 2.5 32B' },
 ];
 
 /** Anthropic API endpoint */
