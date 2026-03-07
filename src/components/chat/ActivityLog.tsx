@@ -51,17 +51,17 @@ function getKindColor(kind: string): string {
   switch (kind) {
     case 'file-saved':
     case 'file-created':
-      return 'text-success';
+      return 'text-emerald-400';
     case 'file-error':
-      return 'text-error';
+      return 'text-red-400';
     case 'tool-call':
-      return 'text-warning';
+      return 'text-amber-400';
     case 'tool-result':
-      return 'text-info';
+      return 'text-cyan-400';
     case 'api-call':
-      return 'text-primary';
+      return 'text-blue-400';
     case 'mcp-tool':
-      return 'text-purple-500';
+      return 'text-purple-400';
     default:
       return 'text-base-content/70';
   }
@@ -71,19 +71,19 @@ function getKindBgColor(kind: string): string {
   switch (kind) {
     case 'file-saved':
     case 'file-created':
-      return 'bg-success/10';
+      return 'bg-emerald-500/10 border-emerald-500/20';
     case 'file-error':
-      return 'bg-error/10';
+      return 'bg-red-500/10 border-red-500/20';
     case 'tool-call':
-      return 'bg-warning/10';
+      return 'bg-amber-500/10 border-amber-500/20';
     case 'tool-result':
-      return 'bg-info/10';
+      return 'bg-cyan-500/10 border-cyan-500/20';
     case 'api-call':
-      return 'bg-primary/10';
+      return 'bg-blue-500/10 border-blue-500/20';
     case 'mcp-tool':
-      return 'bg-purple-500/10';
+      return 'bg-purple-500/10 border-purple-500/20';
     default:
-      return 'bg-base-300/30';
+      return 'bg-base-300/30 border-base-300/50';
   }
 }
 
@@ -143,39 +143,32 @@ export function ActivityLog({ entries }: Props) {
               return (
                 <div 
                   key={originalIdx} 
-                  className={`flex items-start gap-2 px-3 py-2 border-b border-base-300/50 last:border-0 hover:bg-base-300/30 transition-colors ${bgClass}`}
+                  className={`flex items-start gap-2 px-3 py-2 border-b border-base-300/30 last:border-0 hover:bg-base-300/20 transition-all rounded-md mx-1 ${bgClass}`}
                 >
                   {/* Icon */}
                   <div className={`shrink-0 mt-0.5 ${colorClass}`}>
-                    <KindIcon className="w-4 h-4" />
+                    <KindIcon className="w-3.5 h-3.5" />
                   </div>
                   
                   {/* Time */}
-                  <span className="shrink-0 text-[10px] opacity-40 mt-1">
+                  <span className="shrink-0 text-[10px] opacity-40 mt-0.5 font-mono">
                     {formatTime(entry.timestamp)}
                   </span>
                   
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
-                      <span className={`font-medium text-xs ${colorClass}`}>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`font-semibold text-xs ${colorClass}`}>
                         {label}
                       </span>
-                      {detail.length > 60 && (
-                        <button
-                          className="text-[10px] link link-primary hidden"
-                          onClick={() => toggleDetail(originalIdx)}
-                        >
-                          {isExpanded ? '▼' : '▶'}
-                        </button>
-                      )}
                     </div>
                     
                     {detail && (
-                      <div className={`mt-0.5 text-[10px] opacity-60 break-all font-mono ${
-                        detail.length > 60 && !isExpanded ? 'line-clamp-2' : ''
+                      <div className={`mt-1 text-[11px] opacity-70 break-all font-mono leading-relaxed ${
+                        detail.length > 80 ? 'line-clamp-2' : ''
                       }`}>
                         {detail}
+                      </div>
                       </div>
                     )}
                   </div>
