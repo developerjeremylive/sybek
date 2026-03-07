@@ -30,7 +30,6 @@ export const MODELS = [
   { value: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', label: 'Llama 3.3 70B' },
   { value: 'llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout 17B', premium: true },
   // Google (Gemma)
-  { value: '@cf/google/gemma-2-2b', label: 'Gemma 2 2B' },
   { value: '@cf/google/gemma-3-12b-it', label: 'Gemma 3 12B' },
   // GLAB (GLM)
   { value: 'glm-4.7-flash', label: 'GLM-4.7 Flash', premium: true },
