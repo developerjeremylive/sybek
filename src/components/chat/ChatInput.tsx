@@ -217,19 +217,21 @@ export function ChatInput({ onSend, disabled, initialValue }: Props) {
 
   return (
     <>
-      <div className="flex flex-col gap-2 p-4 pb-2">
+      <div className="flex flex-col gap-2 p-2 sm:p-4 pb-2">
         {/* MCP Tools available - clickable display */}
         <button
           onClick={() => setShowToolsModal(true)}
-          className="flex items-center gap-2 px-2 py-1 bg-base-200 rounded-lg text-xs hover:bg-base-300 transition-colors cursor-pointer"
+          className="flex flex-wrap items-center gap-1.5 px-2 py-1.5 bg-base-200 rounded-lg text-xs hover:bg-base-300 transition-colors cursor-pointer"
         >
-          <Wrench className="w-3.5 h-3.5 text-purple-400" />
-          <span className="text-base-content/60">Disponibles:</span>
-          {ALL_TOOLS.map((tool) => (
-            <span key={tool.id} className="flex items-center gap-0.5 text-purple-300" title={tool.name}>
-              {tool.icon}
-            </span>
-          ))}
+          <Wrench className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+          <span className="text-base-content/60 shrink-0">Disponibles:</span>
+          <span className="flex flex-wrap gap-0.5">
+            {ALL_TOOLS.map((tool) => (
+              <span key={tool.id} className="text-lg leading-none" title={tool.name}>
+                {tool.icon}
+              </span>
+            ))}
+          </span>
         </button>
         
         {/* Input row */}
@@ -250,7 +252,7 @@ export function ChatInput({ onSend, disabled, initialValue }: Props) {
             />
           </div>
           <button
-            className="btn btn-primary btn-circle"
+            className="btn btn-primary btn-circle shrink-0"
             onClick={handleSend}
             disabled={disabled || !text.trim()}
             aria-label="Send message"
