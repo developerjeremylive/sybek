@@ -108,9 +108,8 @@ export function ChatPage() {
   // Show welcome screen only when there are NO messages
   const showWelcome = messages.length === 0;
   
-  // Show continue banner only when there are messages and we're waiting for next input
-  // Should NOT show during first message exchange
-  const showContinueBanner = messages.length >= 3 && 
+  // Show continue banner only after at least 2 full conversations (4+ messages)
+  const showContinueBanner = messages.length >= 4 && 
     orchState === 'idle' && 
     lastMessage?.isFromMe === true;
 
