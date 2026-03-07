@@ -24,18 +24,22 @@ export const DEFAULT_MODEL = '@cf/meta/llama-3.1-8b-instruct';
 
 /** Available models with function calling support */
 export const MODELS = [
-  // Workers AI
+  // Meta (Llama)
   { value: '@cf/meta/llama-3.1-8b-instruct', label: 'Llama 3.1 8B' },
   { value: '@cf/meta/llama-3-8b-instruct', label: 'Llama 3 8B' },
-  { value: '@cf/google/gemma-2-2b', label: 'Gemma 2 2B' },
-  // New models
-  { value: 'glm-4.7-flash', label: 'GLM-4.7 Flash' },
-  { value: 'hermes-2-pro-mistral-7b', label: 'Hermes 2 Pro Mistral 7B' },
-  { value: 'qwen3-30b-a3b-fp8', label: 'Qwen 3 30B A3B' },
-  { value: 'mistral-small-3.1-24b-instruct', label: 'Mistral Small 3.1 24B' },
-  { value: 'llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout 17B' },
   { value: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', label: 'Llama 3.3 70B' },
+  { value: 'llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout 17B' },
+  // Google (Gemma)
+  { value: '@cf/google/gemma-2-2b', label: 'Gemma 2 2B' },
   { value: '@cf/google/gemma-3-12b-it', label: 'Gemma 3 12B' },
+  // GLAB (GLM)
+  { value: 'glm-4.7-flash', label: 'GLM-4.7 Flash' },
+  // HuggingFace (Hermes)
+  { value: 'hermes-2-pro-mistral-7b', label: 'Hermes 2 Pro Mistral 7B' },
+  // Qwen
+  { value: 'qwen3-30b-a3b-fp8', label: 'Qwen 3 30B A3B' },
+  // Mistral
+  { value: 'mistral-small-3.1-24b-instruct', label: 'Mistral Small 3.1 24B' },
 ];
 
 /** Anthropic API endpoint */
