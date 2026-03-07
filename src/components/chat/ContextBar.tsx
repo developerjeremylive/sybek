@@ -27,7 +27,7 @@ export function ContextBar({ usage }: Props) {
       : '';
 
   return (
-    <div className="px-4 py-1.5 flex items-center gap-3">
+    <div className="flex items-center gap-3">
       <progress
         className={`progress ${colorClass} flex-1 h-1.5`}
         value={pct}

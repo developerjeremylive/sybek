@@ -26,7 +26,7 @@ export function ChatActions({ disabled }: Props) {
 
   return (
     <>
-      <div className="flex gap-1 px-4 py-2">
+      <div className="flex gap-1 shrink-0">
         <button
           className="btn btn-ghost btn-xs gap-1"
           disabled={disabled}

@@ -319,11 +319,16 @@ export function ChatPage() {
         {/* Activity log (collapsible) */}
         {activityLog.length > 0 && <ActivityLog entries={activityLog} />}
 
-        {/* Context / token usage bar */}
-        {tokenUsage && <ContextBar usage={tokenUsage} />}
-
-        {/* Compact / New Session actions */}
-        <ChatActions disabled={orchState !== 'idle'} />
+        {/* Context bar + Chat actions in same row */}
+        <div className="flex items-center justify-between gap-2 px-4 py-1.5">
+          {/* Context / token usage bar */}
+          <div className="flex-1">
+            {tokenUsage && <ContextBar usage={tokenUsage} />}
+          </div>
+          
+          {/* Compact / New Session actions */}
+          <ChatActions disabled={orchState !== 'idle'} />
+        </div>
 
         {/* Error display */}
         {error && (
