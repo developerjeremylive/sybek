@@ -82,7 +82,7 @@ export function ModelSelector() {
     <div className="relative" ref={dropdownRef}>
       {/* Toast notification */}
       {showToast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-slide-in sm:hidden">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-slide-in">
           <div className="bg-gradient-to-r from-success/90 to-primary/90 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 text-sm">
             <Check className="w-4 h-4" />
             <span>Modelo: <strong>{toastModelName}</strong></span>
