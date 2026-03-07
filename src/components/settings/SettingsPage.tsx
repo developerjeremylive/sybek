@@ -13,6 +13,7 @@ import { getStorageEstimate, requestPersistentStorage } from '../../storage.js';
 import { decryptValue } from '../../crypto.js';
 import { getOrchestrator } from '../../stores/orchestrator-store.js';
 import { useThemeStore, type ThemeChoice } from '../../stores/theme-store.js';
+import { ModelSelector } from '../chat/ChatInput.js';
 
 
 function formatBytes(bytes: number): string {
@@ -197,17 +198,7 @@ export function SettingsPage() {
       <div className="card card-bordered bg-base-200">
         <div className="card-body p-4 sm:p-6 gap-3">
           <h3 className="card-title text-base gap-2"><Bot className="w-4 h-4" /> Model</h3>
-          <select
-            className="select select-bordered select-sm"
-            value={model}
-            onChange={(e) => handleModelChange(e.target.value)}
-          >
-            {MODELS.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
+          <ModelSelector />
         </div>
       </div>
 

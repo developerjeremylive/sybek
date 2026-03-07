@@ -486,15 +486,15 @@ export function AgentsPage() {
   const IconComponent = selectedAgent ? getIconComponent(selectedAgent.icon) : Bot;
 
   return (
-    <div className="flex h-full">
-      {/* Left sidebar - Agent list */}
-      <div className="w-72 border-r border-base-300 bg-base-200 flex flex-col">
+    <div className="flex flex-col sm:flex-row h-full">
+      {/* Left sidebar - Agent list - collapsible on mobile */}
+      <div className="w-full sm:w-72 border-b sm:border-b-0 sm:border-r border-base-300 bg-base-200 flex flex-col max-h-[40vh] sm:max-h-none">
         <div className="p-4 border-b border-base-300">
           <h2 className="font-bold flex items-center gap-2">
             <Bot className="w-5 h-5" />
             Agentes
           </h2>
-          <p className="text-xs opacity-50 mt-1">Selecciona un agente para editar</p>
+          <p className="text-xs opacity-50 mt-1 hidden sm:block">Selecciona un agente para editar</p>
         </div>
         
         <div className="flex-1 overflow-y-auto p-2">
@@ -512,13 +512,13 @@ export function AgentsPage() {
                 onClick={() => setSelectedAgentId(agent.id)}
               >
                 <div className="flex items-start gap-2">
-                  <AgentIcon className={`w-5 h-5 mt-0.5 ${isSelected ? 'text-primary' : 'opacity-60'}`} />
+                  <AgentIcon className={`w-5 h-5 mt-0.5 shrink-0 ${isSelected ? 'text-primary' : 'opacity-60'}`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1">
                       <span className="font-medium text-sm truncate">{agent.name}</span>
                       {isActive && <CheckCircle className="w-3 h-3 text-success shrink-0" />}
                     </div>
-                    <p className="text-xs opacity-50 line-clamp-2">{agent.description}</p>
+                    <p className="text-xs opacity-50 line-clamp-2 hidden sm:block">{agent.description}</p>
                   </div>
                 </div>
                 
@@ -557,7 +557,8 @@ export function AgentsPage() {
             onClick={handleNewAgent}
           >
             <Plus className="w-4 h-4" />
-            Nuevo Agente
+            <span className="sm:hidden">Nuevo</span>
+            <span className="hidden sm:inline">Nuevo Agente</span>
           </button>
         </div>
       </div>

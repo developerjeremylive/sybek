@@ -28,7 +28,7 @@ const AVAILABLE_TOOLS = [
 ];
 
 // Model selector component
-function ModelSelector() {
+export function ModelSelector() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedModel, setSelectedModel] = useState(MODELS[0].value);
   const dropdownRef = useRef<HTMLDivElement>(null);
