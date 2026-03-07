@@ -169,7 +169,6 @@ export function ActivityLog({ entries }: Props) {
                       }`}>
                         {detail}
                       </div>
-                      </div>
                     )}
                   </div>
                 </div>
