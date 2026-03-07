@@ -3,7 +3,9 @@
 // ---------------------------------------------------------------------------
 
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
-import { Send, Wrench, X } from 'lucide-react';
+import { Send, Wrench, X, Bot } from 'lucide-react';
+import { MODELS, getConfig, setConfig } from '../../config.js';
+import type { LucideIcon } from 'lucide-react';
 
 interface Props {
   onSend: (text: string, tools?: string[]) => void;
@@ -22,6 +24,68 @@ const AVAILABLE_TOOLS = [
   { id: 'web_search', name: 'Web Search', description: 'Búsqueda web (herramienta nativa)', icon: '🔍' },
   { id: 'fetch_url', name: 'Fetch URL', description: 'Obtener contenido de URL (herramienta nativa)', icon: '📄' },
 ];
+
+// Model selector component
+function ModelSelector() {
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(MODELS[0].value);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    async function loadModel() {
+      const saved = await getConfig('model');
+      if (saved) setSelectedModel(saved);
+    }
+    loadModel();
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  async function selectModel(model: string) {
+    setSelectedModel(model);
+    await setConfig('model', model);
+    setShowDropdown(false);
+  }
+
+  const currentLabel = MODELS.find(m => m.value === selectedModel)?.label || selectedModel;
+
+  return (
+    <div className="relative shrink-0" ref={dropdownRef}>
+      <button
+        onClick={() => setShowDropdown(!showDropdown)}
+        className="flex items-center gap-1.5 px-2 py-1.5 bg-base-200 hover:bg-base-300 rounded-lg text-xs transition-colors border border-base-300"
+        title="Seleccionar modelo"
+      >
+        <Bot className="w-3.5 h-3.5 text-primary" />
+        <span className="hidden sm:inline max-w-[80px] truncate">{currentLabel}</span>
+      </button>
+      
+      {showDropdown && (
+        <div className="absolute bottom-full mb-2 left-0 bg-base-100 border border-base-300 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto w-48">
+          {MODELS.map((model) => (
+            <button
+              key={model.value}
+              onClick={() => selectModel(model.value)}
+              className={`w-full text-left px-3 py-2 text-xs hover:bg-base-200 transition-colors ${
+                selectedModel === model.value ? 'bg-primary/20 text-primary' : ''
+              }`}
+            >
+              {model.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ToolsModal({ onClose }: { onClose: () => void }) {
   return (
@@ -133,6 +197,9 @@ export function ChatInput({ onSend, disabled, initialValue }: Props) {
         
         {/* Input row */}
         <div className="flex items-end gap-2">
+          {/* Model selector */}
+          <ModelSelector />
+          
           <div className="flex-1">
             <textarea
               ref={textareaRef}
