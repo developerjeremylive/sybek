@@ -114,16 +114,16 @@ export function MessageBubble({ message }: Props) {
           <time className="ml-2">{formatTime(message.timestamp)}</time>
         </div>
         <div className={`chat-bubble ${isAssistant ? 'bg-base-200 text-base-content' : 'bg-base-300 text-base-content'}`}>
-          <div className="prose prose-sm max-w-none">
+          <div className="prose prose-sm max-w-none prose-invert">
             {contentParts.map((part, i) => (
               part.type === 'code' ? (
                 <CodeBlock key={i} code={part.content} language={part.language!} />
               ) : (
-                <div key={i} className="whitespace-pre-wrap" dangerouslySetInnerHTML={{
+                <div key={i} className="whitespace-pre-wrap text-base-content" dangerouslySetInnerHTML={{
                   __html: part.content
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                    .replace(/`(.*?)`/g, '<code class="bg-base-100 px-1 rounded text-sm font-mono">$1</code>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-base-content">$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em class="text-base-content/80">$1</em>')
+                    .replace(/`(.*?)`/g, '<code class="bg-base-100 text-base-content px-1 rounded text-sm font-mono">$1</code>')
                     .replace(/\n/g, '<br/>')
                 }} />
               )
@@ -165,16 +165,16 @@ export function MessageBubble({ message }: Props) {
         {/* Content with collapsible code blocks */}
         {showResponse && (
           <div className="p-4">
-            <div className="prose prose-sm max-w-none">
+            <div className="prose prose-sm max-w-none prose-invert">
               {contentParts.map((part, i) => (
                 part.type === 'code' ? (
                   <CodeBlock key={i} code={part.content} language={part.language!} />
                 ) : (
-                  <div key={i} className="whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{
+                  <div key={i} className="whitespace-pre-wrap leading-relaxed text-base-content" dangerouslySetInnerHTML={{
                     __html: part.content
-                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                      .replace(/`(.*?)`/g, '<code class="bg-base-300 px-1.5 py-0.5 rounded text-xs font-mono">$1</code>')
+                      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-base-content">$1</strong>')
+                      .replace(/\*(.*?)\*/g, '<em class="text-base-content/80">$1</em>')
+                      .replace(/`(.*?)`/g, '<code class="bg-base-300 text-base-content px-1.5 py-0.5 rounded text-xs font-mono">$1</code>')
                       .replace(/\n/g, '<br/>')
                   }} />
                 )
