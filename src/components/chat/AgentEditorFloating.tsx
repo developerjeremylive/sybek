@@ -9,7 +9,7 @@ import { CONFIG_KEYS, DEFAULT_GROUP_ID } from '../../config.js';
 import { writeGroupFile } from '../../storage.js';
 
 // Default agents data (same as AgentsPage)
-const DEFAULT_AGENTS = [
+export const DEFAULT_AGENTS = [
   { 
     id: 'landing-page', 
     name: 'Landing Page', 
