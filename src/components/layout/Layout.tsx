@@ -85,7 +85,6 @@ export function Layout() {
   const viewerFile = useFileViewerStore((s) => s.file);
   const closeFile = useFileViewerStore((s) => s.closeFile);
   const { columns, columnWidths, setColumns, setColumnWidths } = useLayoutStore();
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Handle column resize
   const handleResize = (index: number, delta: number) => {
@@ -157,34 +156,27 @@ export function Layout() {
                   {label}
                 </NavLink>
               ))}
-              
-              {/* More dropdown */}
-              <div className="dropdown dropdown-end">
-                <button
-                  tabIndex={0}
-                  className="tab gap-1.5 btn-ghost"
-                  onClick={() => setShowMoreMenu(!showMoreMenu)}
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                  Más
-                </button>
-                {showMoreMenu && (
-                  <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-200 rounded-box w-52 border border-base-300 mt-2">
-                    {moreNavItems.map(({ to, label, icon: Icon }) => (
-                      <li key={to}>
-                        <NavLink
-                          to={to}
-                          className={({ isActive }) => isActive ? 'active' : ''}
-                          onClick={() => setShowMoreMenu(false)}
-                        >
-                          <Icon className="w-4 h-4" />
-                          {label}
-                        </NavLink>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+            </div>
+            
+            {/* More dropdown */}
+            <div className="dropdown dropdown-end ml-2">
+              <label tabIndex={0} className="btn btn-ghost btn-sm gap-1">
+                <MoreHorizontal className="w-4 h-4" />
+                Más
+              </label>
+              <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-200 rounded-box w-52 border border-base-300">
+                {moreNavItems.map(({ to, label, icon: Icon }) => (
+                  <li key={to}>
+                    <NavLink
+                      to={to}
+                      className={({ isActive }) => isActive ? 'active' : ''}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {label}
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         )}
@@ -252,22 +244,19 @@ export function Layout() {
             <MoreHorizontal className="w-5 h-5" />
             <span className="text-[10px]">Más</span>
           </label>
-          {showMoreMenu && (
-            <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-200 rounded-box w-52 border border-base-300 mb-2">
-              {moreNavItems.map(({ to, label, icon: Icon }) => (
-                <li key={to}>
-                  <NavLink
-                    to={to}
-                    className={({ isActive }) => isActive ? 'active' : ''}
-                    onClick={() => setShowMoreMenu(false)}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {label}
-                  </NavLink>
-                </li>
-              ))}
-            </ul>
-          )}
+          <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-200 rounded-box w-52 border border-base-300 mb-2">
+            {moreNavItems.map(({ to, label, icon: Icon }) => (
+              <li key={to}>
+                <NavLink
+                  to={to}
+                  className={({ isActive }) => isActive ? 'active' : ''}
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 

@@ -118,9 +118,9 @@ export function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full max-w-3xl mx-auto w-full px-0 sm:px-4">
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-1">
+      <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-1">
         {showContinueBanner && (
           <div className="hero min-h-full">
             <div className="hero-content text-center">
