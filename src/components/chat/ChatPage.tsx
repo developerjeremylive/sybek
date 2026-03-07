@@ -94,12 +94,13 @@ export function ChatPage() {
   }, [loadHistory]);
 
   const hasMessages = messages.length > 0;
-  // Show "Continúa la conversación" only when:
-  // - There are at least 2 messages (user + assistant completed)
-  // - We're idle (not thinking/responding)
-  // - The last message was from the assistant (isFromMe = true)
   const lastMessage = messages[messages.length - 1];
-  const showContinueBanner = messages.length >= 2 && 
+  
+  // Show welcome screen only when there are NO messages
+  const showWelcome = messages.length === 0;
+  
+  // Show continue banner only when there are messages but waiting for next input
+  const showContinueBanner = messages.length > 0 && 
     orchState === 'idle' && 
     lastMessage?.isFromMe === true;
 
@@ -133,7 +134,7 @@ export function ChatPage() {
           </div>
         )}
 
-        {!showContinueBanner && (
+        {showWelcome && (
           <div className="space-y-6">
             {/* Welcome message */}
             <div className="text-center py-4">
@@ -220,7 +221,10 @@ export function ChatPage() {
           </div>
         )}
 
-        <MessageList messages={messages} />
+        {/* Show messages when there are messages and not showing welcome/continue */}
+        {messages.length > 0 && !showWelcome && (
+          <MessageList messages={messages} />
+        )}
 
         {/* Tool Results Panel - only show when there are tool results */}
         {toolResults.length > 0 && (
