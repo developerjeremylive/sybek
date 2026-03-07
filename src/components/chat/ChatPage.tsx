@@ -19,6 +19,19 @@ import { ToolExecutionDisplay } from './ToolExecutionDisplay.js';
 // Agent templates for prompt carousel
 const AGENT_TEMPLATES = [
     {
+        id: 'general',
+        name: 'Asistente General',
+        agentId: 'general',
+        icon: MessageSquare,
+        color: 'bg-blue-500',
+        prompts: [
+            'Ayúdame a escribir un código para calcular fibonacci',
+            'Explícame qué es una API REST',
+            'Revisa este código y dime cómo mejorarlo',
+            'Ayúdame a escribir tests unitarios',
+        ]
+    },
+    {
         id: 'landing-page',
         name: 'Landing Page',
         agentId: 'landing-page',

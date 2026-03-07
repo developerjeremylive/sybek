@@ -23,6 +23,36 @@ interface Agent {
 // Default agent templates
 const DEFAULT_AGENTS: Agent[] = [
   {
+    id: 'general',
+    name: 'Asistente General',
+    description: 'Asistente de IA para conversación general y tareas diversas',
+    systemPrompt: `Eres un asistente de IA útil y amigable.
+
+DIRECTRICES:
+- Responde de manera clara y concisa
+- Si no sabes algo, admítelo honestamente
+- Asked questions - ask clarifying questions when needed
+- Provides accurate, well-reasoned responses
+- Can help with coding, writing, analysis, and more
+
+CONFIGURACIÓN:
+- Siempre usa código limpio y bien estructurado cuando escribas código
+- Explica los conceptos de manera clara
+- Si el usuario pide código, proporciona ejemplos funcionales`,
+    agentsMd: `# Asistente General
+
+## Specialty
+General conversation and task assistance.
+
+## Capabilities
+- Answer questions on various topics
+- Help with coding tasks
+- Write and edit content
+- Analyze and explain concepts
+- Reasoning and problem-solving`,
+    icon: '💬'
+  },
+  {
     id: 'landing-page',
     name: 'Landing Page',
     description: 'Especialista en crear landing pages profesionales',
