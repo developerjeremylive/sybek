@@ -4,9 +4,7 @@
 
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { Send } from 'lucide-react';
-import { ToolsToggle } from './ToolsToggle.js';
 import { AgentSkillsPanel } from './AgentSkillsPanel.js';
-import { useActiveToolsStore } from '../../stores/active-tools-store.js';
 
 interface Props {
   onSend: (text: string, tools?: string[]) => void;
@@ -17,8 +15,6 @@ interface Props {
 export function ChatInput({ onSend, disabled, initialValue }: Props) {
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const activeTools = useActiveToolsStore((s) => s.activeTools);
-  const toggleTool = useActiveToolsStore((s) => s.toggleTool);
 
   // Set initial value from prop
   useEffect(() => {
@@ -33,8 +29,8 @@ export function ChatInput({ onSend, disabled, initialValue }: Props) {
   function handleSend() {
     const trimmed = text.trim();
     if (!trimmed || disabled) return;
-    // Send with active tools
-    onSend(trimmed, activeTools);
+    // Send message without tools
+    onSend(trimmed);
     setText('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -64,7 +60,6 @@ export function ChatInput({ onSend, disabled, initialValue }: Props) {
       </div>
       <div className="flex items-center gap-2">
         <AgentSkillsPanel />
-        <ToolsToggle activeTools={activeTools} onToggle={toggleTool} />
         <button
           className="btn btn-primary btn-circle"
           onClick={handleSend}

@@ -3,33 +3,16 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef, useState } from 'react';
-import { X, MessageSquare, Globe, FileText, MapPin, Layout, Smartphone, Code, Zap, ChevronLeft, ChevronRight, Copy, Check, Trash2 } from 'lucide-react';
+import { X, MessageSquare, Layout, Smartphone, Code, Zap, ChevronLeft, ChevronRight, Copy, Check, Trash2 } from 'lucide-react';
 import { useOrchestratorStore } from '../../stores/orchestrator-store.js';
 import { MessageList } from './MessageList.js';
 import { ChatInput } from './ChatInput.js';
 import { TypingIndicator } from './TypingIndicator.js';
-import { ToolActivity } from './ToolActivity.js';
 import { ActivityLog } from './ActivityLog.js';
 import { ContextBar } from './ContextBar.js';
 import { ChatActions } from './ChatActions.js';
 import { ChatContextIndicator } from './ChatContextIndicator.js';
 import { ToolResultsPanel } from './ToolResultsPanel.js';
-
-const LineGraphIcon = ({ className }: { className?: string }) => (
-    <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-        aria-hidden="true"
-    >
-        <path d="M3 3v18h18" />
-        <path d="m7 15 4-4 3 3 5-7" />
-    </svg>
-);
 
 // Agent templates for prompt carousel
 const AGENT_TEMPLATES = [
@@ -86,7 +69,6 @@ const AGENT_TEMPLATES = [
 export function ChatPage() {
   const messages = useOrchestratorStore((s) => s.messages);
   const isTyping = useOrchestratorStore((s) => s.isTyping);
-  const toolActivity = useOrchestratorStore((s) => s.toolActivity);
   const activityLog = useOrchestratorStore((s) => s.activityLog);
   const orchState = useOrchestratorStore((s) => s.state);
   const tokenUsage = useOrchestratorStore((s) => s.tokenUsage);
@@ -94,33 +76,16 @@ export function ChatPage() {
   const sendMessage = useOrchestratorStore((s) => s.sendMessage);
   const loadHistory = useOrchestratorStore((s) => s.loadHistory);
   const toolResults = useOrchestratorStore((s) => s.toolResults);
-  const apiResponse = useOrchestratorStore((s) => s.apiResponse);
-  const clearToolResults = useOrchestratorStore((s) => s.clearToolResults);
 
   const [activeSlide, setActiveSlide] = useState(0);
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
-  const [toolResultsOpen, setToolResultsOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
-
-  // When loading (not idle), maximize tool results panel
-  useEffect(() => {
-    if (orchState === 'thinking') {
-      setToolResultsOpen(true);
-    }
-  }, [orchState]);
-
-  // When response arrives (idle), minimize the panel but keep it visible
-  useEffect(() => {
-    if (orchState === 'idle' && toolResults.length > 0) {
-      setToolResultsOpen(false);
-    }
-  }, [orchState, toolResults.length]);
 
   // Load history on mount
   useEffect(() => {
@@ -248,20 +213,14 @@ export function ChatPage() {
 
         <MessageList messages={messages} />
 
-        {/* Tool Results Panel - shows API response and tool results above response */}
-        {(toolResults.length > 0 || apiResponse) && (
+        {/* Tool Results Panel - only show when there are tool results */}
+        {toolResults.length > 0 && (
           <ToolResultsPanel 
-            apiResponse={apiResponse} 
             toolResults={toolResults}
-            isOpen={toolResultsOpen}
-            onToggle={() => setToolResultsOpen(!toolResultsOpen)}
           />
         )}
 
         {isTyping && <TypingIndicator />}
-        {toolActivity && (
-          <ToolActivity tool={toolActivity.tool} status={toolActivity.status} />
-        )}
 
         <div ref={bottomRef} />
       </div>

@@ -17,7 +17,6 @@ interface OrchestratorStoreState {
   // --- reactive state ---
   messages: StoredMessage[];
   isTyping: boolean;
-  toolActivity: { tool: string; status: string } | null;
   activityLog: ThinkingLogEntry[];
   state: OrchestratorState;
   tokenUsage: TokenUsage | null;
@@ -46,7 +45,6 @@ export function getOrchestrator(): Orchestrator {
 export const useOrchestratorStore = create<OrchestratorStoreState>((set, get) => ({
   messages: [],
   isTyping: false,
-  toolActivity: null,
   activityLog: [],
   state: 'idle',
   tokenUsage: null,
@@ -98,12 +96,6 @@ export async function initOrchestratorStore(orch: Orchestrator): Promise<void> {
     store.setState({ isTyping: typing });
   });
 
-  orch.events.on('tool-activity', ({ tool, status }) => {
-    store.setState({
-      toolActivity: status === 'running' ? { tool, status } : null,
-    });
-  });
-
   orch.events.on('thinking-log', (entry) => {
     store.setState((s) => {
       // Reset log when a new invocation starts
@@ -116,9 +108,6 @@ export async function initOrchestratorStore(orch: Orchestrator): Promise<void> {
 
   orch.events.on('state-change', (state) => {
     store.setState({ state });
-    if (state === 'idle') {
-      store.setState({ toolActivity: null });
-    }
   });
 
   orch.events.on('error', ({ error }) => {
@@ -138,7 +127,6 @@ export async function initOrchestratorStore(orch: Orchestrator): Promise<void> {
       messages: [],
       activityLog: [],
       tokenUsage: null,
-      toolActivity: null,
       isTyping: false,
       toolResults: [],
       apiResponse: '',
