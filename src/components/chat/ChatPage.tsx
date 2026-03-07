@@ -13,8 +13,7 @@ import { ContextBar } from './ContextBar.js';
 import { ChatActions } from './ChatActions.js';
 import { ChatContextIndicator } from './ChatContextIndicator.js';
 import { ToolResultsPanel } from './ToolResultsPanel.js';
-import { SystemPromptFloating } from './SystemPromptFloating.js';
-import { ActiveAgentEditor } from './ActiveAgentEditor.js';
+import { AgentEditorFloating } from './AgentEditorFloating.js';
 
 // Agent templates for prompt carousel
 const AGENT_TEMPLATES = [
@@ -277,11 +276,8 @@ export function ChatPage() {
         window.location.reload();
       }} />
 
-      {/* System Prompt Floating Component */}
-      <SystemPromptFloating />
-      
-      {/* Active Agent Editor Component */}
-      <ActiveAgentEditor />
+      {/* Agent Editor Floating Component */}
+      <AgentEditorFloating />
     </div>
   );
 }
