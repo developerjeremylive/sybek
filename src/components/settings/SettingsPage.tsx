@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import {
   Palette, KeyRound, Eye, EyeOff, Bot, MessageSquare,
-  Smartphone, HardDrive, Lock, Check, Zap,
+  Smartphone, HardDrive, Lock, Check,
 } from 'lucide-react';
 import { getConfig, setConfig } from '../../db.js';
 import { CONFIG_KEYS, MODELS } from '../../config.js';
@@ -125,175 +125,207 @@ export function SettingsPage() {
   const storagePercent = storageQuota > 0 ? (storageUsage / storageQuota) * 100 : 0;
 
   return (
-    <div className="h-full overflow-y-auto p-4 sm:p-6 max-w-3xl mx-auto space-y-4">
-      {/* V2 Notification Toast */}
-      {showV2Notification && (
-        <div className="fixed top-4 right-4 z-50 animate-slide-in">
-          <div className="bg-gradient-to-r from-amber-500/90 to-orange-500/90 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
-            <Zap className="w-5 h-5" />
-            <span className="font-medium">Anthropic API key feature coming in version 2.0</span>
-          </div>
+    <div className="h-full overflow-y-auto p-2 sm:p-4 max-w-2xl mx-auto space-y-3 sm:space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
+          <Palette className="w-5 h-5 text-white" />
         </div>
-      )}
-
-      <h2 className="text-xl font-bold mb-4">Settings</h2>
-
-      {/* ---- Theme ---- */}
-      <div className="card card-bordered bg-base-200">
-        <div className="card-body p-4 sm:p-6 gap-3">
-          <h3 className="card-title text-base gap-2"><Palette className="w-4 h-4" /> Appearance</h3>
-          <fieldset className="fieldset">
-            <legend className="fieldset-legend">Theme</legend>
-            <select
-              className="select select-bordered select-sm w-full"
-              value={theme}
-              onChange={(e) => setTheme(e.target.value as ThemeChoice)}
-            >
-              <option value="system">System</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
-          </fieldset>
+        <div>
+          <h2 className="text-lg sm:text-xl font-bold">Configuración</h2>
+          <p className="text-xs sm:text-sm opacity-50">Personaliza tu experiencia</p>
         </div>
       </div>
 
-      {/* ---- API Key ---- */}
-      <div className="card card-bordered bg-base-200">
-        <div className="card-body p-4 sm:p-6 gap-3">
-          <h3 className="card-title text-base gap-2"><KeyRound className="w-4 h-4" /> Anthropic API Key</h3>
-          <div className="flex gap-2">
+      {/* Section: Apariencia */}
+      <section className="space-y-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider opacity-40 px-1 flex items-center gap-2">
+          <Palette className="w-3 h-3" /> Apariencia
+        </h3>
+        <div className="card bg-base-200 shadow-sm">
+          <div className="card-body p-3 sm:p-4 gap-3">
+            <label className="flex items-center justify-between cursor-pointer">
+              <span className="font-medium text-sm">Tema</span>
+              <select
+                className="select select-bordered select-sm w-28"
+                value={theme}
+                onChange={(e) => setTheme(e.target.value as ThemeChoice)}
+              >
+                <option value="system">Sistema</option>
+                <option value="light">Claro</option>
+                <option value="dark">Oscuro</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      {/* Section: Modelo */}
+      <section className="space-y-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider opacity-40 px-1 flex items-center gap-2">
+          <Bot className="w-3 h-3" /> Modelo de IA
+        </h3>
+        <div className="card bg-base-200 shadow-sm">
+          <div className="card-body p-3 sm:p-4 gap-3">
+            <ModelSelector />
+          </div>
+        </div>
+      </section>
+
+      {/* Section: Asistente */}
+      <section className="space-y-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider opacity-40 px-1 flex items-center gap-2">
+          <MessageSquare className="w-3 h-3" /> Asistente
+        </h3>
+        <div className="card bg-base-200 shadow-sm">
+          <div className="card-body p-3 sm:p-4 gap-3">
+            <label className="form-control">
+              <span className="label-text text-sm mb-1">Nombre del asistente</span>
+              <input
+                type="text"
+                className="input input-bordered input-sm w-full"
+                placeholder="Andy"
+                value={assistantName}
+                onChange={(e) => setAssistantName(e.target.value)}
+                onBlur={handleNameSave}
+              />
+            </label>
+            <p className="text-xs opacity-40">
+              Menciona @{assistantName} para activar una respuesta
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Section: API Keys */}
+      <section className="space-y-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider opacity-40 px-1 flex items-center gap-2">
+          <KeyRound className="w-3 h-3" /> API Keys
+        </h3>
+        
+        {/* Anthropic API */}
+        <div className="card bg-base-200 shadow-sm">
+          <div className="card-body p-3 sm:p-4 gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-sm">Anthropic API</span>
+                <span className="badge badge-outline badge-xs">Opcional</span>
+              </div>
+              <button
+                className="btn btn-ghost btn-xs"
+                onClick={() => setApiKeyMasked(!apiKeyMasked)}
+              >
+                {apiKeyMasked ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              </button>
+            </div>
             <input
               type={apiKeyMasked ? 'password' : 'text'}
-              className="input input-bordered input-sm w-full flex-1 font-mono"
+              className="input input-bordered input-sm w-full font-mono text-xs"
               placeholder="sk-ant-..."
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
             />
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => setApiKeyMasked(!apiKeyMasked)}
-            >
-              {apiKeyMasked ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={handleSaveApiKey}
-              disabled={!apiKey.trim()}
-            >
-              Save
-            </button>
-            {apiKeySaved && (
-              <span className="text-success text-sm flex items-center gap-1"><Check className="w-4 h-4" /> Saved</span>
-            )}
-          </div>
-          <p className="text-xs opacity-50">
-            Your API key is encrypted and stored locally. It never leaves your browser.
-          </p>
-        </div>
-      </div>
-
-      {/* ---- Model ---- */}
-      <div className="card card-bordered bg-base-200">
-        <div className="card-body p-4 sm:p-6 gap-3">
-          <h3 className="card-title text-base gap-2"><Bot className="w-4 h-4" /> Model</h3>
-          <ModelSelector />
-        </div>
-      </div>
-
-      {/* ---- Assistant Name ---- */}
-      <div className="card card-bordered bg-base-200">
-        <div className="card-body p-4 sm:p-6 gap-3">
-          <h3 className="card-title text-base gap-2"><MessageSquare className="w-4 h-4" /> Assistant Name</h3>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              className="input input-bordered input-sm flex-1"
-              placeholder="Andy"
-              value={assistantName}
-              onChange={(e) => setAssistantName(e.target.value)}
-              onBlur={handleNameSave}
-            />
-          </div>
-          <p className="text-xs opacity-50">
-            The name used for the assistant. Mention @{assistantName} to trigger a response.
-          </p>
-        </div>
-      </div>
-
-      {/* ---- Telegram ---- */}
-      <div className="card card-bordered bg-base-200">
-        <div className="card-body p-4 sm:p-6 gap-3">
-          <h3 className="card-title text-base gap-2"><Smartphone className="w-4 h-4" /> Telegram Bot</h3>
-          <fieldset className="fieldset">
-            <legend className="fieldset-legend">Bot Token</legend>
-            <input
-              type="password"
-              className="input input-bordered input-sm w-full font-mono"
-              placeholder="123456:ABC-DEF..."
-              value={telegramToken}
-              onChange={(e) => setTelegramToken(e.target.value)}
-            />
-          </fieldset>
-          <fieldset className="fieldset">
-            <legend className="fieldset-legend">Allowed Chat IDs</legend>
-            <input
-              type="text"
-              className="input input-bordered input-sm w-full font-mono"
-              placeholder="-100123456, 789012"
-              value={telegramChatIds}
-              onChange={(e) => setTelegramChatIds(e.target.value)}
-            />
-            <p className="fieldset-label opacity-60">Comma-separated chat IDs</p>
-          </fieldset>
-          <div className="flex items-center gap-2">
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={handleTelegramSave}
-              disabled={!telegramToken.trim()}
-            >
-              Save Telegram Config
-            </button>
-            {telegramSaved && (
-              <span className="text-success text-sm flex items-center gap-1"><Check className="w-4 h-4" /> Saved</span>
-            )}
+            <div className="flex items-center justify-between">
+              <p className="text-xs opacity-40">
+                Se encripta y guarda localmente
+              </p>
+              <div className="flex items-center gap-2">
+                {apiKeySaved && (
+                  <span className="text-success text-xs flex items-center gap-1">
+                    <Check className="w-3 h-3" /> Guardado
+                  </span>
+                )}
+                <button
+                  className="btn btn-primary btn-xs"
+                  onClick={handleSaveApiKey}
+                  disabled={!apiKey.trim()}
+                >
+                  Guardar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* ---- Storage ---- */}
-      <div className="card card-bordered bg-base-200">
-        <div className="card-body p-4 sm:p-6 gap-3">
-          <h3 className="card-title text-base gap-2"><HardDrive className="w-4 h-4" /> Storage</h3>
-          <div>
-            <div className="flex items-center justify-between text-sm mb-1">
-              <span>{formatBytes(storageUsage)} used</span>
-              <span className="opacity-60">
-                of {formatBytes(storageQuota)}
-              </span>
+        {/* Telegram */}
+        <div className="card bg-base-200 shadow-sm">
+          <div className="card-body p-3 sm:p-4 gap-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Smartphone className="w-4 h-4 text-primary" />
+              <span className="font-medium text-sm">Telegram Bot</span>
+            </div>
+            <label className="form-control">
+              <span className="label-text text-xs mb-1">Bot Token</span>
+              <input
+                type="password"
+                className="input input-bordered input-sm w-full font-mono text-xs"
+                placeholder="123456:ABC-DEF..."
+                value={telegramToken}
+                onChange={(e) => setTelegramToken(e.target.value)}
+              />
+            </label>
+            <label className="form-control">
+              <span className="label-text text-xs mb-1">Chat IDs</span>
+              <input
+                type="text"
+                className="input input-bordered input-sm w-full font-mono text-xs"
+                placeholder="-100123456, 789012"
+                value={telegramChatIds}
+                onChange={(e) => setTelegramChatIds(e.target.value)}
+              />
+              <span className="label-text-alt opacity-40">Separados por coma</span>
+            </label>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              {telegramSaved && (
+                <span className="text-success text-xs flex items-center gap-1">
+                  <Check className="w-3 h-3" /> Guardado
+                </span>
+              )}
+              <button
+                className="btn btn-primary btn-xs"
+                onClick={handleTelegramSave}
+                disabled={!telegramToken.trim()}
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section: Almacenamiento */}
+      <section className="space-y-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider opacity-40 px-1 flex items-center gap-2">
+          <HardDrive className="w-3 h-3" /> Almacenamiento
+        </h3>
+        <div className="card bg-base-200 shadow-sm">
+          <div className="card-body p-3 sm:p-4 gap-3">
+            <div className="flex items-center justify-between text-sm">
+              <span>Uso</span>
+              <span className="opacity-60">{formatBytes(storageUsage)} / {formatBytes(storageQuota)}</span>
             </div>
             <progress
-              className="progress progress-primary w-full h-2"
+              className="progress progress-primary h-2"
               value={storagePercent}
               max={100}
             />
-          </div>
-          {!isPersistent && (
-            <button
-              className="btn btn-outline btn-sm"
-              onClick={handleRequestPersistent}
-            >
-              <Lock className="w-4 h-4" /> Request Persistent Storage
-            </button>
-          )}
-          {isPersistent && (
-            <div className="badge badge-success badge-sm gap-1.5">
-              <Lock className="w-3 h-3" /> Persistent storage active
+            <div className="flex items-center justify-between pt-2">
+              {isPersistent ? (
+                <div className="badge badge-success gap-1.5 text-xs">
+                  <Lock className="w-3 h-3" /> Persistente activo
+                </div>
+              ) : (
+                <button
+                  className="btn btn-outline btn-xs"
+                  onClick={handleRequestPersistent}
+                >
+                  <Lock className="w-3 h-3" /> Solicitar persistente
+                </button>
+              )}
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
