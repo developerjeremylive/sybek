@@ -21,8 +21,8 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
 
   if (!isLong) {
     return (
-      <pre className="bg-slate-800 p-3 rounded-lg overflow-x-auto my-2 text-xs">
-        <code className="text-cyan-300 font-mono">{code}</code>
+      <pre className="bg-base-300 p-3 rounded-lg overflow-x-auto my-2 text-xs">
+        <code className="text-base-content font-mono">{code}</code>
       </pre>
     );
   }
@@ -31,20 +31,20 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
     <div className="my-2">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-purple-500/20 border border-purple-500/30 rounded-t-lg hover:bg-purple-500/30 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2 bg-base-300 border border-base-content/20 rounded-t-lg hover:bg-base-content/10 transition-colors"
       >
-        <span className="text-xs text-purple-300 font-mono">
+        <span className="text-xs text-base-content/70 font-mono">
           📄 Código {language ? `(${language})` : ''} • Click para {isExpanded ? 'colapsar' : 'expandir'}
         </span>
         {isExpanded ? (
-          <ChevronUp className="w-4 h-4 text-purple-400" />
+          <ChevronUp className="w-4 h-4" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-purple-400" />
+          <ChevronDown className="w-4 h-4" />
         )}
       </button>
       {isExpanded && (
-        <pre className="bg-slate-900 p-3 border border-purple-500/30 rounded-b-lg overflow-x-auto text-xs">
-          <code className="text-cyan-300 font-mono">{code}</code>
+        <pre className="bg-base-300 p-3 border border-base-content/20 rounded-b-lg overflow-x-auto text-xs">
+          <code className="text-base-content font-mono">{code}</code>
         </pre>
       )}
     </div>
@@ -113,7 +113,7 @@ export function MessageBubble({ message }: Props) {
           {senderName}
           <time className="ml-2">{formatTime(message.timestamp)}</time>
         </div>
-        <div className={`chat-bubble ${isAssistant ? 'bg-base-200 text-base-content' : 'chat-bubble-primary'}`}>
+        <div className={`chat-bubble ${isAssistant ? 'bg-base-200 text-base-content' : 'bg-base-300 text-base-content'}`}>
           <div className="prose prose-sm max-w-none">
             {contentParts.map((part, i) => (
               part.type === 'code' ? (
@@ -123,7 +123,7 @@ export function MessageBubble({ message }: Props) {
                   __html: part.content
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                     .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                    .replace(/`(.*?)`/g, '<code class="bg-base-300/50 px-1 rounded text-sm">$1</code>')
+                    .replace(/`(.*?)`/g, '<code class="bg-base-100 px-1 rounded text-sm font-mono">$1</code>')
                     .replace(/\n/g, '<br/>')
                 }} />
               )
