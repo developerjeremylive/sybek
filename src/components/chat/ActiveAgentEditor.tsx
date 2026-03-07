@@ -30,22 +30,33 @@ export function ActiveAgentEditor() {
   const [showDropdown, setShowDropdown] = useState(false);
 
   // Load active agent data
+  // Also poll for changes to stay synced with AgentsPage
   useEffect(() => {
     async function load() {
-      const activeAgent = await getConfig(CONFIG_KEYS.USE_AGENTS_FILE);
+      let activeAgent = await getConfig(CONFIG_KEYS.USE_AGENTS_FILE);
       const systemPrompt = await getConfig(CONFIG_KEYS.SYSTEM_PROMPT);
       
-      if (activeAgent) {
-        setActiveAgentId(activeAgent);
-        const agent = DEFAULT_AGENTS.find(a => a.id === activeAgent);
-        setAgentName(agent?.name || activeAgent);
+      // Default to landing-page if no agent selected
+      if (!activeAgent) {
+        activeAgent = 'landing-page';
+        await setConfig(CONFIG_KEYS.USE_AGENTS_FILE, activeAgent);
       }
       
-      if (systemPrompt) {
+      setActiveAgentId(activeAgent);
+      const agent = DEFAULT_AGENTS.find(a => a.id === activeAgent);
+      setAgentName(agent?.name || activeAgent);
+      
+      // Only set system prompt if it's explicitly set (not null/empty)
+      // Otherwise leave the editor empty for user to fill
+      if (systemPrompt && systemPrompt.trim() !== '') {
         setAgentSystemPrompt(systemPrompt);
       }
     }
     load();
+    
+    // Poll every 2 seconds to stay synced with AgentsPage
+    const interval = setInterval(load, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   // Save agent and system prompt

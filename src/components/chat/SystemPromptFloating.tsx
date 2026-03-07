@@ -21,21 +21,31 @@ export function SystemPromptFloating({ onClose }: SystemPromptFloatingProps) {
   const [copied, setCopied] = useState(false);
 
   // Load current system prompt and active agent
+  // Also poll for changes to stay synced with AgentsPage
   useEffect(() => {
     async function load() {
+      let activeAgent = await getConfig(CONFIG_KEYS.USE_AGENTS_FILE);
       const prompt = await getConfig(CONFIG_KEYS.SYSTEM_PROMPT);
-      const activeAgent = await getConfig(CONFIG_KEYS.USE_AGENTS_FILE);
       
-      if (prompt) {
-        setSystemPrompt(prompt);
+      // Default to landing-page if no agent selected
+      if (!activeAgent) {
+        activeAgent = 'landing-page';
+        await setConfig(CONFIG_KEYS.USE_AGENTS_FILE, activeAgent);
       }
       
-      if (activeAgent) {
-        setActiveAgentId(activeAgent);
-        setActiveAgentName(activeAgent.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
+      setActiveAgentId(activeAgent);
+      setActiveAgentName(activeAgent.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
+      
+      // Only set system prompt if it's explicitly set
+      if (prompt && prompt.trim() !== '') {
+        setSystemPrompt(prompt);
       }
     }
     load();
+    
+    // Poll every 2 seconds to stay synced with AgentsPage
+    const interval = setInterval(load, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   // Save system prompt
