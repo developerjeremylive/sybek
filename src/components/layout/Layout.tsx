@@ -4,7 +4,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router';
-import { MessageSquare, FolderOpen, Clock, Settings, LayoutGrid, Wrench, GripVertical, Bot } from 'lucide-react';
+import { MessageSquare, FolderOpen, Clock, Settings, LayoutGrid, Wrench, GripVertical, Bot, MoreHorizontal } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle.js';
 import { FileViewerModal } from '../files/FileViewerModal.js';
 import { useFileViewerStore } from '../../stores/file-viewer-store.js';
@@ -13,11 +13,14 @@ import { ChatPage } from '../chat/ChatPage.js';
 import { FilesPage } from '../files/FilesPage.js';
 import { AgentsPage } from '../agents/AgentsPage.js';
 
-const navItems = [
+const mainNavItems = [
   { to: '/chat', label: 'Chat', icon: MessageSquare },
   { to: '/files', label: 'Files', icon: FolderOpen },
-  { to: '/tasks', label: 'Tasks', icon: Clock },
   { to: '/agents', label: 'Agents', icon: Bot },
+] as const;
+
+const moreNavItems = [
+  { to: '/tasks', label: 'Tasks', icon: Clock },
   { to: '/skills', label: 'Skills', icon: Wrench },
   { to: '/settings', label: 'Settings', icon: Settings },
 ] as const;
@@ -82,6 +85,7 @@ export function Layout() {
   const viewerFile = useFileViewerStore((s) => s.file);
   const closeFile = useFileViewerStore((s) => s.closeFile);
   const { columns, columnWidths, setColumns, setColumnWidths } = useLayoutStore();
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Handle column resize
   const handleResize = (index: number, delta: number) => {
@@ -138,9 +142,9 @@ export function Layout() {
 
         {/* Desktop tabs - only show in 1 column mode */}
         {showTabs && (
-          <div className="navbar-end flex">
+          <div className="navbar-end flex items-center">
             <div role="tablist" className="tabs tabs-box">
-              {navItems.map(({ to, label, icon: Icon }) => (
+              {mainNavItems.map(({ to, label, icon: Icon }) => (
                 <NavLink
                   key={to}
                   to={to}
@@ -153,6 +157,34 @@ export function Layout() {
                   {label}
                 </NavLink>
               ))}
+              
+              {/* More dropdown */}
+              <div className="dropdown dropdown-end">
+                <button
+                  tabIndex={0}
+                  className="tab gap-1.5 btn-ghost"
+                  onClick={() => setShowMoreMenu(!showMoreMenu)}
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                  Más
+                </button>
+                {showMoreMenu && (
+                  <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-200 rounded-box w-52 border border-base-300 mt-2">
+                    {moreNavItems.map(({ to, label, icon: Icon }) => (
+                      <li key={to}>
+                        <NavLink
+                          to={to}
+                          className={({ isActive }) => isActive ? 'active' : ''}
+                          onClick={() => setShowMoreMenu(false)}
+                        >
+                          <Icon className="w-4 h-4" />
+                          {label}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -203,7 +235,7 @@ export function Layout() {
 
       {/* ---- Mobile bottom nav ---- */}
       <div className="dock sm:hidden">
-        {navItems.map(({ to, label, icon: Icon }) => (
+        {mainNavItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
@@ -213,6 +245,30 @@ export function Layout() {
             <span className="dock-label">{label}</span>
           </NavLink>
         ))}
+        
+        {/* More button for mobile */}
+        <div className="dropdown dropdown-top dropdown-end">
+          <label tabIndex={0} className="dock-label flex flex-col items-center gap-0.5 cursor-pointer">
+            <MoreHorizontal className="w-5 h-5" />
+            <span className="text-[10px]">Más</span>
+          </label>
+          {showMoreMenu && (
+            <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-200 rounded-box w-52 border border-base-300 mb-2">
+              {moreNavItems.map(({ to, label, icon: Icon }) => (
+                <li key={to}>
+                  <NavLink
+                    to={to}
+                    className={({ isActive }) => isActive ? 'active' : ''}
+                    onClick={() => setShowMoreMenu(false)}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       {/* ---- Global file viewer modal ---- */}
