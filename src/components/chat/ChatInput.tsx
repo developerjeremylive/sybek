@@ -4,7 +4,8 @@
 
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { Send, Wrench, X, Bot } from 'lucide-react';
-import { MODELS, getConfig, setConfig } from '../../config.js';
+import { MODELS } from '../../config.js';
+import { getConfig, setConfig } from '../../db.js';
 import type { LucideIcon } from 'lucide-react';
 
 interface Props {
