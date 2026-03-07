@@ -84,15 +84,6 @@ function getKindBgColor(kind: string): string {
 export function ActivityLog({ entries }: Props) {
   const [open, setOpen] = useState(false);
   const [expandedDetails, setExpandedDetails] = useState<Set<number>>(new Set());
-  const [prevLength, setPrevLength] = useState(0);
-
-  // Auto-open when new entries arrive
-  useEffect(() => {
-    if (entries.length > prevLength) {
-      setOpen(true);
-    }
-    setPrevLength(entries.length);
-  }, [entries.length, prevLength]);
 
   // Get last 15 entries
   const recentEntries = entries.slice(-15);

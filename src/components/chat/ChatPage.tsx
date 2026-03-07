@@ -93,8 +93,14 @@ export function ChatPage() {
   }, [loadHistory]);
 
   const hasMessages = messages.length > 0;
-  // Show "Continúa la conversación" only when there are messages AND we're idle (not thinking)
-  const showContinueBanner = hasMessages && orchState === 'idle';
+  // Show "Continúa la conversación" only when:
+  // - There are at least 2 messages (user + assistant completed)
+  // - We're idle (not thinking/responding)
+  // - The last message was from the assistant (isFromMe = true)
+  const lastMessage = messages[messages.length - 1];
+  const showContinueBanner = messages.length >= 2 && 
+    orchState === 'idle' && 
+    lastMessage?.isFromMe === true;
 
   function handleSelectPrompt(prompt: string) {
     setInputValue(prompt);
