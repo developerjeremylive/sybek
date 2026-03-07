@@ -14,6 +14,7 @@ import { ChatActions } from './ChatActions.js';
 import { ChatContextIndicator } from './ChatContextIndicator.js';
 import { ToolResultsPanel } from './ToolResultsPanel.js';
 import { AgentEditorFloating } from './AgentEditorFloating.js';
+import { ToolExecutionDisplay } from './ToolExecutionDisplay.js';
 
 // Agent templates for prompt carousel
 const AGENT_TEMPLATES = [
@@ -81,6 +82,20 @@ export function ChatPage() {
   const sendMessage = useOrchestratorStore((s) => s.sendMessage);
   const loadHistory = useOrchestratorStore((s) => s.loadHistory);
   const toolResults = useOrchestratorStore((s) => s.toolResults);
+  
+  // Track tool executions for futuristic display
+  const [toolExecutions, setToolExecutions] = useState<Array<{id: string; tool: string; status: 'done'; result?: string; timestamp: number}>>([]);
+  
+  useEffect(() => {
+    const executions = toolResults.map((tr, idx) => ({
+      id: `${tr.tool}-${idx}`,
+      tool: tr.tool,
+      status: 'done' as const,
+      result: tr.result?.slice(0, 500),
+      timestamp: Date.now() - (toolResults.length - idx) * 1000,
+    }));
+    setToolExecutions(executions);
+  }, [toolResults]);
 
   const [activeSlide, setActiveSlide] = useState(0);
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
@@ -280,6 +295,11 @@ export function ChatPage() {
         {/* Show messages when there are messages and not showing welcome/continue */}
         {messages.length > 0 && !showWelcome && (
           <MessageList messages={messages} />
+        )}
+
+        {/* Futuristic Tool Execution Display */}
+        {toolExecutions.length > 0 && (
+          <ToolExecutionDisplay tools={toolExecutions} />
         )}
 
         {/* Tool Results Panel - only show when there are tool results */}

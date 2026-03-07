@@ -158,6 +158,7 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
       }
       case 'write_file': {
         await writeGroupFile(groupId, input.path, input.content);
+        log(groupId, 'file-saved', 'Archivo guardado', input.path);
         return `File saved: ${input.path}`;
       }
       case 'list_files': {
