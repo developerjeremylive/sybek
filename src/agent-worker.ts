@@ -646,6 +646,15 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       
       log(groupId, 'text', 'Response', responseContent.slice(0, 200));
       
+      // Detect MCP Tools in response and log them
+      const mcpToolMatches = responseContent.match(/MCP Tool[s]?[:\s]+(\w+)/gi);
+      if (mcpToolMatches) {
+        const uniqueMcpTools = [...new Set(mcpToolMatches.map(m => m.split(/[:\s]+/).pop()))];
+        for (const toolName of uniqueMcpTools) {
+          log(groupId, 'mcp-tool', 'MCP Tool', `Used: ${toolName}`);
+        }
+      }
+      
       // Send API response to store for UI display
       post({ type: 'api-response', payload: { groupId, response: responseContent.slice(0, 2000) } });
 

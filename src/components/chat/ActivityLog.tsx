@@ -24,6 +24,7 @@ const kindIcons: Record<string, LucideIcon> = {
   'file-error': X,
   'file-created': FolderPlus,
   'file-updated': FileCode,
+  'mcp-tool': Sparkles,
 };
 
 const kindLabels: Record<string, string> = {
@@ -36,6 +37,7 @@ const kindLabels: Record<string, string> = {
   'file-error': 'Error de archivo',
   'file-created': 'Archivo creado',
   'file-updated': 'Archivo actualizado',
+  'mcp-tool': 'MCP Tool',
 };
 
 function formatTime(ts: number): string {
@@ -58,6 +60,8 @@ function getKindColor(kind: string): string {
       return 'text-info';
     case 'api-call':
       return 'text-primary';
+    case 'mcp-tool':
+      return 'text-purple-500';
     default:
       return 'text-base-content/70';
   }
@@ -76,6 +80,8 @@ function getKindBgColor(kind: string): string {
       return 'bg-info/10';
     case 'api-call':
       return 'bg-primary/10';
+    case 'mcp-tool':
+      return 'bg-purple-500/10';
     default:
       return 'bg-base-300/30';
   }
