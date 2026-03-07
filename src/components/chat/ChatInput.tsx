@@ -6,7 +6,7 @@ import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { Send, Wrench, X, Bot } from 'lucide-react';
 import { MODELS, CONFIG_KEYS } from '../../config.js';
 import { getConfig } from '../../db.js';
-import { useOrchestratorStore } from '../../stores/orchestrator-store.js';
+import { getOrchestrator } from '../../stores/orchestrator-store.js';
 import type { LucideIcon } from 'lucide-react';
 
 interface Props {
@@ -32,7 +32,6 @@ function ModelSelector() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedModel, setSelectedModel] = useState(MODELS[0].value);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const orch = useOrchestratorStore.getState();
 
   useEffect(() => {
     async function loadModel() {
@@ -55,7 +54,7 @@ function ModelSelector() {
   async function selectModel(model: string) {
     setSelectedModel(model);
     // Use orchestrator to set model (syncs with settings)
-    await orch.setModel(model);
+    await getOrchestrator().setModel(model);
     setShowDropdown(false);
   }
 
