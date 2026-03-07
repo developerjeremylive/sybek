@@ -43,6 +43,8 @@ const ALL_TOOLS = [...NATIVE_TOOLS, ...WORKERS_AI_TOOLS];
 export function ModelSelector() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedModel, setSelectedModel] = useState(MODELS[0].value);
+  const [showToast, setShowToast] = useState(false);
+  const [toastModelName, setToastModelName] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,16 +66,30 @@ export function ModelSelector() {
   }, []);
 
   async function selectModel(model: string) {
+    const modelLabel = MODELS.find(m => m.value === model)?.label || model;
     setSelectedModel(model);
-    // Use orchestrator to set model (syncs with settings)
     await getOrchestrator().setModel(model);
     setShowDropdown(false);
+    // Show toast
+    setToastModelName(modelLabel);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
   }
 
   const currentLabel = MODELS.find(m => m.value === selectedModel)?.label || selectedModel;
 
   return (
-    <div className="relative shrink-0" ref={dropdownRef}>
+    <div className="relative" ref={dropdownRef}>
+      {/* Toast notification */}
+      {showToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-slide-in sm:hidden">
+          <div className="bg-gradient-to-r from-success/90 to-primary/90 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 text-sm">
+            <Check className="w-4 h-4" />
+            <span>Modelo: <strong>{toastModelName}</strong></span>
+          </div>
+        </div>
+      )}
+      
       <button
         onClick={() => setShowDropdown(!showDropdown)}
         className="flex items-center gap-1.5 px-2 py-1.5 bg-base-200 hover:bg-base-300 rounded-lg text-xs transition-colors border border-base-300"
@@ -81,10 +97,12 @@ export function ModelSelector() {
       >
         <Bot className="w-3.5 h-3.5 text-primary" />
         <span className="hidden sm:inline max-w-[80px] truncate">{currentLabel}</span>
+        <span className="sm:hidden">Modelo</span>
       </button>
       
+      {/* Desktop dropdown */}
       {showDropdown && (
-        <div className="absolute bottom-full mb-2 left-0 bg-base-100 border border-base-300 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto w-48">
+        <div className="hidden sm:block absolute bottom-full mb-2 left-0 bg-base-100 border border-base-300 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto w-48">
           {MODELS.map((model) => (
             <button
               key={model.value}
@@ -98,6 +116,52 @@ export function ModelSelector() {
               {model.premium && <span className="badge badge-xs badge-warning shrink-0">Premium</span>}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Mobile bottom sheet */}
+      {showDropdown && (
+        <div className="sm:hidden fixed inset-0 z-50">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setShowDropdown(false)}
+          />
+          {/* Bottom sheet */}
+          <div className="absolute bottom-0 left-0 right-0 bg-base-100 rounded-t-2xl shadow-2xl max-h-[70vh] overflow-hidden animate-slide-in-up">
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-12 h-1.5 bg-base-300 rounded-full" />
+            </div>
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-base-300">
+              <span className="font-bold">Seleccionar Modelo</span>
+              <button 
+                onClick={() => setShowDropdown(false)}
+                className="btn btn-ghost btn-sm btn-circle"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {/* Options */}
+            <div className="overflow-y-auto max-h-[50vh] p-2">
+              {MODELS.map((model) => (
+                <button
+                  key={model.value}
+                  onClick={() => !model.premium && selectModel(model.value)}
+                  disabled={model.premium}
+                  className={`w-full text-left px-4 py-3 rounded-lg mb-1 flex items-center justify-between gap-2 ${
+                    selectedModel === model.value 
+                      ? 'bg-primary/20 text-primary border border-primary/30' 
+                      : 'hover:bg-base-200'
+                  } ${model.premium ? 'opacity-40' : ''}`}
+                >
+                  <span className="font-medium">{model.label}</span>
+                  {model.premium && <span className="badge badge-warning badge-sm">Premium</span>}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
