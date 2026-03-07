@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
-import { Send, Wrench, X, Bot } from 'lucide-react';
+import { Send, Wrench, X, Bot, Check } from 'lucide-react';
 import { MODELS, CONFIG_KEYS } from '../../config.js';
 import { getConfig } from '../../db.js';
 import { getOrchestrator } from '../../stores/orchestrator-store.js';
