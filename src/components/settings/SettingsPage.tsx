@@ -38,6 +38,7 @@ export function SettingsPage() {
 
   // Assistant name
   const [assistantName, setAssistantName] = useState(orch.getAssistantName());
+  const [nameSaved, setNameSaved] = useState(false);
 
   // Telegram
   const [telegramToken, setTelegramToken] = useState('');
@@ -105,6 +106,8 @@ export function SettingsPage() {
 
   async function handleNameSave() {
     await orch.setAssistantName(assistantName.trim());
+    setNameSaved(true);
+    setTimeout(() => setNameSaved(false), 3000);
   }
 
   async function handleTelegramSave() {
@@ -136,6 +139,16 @@ export function SettingsPage() {
           <p className="text-xs sm:text-sm opacity-50">Personaliza tu experiencia</p>
         </div>
       </div>
+
+      {/* Toast notifications */}
+      {nameSaved && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-slide-in">
+          <div className="bg-gradient-to-r from-success/90 to-primary/90 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <Check className="w-5 h-5" />
+            <span className="font-medium">¡Listo! Ahora el asistente se llamará <strong>{assistantName}</strong></span>
+          </div>
+        </div>
+      )}
 
       {/* Section: Apariencia */}
       <section className="space-y-2">

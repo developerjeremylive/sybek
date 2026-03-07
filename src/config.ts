@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 /** Default assistant name (used in trigger pattern) */
-export const ASSISTANT_NAME = 'Andy';
+export const ASSISTANT_NAME = 'Sybek';
 
 /** Trigger pattern — messages must match this to invoke the agent */
 export function buildTriggerPattern(name: string): RegExp {
