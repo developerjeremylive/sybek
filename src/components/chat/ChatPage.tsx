@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef, useState } from 'react';
-import { X, MessageSquare, Layout, Smartphone, Code, Zap, ChevronLeft, ChevronRight, Copy, Check, Trash2 } from 'lucide-react';
+import { X, MessageSquare, Layout, Smartphone, Code, Zap, ChevronLeft, ChevronRight, Copy, Check, Trash2, Bot, Save } from 'lucide-react';
 import { useOrchestratorStore } from '../../stores/orchestrator-store.js';
 import { MessageList } from './MessageList.js';
 import { ChatInput } from './ChatInput.js';
@@ -20,6 +20,7 @@ const AGENT_TEMPLATES = [
     {
         id: 'landing-page',
         name: 'Landing Page',
+        agentId: 'landing-page',
         icon: Layout,
         color: 'bg-orange-500',
         prompts: [
@@ -32,6 +33,7 @@ const AGENT_TEMPLATES = [
     {
         id: 'pwa',
         name: 'PWA',
+        agentId: 'pwa',
         icon: Smartphone,
         color: 'bg-blue-500',
         prompts: [
@@ -44,6 +46,7 @@ const AGENT_TEMPLATES = [
     {
         id: 'fullstack',
         name: 'Full Stack',
+        agentId: 'fullstack',
         icon: Code,
         color: 'bg-purple-500',
         prompts: [
@@ -56,6 +59,7 @@ const AGENT_TEMPLATES = [
     {
         id: 'ecommerce',
         name: 'E-Commerce',
+        agentId: 'ecommerce',
         icon: Zap,
         color: 'bg-green-500',
         prompts: [
@@ -82,6 +86,11 @@ export function ChatPage() {
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+  
+  // Agent change confirmation state
+  const [showAgentConfirm, setShowAgentConfirm] = useState(false);
+  const [pendingTemplateAgentId, setPendingTemplateAgentId] = useState<string | null>(null);
+  const [pendingTemplatePrompt, setPendingTemplatePrompt] = useState<string | null>(null);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -107,10 +116,46 @@ export function ChatPage() {
     orchState === 'idle' && 
     lastMessage?.isFromMe === true;
 
-  function handleSelectPrompt(prompt: string) {
-    setInputValue(prompt);
-    setCopiedPrompt(prompt);
+  function handleSelectPrompt(prompt: string, templateAgentId?: string) {
+    // If template has a different agent than current, show confirmation
+    if (templateAgentId) {
+      setPendingTemplateAgentId(templateAgentId);
+      setPendingTemplatePrompt(prompt);
+      setShowAgentConfirm(true);
+    } else {
+      // Same agent, just set the prompt
+      setInputValue(prompt);
+      setCopiedPrompt(prompt);
+      setTimeout(() => setCopiedPrompt(null), 2000);
+    }
+  }
+
+  // Handle confirmed agent change from template
+  async function handleConfirmTemplateAgent() {
+    if (!pendingTemplateAgentId || !pendingTemplatePrompt) return;
+    
+    // Save the new agent
+    const { setConfig } = await import('../../db.js');
+    const { CONFIG_KEYS, DEFAULT_GROUP_ID } = await import('../../config.js');
+    const { writeGroupFile } = await import('../../storage.js');
+    const { DEFAULT_AGENTS } = await import('./AgentEditorFloating.js');
+    
+    const agent = DEFAULT_AGENTS.find((a: { id: string }) => a.id === pendingTemplateAgentId);
+    if (agent) {
+      await setConfig(CONFIG_KEYS.USE_AGENTS_FILE, pendingTemplateAgentId);
+      await setConfig(CONFIG_KEYS.SYSTEM_PROMPT, agent.systemPrompt);
+      await writeGroupFile(DEFAULT_GROUP_ID, 'AGENTS.md', agent.agentsMd);
+    }
+    
+    // Set the prompt in textarea
+    setInputValue(pendingTemplatePrompt);
+    setCopiedPrompt(pendingTemplatePrompt);
     setTimeout(() => setCopiedPrompt(null), 2000);
+    
+    // Close popup
+    setShowAgentConfirm(false);
+    setPendingTemplateAgentId(null);
+    setPendingTemplatePrompt(null);
   }
 
   function nextSlide() {
@@ -186,7 +231,7 @@ export function ChatPage() {
                                 <button
                                   key={idx}
                                   className="btn btn-outline btn-sm h-auto py-2 text-left justify-start items-start"
-                                  onClick={() => handleSelectPrompt(prompt)}
+                                  onClick={() => handleSelectPrompt(prompt, agent.agentId)}
                                 >
                                   {copiedPrompt === prompt ? (
                                     <Check className="w-4 h-4 text-success shrink-0 mt-0.5" />
@@ -285,6 +330,43 @@ export function ChatPage() {
 
       {/* Agent Editor Floating Component */}
       <AgentEditorFloating />
+      
+      {/* Agent Change Confirmation Popup for Templates */}
+      {showAgentConfirm && pendingTemplateAgentId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+          <div className="bg-base-200 border border-base-300 rounded-lg shadow-xl w-72 p-4">
+            <div className="text-center mb-4">
+              <Bot className="w-10 h-10 mx-auto mb-2 text-warning" />
+              <h3 className="font-bold">¿Cambiar Agente?</h3>
+              <p className="text-sm opacity-70 mt-2">
+                ¿Estás seguro de cambiar a <strong>{AGENT_TEMPLATES.find(t => t.agentId === pendingTemplateAgentId)?.name}</strong>?
+              </p>
+              <p className="text-xs opacity-50 mt-2">
+                Esto reemplazará el agent actual y pegará el template en el input.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setShowAgentConfirm(false);
+                  setPendingTemplateAgentId(null);
+                  setPendingTemplatePrompt(null);
+                }}
+                className="btn btn-ghost btn-sm flex-1"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmTemplateAgent}
+                className="btn btn-primary btn-sm flex-1"
+              >
+                <Save className="w-4 h-4" />
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

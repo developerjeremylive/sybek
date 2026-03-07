@@ -143,7 +143,15 @@ Creates professional online stores with shopping cart functionality.`
   },
 ];
 
-export function AgentEditorFloating() {
+interface AgentEditorFloatingProps {
+  onAgentChange?: (agentId: string) => void;
+  onAgentChangeWithPrompt?: (agentId: string, prompt: string) => void;
+  pendingAgentId?: string | null;
+  pendingPrompt?: string | null;
+  onConfirmPending?: () => void;
+}
+
+export function AgentEditorFloating({ onAgentChange, pendingAgentId: externalPendingAgentId, pendingPrompt: externalPendingPrompt, onConfirmPending }: AgentEditorFloatingProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeAgentId, setActiveAgentId] = useState<string>('landing-page');
   const [systemPrompt, setSystemPrompt] = useState('');
@@ -154,6 +162,7 @@ export function AgentEditorFloating() {
   const [showHelp, setShowHelp] = useState(false);
   const [pendingAgentId, setPendingAgentId] = useState<string | null>(null);
   const [showConfirmPopup, setShowConfirmPopup] = useState(false);
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
   // Load current agent data and stay synced
   useEffect(() => {
@@ -221,12 +230,21 @@ export function AgentEditorFloating() {
     setSystemPrompt(agent.systemPrompt);
     setAgentsMd(agent.agentsMd);
     
+    // Get the pending prompt to insert after saving
+    const promptToInsert = pendingPrompt;
+    setPendingPrompt(null);
+    
     // Immediately save to DB
     setSaving(true);
     try {
       await setConfig(CONFIG_KEYS.USE_AGENTS_FILE, agentId);
       await setConfig(CONFIG_KEYS.SYSTEM_PROMPT, agent.systemPrompt);
       await writeGroupFile(DEFAULT_GROUP_ID, 'AGENTS.md', agent.agentsMd);
+      
+      // Call the callback with the prompt if provided
+      if (onAgentChange && promptToInsert) {
+        onAgentChange(promptToInsert);
+      }
       
       setSaved(true);
       setTimeout(() => {
@@ -237,6 +255,15 @@ export function AgentEditorFloating() {
       console.error('Error saving agent:', err);
       setSaving(false);
     }
+  }
+
+  // Request agent change with optional prompt to insert after confirmation
+  function requestAgentChange(agentId: string, prompt?: string) {
+    if (prompt) {
+      setPendingPrompt(prompt);
+    }
+    setPendingAgentId(agentId);
+    setShowConfirmPopup(true);
   }
 
   // Toggle panel
