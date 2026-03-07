@@ -195,29 +195,29 @@ export function ChatPage() {
             <div className="relative max-w-4xl mx-auto">
               {/* Navigation arrows */}
               <button
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 btn btn-circle btn-sm btn-ghost"
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-10 btn btn-circle btn-sm bg-base-200 border border-base-300 hover:bg-primary hover:border-primary hover:text-primary-content shadow-md"
                 onClick={prevSlide}
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 btn btn-circle btn-sm btn-ghost"
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-10 btn btn-circle btn-sm bg-base-200 border border-base-300 hover:bg-primary hover:border-primary hover:text-primary-content shadow-md"
                 onClick={nextSlide}
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
 
-              {/* Carousel cards */}
-              <div className="overflow-hidden px-8">
+              {/* Carousel cards - scrollable horizontally */}
+              <div className="overflow-x-auto scrollbar-hide px-10 py-2 -mx-2">
                 <div 
-                  className="flex transition-transform duration-300"
-                  style={{ transform: `translateX(-${activeSlide * 100}%)` }}
+                  className="flex gap-4 transition-transform duration-300 ease-out"
+                  style={{ transform: `translateX(-${activeSlide * (100 / 1)}%)`, width: `${AGENT_TEMPLATES.length * 100}%` }}
                 >
                   {AGENT_TEMPLATES.map((agent) => {
                     const Icon = agent.icon;
                     return (
-                      <div key={agent.id} className="w-full flex-shrink-0 px-2">
-                        <div className="card bg-base-200 border border-base-300">
+                      <div key={agent.id} className="flex-shrink-0" style={{ width: '100%' }}>
+                        <div className="card bg-base-200 border border-base-300 shadow-sm hover:shadow-md transition-shadow">
                           <div className="card-body p-4">
                             <div className="flex items-center gap-2 mb-3">
                               <div className={`p-2 rounded-lg ${agent.color}`}>
@@ -252,11 +252,16 @@ export function ChatPage() {
 
               {/* Dots indicator */}
               <div className="flex justify-center gap-2 mt-4">
-                {AGENT_TEMPLATES.map((_, idx) => (
+                {AGENT_TEMPLATES.map((agent, idx) => (
                   <button
                     key={idx}
-                    className={`btn btn-xs btn-circle ${idx === activeSlide ? 'btn-primary' : 'btn-ghost'}`}
                     onClick={() => setActiveSlide(idx)}
+                    className={`transition-all duration-200 ${
+                      idx === activeSlide 
+                        ? 'w-6 h-2 bg-primary rounded-full' 
+                        : 'w-2 h-2 bg-base-content/30 rounded-full hover:bg-base-content/50'
+                    }`}
+                    aria-label={`Go to slide ${idx + 1}`}
                   />
                 ))}
               </div>
