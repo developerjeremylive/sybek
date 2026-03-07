@@ -18,13 +18,9 @@ const AVAILABLE_TOOLS = [
   { id: 'joke', name: 'Chiste', description: 'Chiste aleatorio', icon: '😂' },
   { id: 'cat_fact', name: 'Dato gato', description: 'Dato curioso de gatos', icon: '🐱' },
   { id: 'hackernews', name: 'HN News', description: 'Top noticias de Hacker News', icon: '📰' },
-  { id: 'web_search', name: 'Web Search', description: 'Búsqueda web general', icon: '🔍' },
-  { id: 'wikipedia', name: 'Wikipedia', description: 'Buscar en Wikipedia', icon: '📚' },
-  { id: 'word_of_day', name: 'Palabra del día', description: 'Palabra del diccionario', icon: '📝' },
-  { id: 'define_word', name: 'Definir palabra', description: 'Definición de una palabra', icon: '🔤' },
-  { id: 'get_ip', name: 'Mi IP', description: 'Obtener tu dirección IP', icon: '🌐' },
-  { id: 'fetch_url', name: 'Fetch URL', description: 'Obtener contenido de URL', icon: '📄' },
-  { id: 'dog_fact', name: 'Dato perro', description: 'Dato curioso de perros', icon: '🐕' },
+  // Native agent tools
+  { id: 'web_search', name: 'Web Search', description: 'Búsqueda web (herramienta nativa)', icon: '🔍' },
+  { id: 'fetch_url', name: 'Fetch URL', description: 'Obtener contenido de URL (herramienta nativa)', icon: '📄' },
 ];
 
 function ToolsModal({ onClose }: { onClose: () => void }) {
