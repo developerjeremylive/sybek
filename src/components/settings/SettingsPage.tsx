@@ -179,17 +179,22 @@ export function SettingsPage() {
         </h3>
         <div className="card bg-base-200 shadow-sm">
           <div className="card-body p-3 sm:p-4 gap-3">
-            <label className="form-control">
-              <span className="label-text text-sm mb-1">Nombre del asistente</span>
+            <div className="flex items-center gap-2">
               <input
                 type="text"
-                className="input input-bordered input-sm w-full"
-                placeholder="Andy"
+                className="input input-bordered input-sm flex-1"
+                placeholder="Sybek"
                 value={assistantName}
                 onChange={(e) => setAssistantName(e.target.value)}
-                onBlur={handleNameSave}
               />
-            </label>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={handleNameSave}
+                disabled={!assistantName.trim()}
+              >
+                Guardar
+              </button>
+            </div>
             <p className="text-xs opacity-40">
               Menciona @{assistantName} para activar una respuesta
             </p>

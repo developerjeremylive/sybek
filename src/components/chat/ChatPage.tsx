@@ -15,6 +15,8 @@ import { ChatContextIndicator } from './ChatContextIndicator.js';
 import { ToolResultsPanel } from './ToolResultsPanel.js';
 import { AgentEditorFloating } from './AgentEditorFloating.js';
 import { ToolExecutionDisplay } from './ToolExecutionDisplay.js';
+import { getConfig } from '../../db.js';
+import { CONFIG_KEYS } from '../../config.js';
 
 // Agent templates for prompt carousel
 const AGENT_TEMPLATES = [
@@ -98,6 +100,15 @@ export function ChatPage() {
   
   // Track tool executions for futuristic display
   const [toolExecutions, setToolExecutions] = useState<Array<{id: string; tool: string; status: 'done'; result?: string; timestamp: number}>>([]);
+  const [assistantName, setAssistantName] = useState('Sybek');
+  
+  useEffect(() => {
+    async function loadAssistantName() {
+      const name = await getConfig(CONFIG_KEYS.ASSISTANT_NAME);
+      if (name) setAssistantName(name);
+    }
+    loadAssistantName();
+  }, []);
   
   useEffect(() => {
     const executions = toolResults.map((tr, idx) => ({
@@ -212,7 +223,7 @@ export function ChatPage() {
             {/* Welcome message */}
             <div className="text-center py-4">
               <MessageSquare className="w-16 h-16 mx-auto mb-4 text-primary opacity-80" />
-              <h2 className="text-3xl font-bold">¡Hola! Soy Sybek</h2>
+              <h2 className="text-3xl font-bold">¡Hola! Soy {assistantName}</h2>
               <p className="mt-2 opacity-60 text-lg">Selecciona una plantilla o escribe tu idea</p>
             </div>
 
