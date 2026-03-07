@@ -152,6 +152,8 @@ export function AgentEditorFloating() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [pendingAgentId, setPendingAgentId] = useState<string | null>(null);
+  const [showConfirmPopup, setShowConfirmPopup] = useState(false);
 
   // Load current agent data and stay synced
   useEffect(() => {
@@ -280,7 +282,12 @@ export function AgentEditorFloating() {
             <select
               className="select select-bordered select-sm w-full"
               value={activeAgentId}
-              onChange={(e) => selectAgent(e.target.value)}
+              onChange={(e) => {
+                if (e.target.value !== activeAgentId) {
+                  setPendingAgentId(e.target.value);
+                  setShowConfirmPopup(true);
+                }
+              }}
             >
               {DEFAULT_AGENTS.map(agent => (
                 <option key={agent.id} value={agent.id}>
@@ -340,6 +347,46 @@ export function AgentEditorFloating() {
               {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
               {saving ? 'Guardando...' : saved ? 'Guardado' : 'Guardar'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Popup */}
+      {showConfirmPopup && pendingAgentId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+          <div className="bg-base-200 border border-base-300 rounded-lg shadow-xl w-72 p-4">
+            <div className="text-center mb-4">
+              <Bot className="w-10 h-10 mx-auto mb-2 text-warning" />
+              <h3 className="font-bold">¿Cambiar Agente?</h3>
+              <p className="text-sm opacity-70 mt-2">
+                ¿Estás seguro de cambiar a <strong>{DEFAULT_AGENTS.find(a => a.id === pendingAgentId)?.name}</strong>?
+              </p>
+              <p className="text-xs opacity-50 mt-2">
+                Esto reemplazará el system prompt actual con la plantilla del nuevo agente.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setShowConfirmPopup(false);
+                  setPendingAgentId(null);
+                }}
+                className="btn btn-ghost btn-sm flex-1"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  selectAgent(pendingAgentId);
+                  setShowConfirmPopup(false);
+                  setPendingAgentId(null);
+                }}
+                className="btn btn-primary btn-sm flex-1"
+              >
+                <Save className="w-4 h-4" />
+                Guardar
+              </button>
+            </div>
           </div>
         </div>
       )}
