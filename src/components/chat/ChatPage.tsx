@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef, useState } from 'react';
-import { X, MessageSquare, Layout, Smartphone, Code, Zap, ChevronLeft, ChevronRight, Copy, Check, Trash2, Bot, Save } from 'lucide-react';
+import { X, MessageSquare, Layout, Smartphone, Code, Zap, ChevronLeft, ChevronRight, Copy, Check, Trash2, Bot, Save, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useOrchestratorStore } from '../../stores/orchestrator-store.js';
 import { MessageList } from './MessageList.js';
 import { ChatInput } from './ChatInput.js';
@@ -15,6 +15,7 @@ import { ChatContextIndicator } from './ChatContextIndicator.js';
 import { ToolResultsPanel } from './ToolResultsPanel.js';
 import { AgentEditorFloating } from './AgentEditorFloating.js';
 import { ToolExecutionDisplay } from './ToolExecutionDisplay.js';
+import { ChatHistory, addToChatHistory, updateChatHistory } from './ChatHistory.js';
 import { getConfig } from '../../db.js';
 import { CONFIG_KEYS } from '../../config.js';
 
@@ -121,6 +122,34 @@ export function ChatPage() {
     setToolExecutions(executions);
   }, [toolResults]);
 
+  // Chat history state
+  const [showChatHistory, setShowChatHistory] = useState(true);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  
+  function handleNewChat() {
+    setCurrentChatId(null);
+    localStorage.removeItem('currentSessionFolder');
+    localStorage.removeItem('contextFolders');
+  }
+  
+  function handleSelectChat(sessionId: string) {
+    setCurrentChatId(sessionId);
+  }
+  
+  // Update chat history when messages change
+  useEffect(() => {
+    if (messages.length > 0 && messages[0]?.content) {
+      const firstMessage = messages[0].content?.slice(0, 100) || 'Nueva conversación';
+      const title = firstMessage.slice(0, 40) + (firstMessage.length > 40 ? '...' : '');
+      if (currentChatId) {
+        updateChatHistory(currentChatId, title, firstMessage);
+      } else if (messages.length >= 2) {
+        const newChat = addToChatHistory(title, firstMessage);
+        setCurrentChatId(newChat.id);
+      }
+    }
+  }, [messages.length]);
+
   const [activeSlide, setActiveSlide] = useState(0);
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -203,9 +232,29 @@ export function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-full max-w-3xl mx-auto w-full px-0 sm:px-4">
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-1">
+    <div className="flex h-full">
+      {/* Chat History Sidebar */}
+      {showChatHistory && (
+        <ChatHistory 
+          currentSessionId={currentChatId}
+          onSelectSession={handleSelectChat}
+          onNewChat={handleNewChat}
+        />
+      )}
+      
+      {/* Main chat area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Toggle history button */}
+        <button
+          onClick={() => setShowChatHistory(!showChatHistory)}
+          className="btn btn-ghost btn-sm btn-circle absolute left-3 top-3 z-10"
+        >
+          {showChatHistory ? <PanelLeftClose className="w-5 h-5" /> : <PanelLeft className="w-5 h-5" />}
+        </button>
+        
+        <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full">
+          {/* Messages area */}
+          <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-1">
         {showContinueBanner && (
           <div className="hero min-h-full">
             <div className="hero-content text-center">
@@ -424,6 +473,8 @@ export function ChatPage() {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }
