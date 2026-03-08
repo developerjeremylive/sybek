@@ -1,7 +1,28 @@
 {
   "mcpServers": {
     "github": {
-      "command": "npx -y @modelcontextprotocol/server-github"
+      "command": "npx -y @modelcontextprotocol/server-github",
+      "keepAlive": true
+    },
+    "brave-search": {
+      "command": "npx -y @modelcontextprotocol/server-brave-search",
+      "keepAlive": true
+    },
+    "firecrawl": {
+      "command": "npx -y @modelcontextprotocol/server-firecrawl",
+      "keepAlive": true
+    },
+    "filesystem": {
+      "command": "npx -y @modelcontextprotocol/server-filesystem /root",
+      "keepAlive": true
+    },
+    "fetch": {
+      "command": "npx -y @modelcontextprotocol/server-fetch",
+      "keepAlive": true
+    },
+    "search": {
+      "command": "npx -y @modelcontextprotocol/server-search",
+      "keepAlive": true
     },
     "notion": {
       "command": "npx -y @notionhq/notion-mcp-server"
@@ -14,9 +35,6 @@
     },
     "memory": {
       "command": "npx -y @modelcontextprotocol/server-memory"
-    },
-    "fetch": {
-      "command": "npx -y @modelcontextprotocol/server-fetch"
     },
     "time": {
       "command": "npx -y time-mcp-pypi"
@@ -33,17 +51,11 @@
     "sqlite": {
       "command": "npx -y @modelcontextprotocol/server-sqlite"
     },
-    "search": {
-      "command": "npx -y @modelcontextprotocol/server-search"
-    },
     "aws": {
       "command": "npx -y @modelcontextprotocol/server-aws-kb-retrieval-server"
     },
     "puppeteer": {
       "command": "npx -y @modelcontextprotocol/server-puppeteer"
-    },
-    "brave-search": {
-      "command": "npx -y @modelcontextprotocol/server-brave-search"
     },
     "gmail": {
       "command": "npx -y @modelcontextprotocol/server-gmail"
@@ -105,9 +117,6 @@
     "context7": {
       "command": "npx -y @upstash/context7-mcp"
     },
-    "firecrawl": {
-      "command": "npx -y @modelcontextprotocol/server-firecrawl"
-    },
     "apify": {
       "command": "npx -y @modelcontextprotocol/server-apify"
     },
@@ -155,9 +164,6 @@
     },
     "twilio": {
       "command": "npx -y @modelcontextprotocol/server-twilio"
-    },
-    "filesystem": {
-      "command": "npx -y @modelcontextprotocol/server-filesystem /root"
     }
   },
   "imports": []
