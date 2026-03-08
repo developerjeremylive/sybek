@@ -64,6 +64,7 @@ interface ChatHistoryProps {
 export function ChatHistory({ currentSessionId, onSelectSession, onNewChat }: ChatHistoryProps) {
   const [history, setHistory] = useState<ChatSession[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     setHistory(getChatHistory());
@@ -139,7 +140,10 @@ export function ChatHistory({ currentSessionId, onSelectSession, onNewChat }: Ch
                   <div className="flex items-center gap-1 shrink-0">
                     <span className="text-[10px] opacity-40">{formatTime(chat.updatedAt)}</span>
                     <button
-                      onClick={(e) => handleDelete(e, chat.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteConfirmId(chat.id);
+                      }}
                       className="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 text-error"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -151,6 +155,57 @@ export function ChatHistory({ currentSessionId, onSelectSession, onNewChat }: Ch
           </div>
         )}
       </div>
+      
+      {/* Delete Confirmation Popup */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-base-200 border border-error/30 rounded-xl shadow-2xl w-80 mx-4 overflow-hidden">
+            {/* Header */}
+            <div className="p-4 border-b border-error/20 bg-error/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-error/20 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-error" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-error">¿Eliminar Chat?</h3>
+                  <p className="text-xs opacity-60">Esta acción no se puede deshacer</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Body */}
+            <div className="p-4">
+              <p className="text-sm mb-3">
+                ¿Estás seguro de que deseas eliminar este chat?
+              </p>
+              <div className="bg-base-300/50 rounded-lg p-3 text-xs opacity-70">
+                <p className="font-medium mb-1">ℹ️ Nota:</p>
+                <p>Los archivos creados en <strong>Files</strong> no se eliminarán. Solo se borrará el historial de conversación.</p>
+              </div>
+            </div>
+            
+            {/* Actions */}
+            <div className="p-4 pt-0 flex gap-2">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="btn btn-ghost btn-sm flex-1"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  deleteFromChatHistory(deleteConfirmId);
+                  setHistory(getChatHistory());
+                  setDeleteConfirmId(null);
+                }}
+                className="btn btn-error btn-sm flex-1"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
