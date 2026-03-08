@@ -31,6 +31,7 @@ interface OrchestratorStoreState {
   newSession: () => Promise<void>;
   compactContext: () => Promise<void>;
   clearError: () => void;
+  setMessages: (messages: StoredMessage[]) => void;
   loadHistory: () => Promise<void>;
   clearToolResults: () => void;
 }
@@ -72,6 +73,8 @@ export const useOrchestratorStore = create<OrchestratorStoreState>((set, get) =>
   clearError: () => set({ error: null }),
 
   clearToolResults: () => set({ toolResults: [], apiResponse: '' }),
+
+  setMessages: (msgs: StoredMessage[]) => set({ messages: msgs }),
 
   loadHistory: async () => {
     const msgs = await getRecentMessages(get().activeGroupId, 200);
