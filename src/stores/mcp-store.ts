@@ -9,7 +9,7 @@ export interface MCPServer {
   id: string;
   name: string;
   url: string;
-  type: 'sse' | 'stdio';
+  type: 'sse' | 'http';
   enabled: boolean;
   description?: string;
   icon?: string;
@@ -20,12 +20,24 @@ export interface MCPTool {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
+  serverId: string;
+  serverName: string;
+}
+
+// MCP Protocol types
+interface MCPListToolsResponse {
+  tools: Array<{
+    name: string;
+    description?: string;
+    inputSchema?: Record<string, unknown>;
+  }>;
 }
 
 interface MCPState {
   servers: MCPServer[];
   activeTools: MCPTool[];
   isConnecting: boolean;
+  isLoadingTools: boolean;
   connectionError: string | null;
   
   // Actions
@@ -36,6 +48,8 @@ interface MCPState {
   connectServer: (id: string) => Promise<void>;
   disconnectServer: (id: string) => void;
   setServers: (servers: MCPServer[]) => void;
+  fetchServerTools: (server: MCPServer) => Promise<MCPTool[]>;
+  refreshAllTools: () => Promise<void>;
 }
 
 // Default public MCP servers (no credentials needed)
@@ -112,6 +126,7 @@ export const useMCPStore = create<MCPState>()(
       servers: [],
       activeTools: [],
       isConnecting: false,
+      isLoadingTools: false,
       connectionError: null,
 
       addServer: (serverData) => {
@@ -129,7 +144,8 @@ export const useMCPStore = create<MCPState>()(
           get().disconnectServer(id);
         }
         set((state) => ({ 
-          servers: state.servers.filter((s) => s.id !== id) 
+          servers: state.servers.filter((s) => s.id !== id),
+          activeTools: state.activeTools.filter((t) => t.serverId !== id),
         }));
       },
 
@@ -139,11 +155,6 @@ export const useMCPStore = create<MCPState>()(
 
         if (server.enabled) {
           get().disconnectServer(id);
-          set((state) => ({
-            servers: state.servers.map((s) =>
-              s.id === id ? { ...s, enabled: false } : s
-            ),
-          }));
         } else {
           await get().connectServer(id);
         }
@@ -164,25 +175,19 @@ export const useMCPStore = create<MCPState>()(
         set({ isConnecting: true, connectionError: null });
 
         try {
-          // Test connection to MCP server
-          const response = await fetch(`${server.url}/health`, {
-            method: 'GET',
-            signal: AbortSignal.timeout(5000),
-          });
-
-          if (response.ok) {
-            set((state) => ({
-              servers: state.servers.map((s) =>
-                s.id === id ? { ...s, enabled: true } : s
-              ),
-              isConnecting: false,
-            }));
-          } else {
-            throw new Error(`Server returned ${response.status}`);
-          }
+          // Try to fetch tools from MCP server using JSON-RPC
+          const tools = await get().fetchServerTools(server);
+          
+          set((state) => ({
+            servers: state.servers.map((s) =>
+              s.id === id ? { ...s, enabled: true } : s
+            ),
+            activeTools: [...state.activeTools.filter(t => t.serverId !== id), ...tools],
+            isConnecting: false,
+          }));
         } catch (error) {
-          // For SSE servers, connection might work even if /health doesn't exist
-          // Try to connect anyway
+          console.error('Failed to connect MCP server:', error);
+          // Even if tools fail, mark as enabled
           set((state) => ({
             servers: state.servers.map((s) =>
               s.id === id ? { ...s, enabled: true } : s
@@ -197,14 +202,65 @@ export const useMCPStore = create<MCPState>()(
           servers: state.servers.map((s) =>
             s.id === id ? { ...s, enabled: false } : s
           ),
-          activeTools: state.activeTools.filter((_, idx) => {
-            // Remove tools from this server
-            return true;
-          }),
+          activeTools: state.activeTools.filter((t) => t.serverId !== id),
         }));
       },
 
       setServers: (servers) => set({ servers }),
+
+      fetchServerTools: async (server: MCPServer): Promise<MCPTool[]> => {
+        try {
+          // MCP protocol: POST to server with JSON-RPC request for tools
+          const response = await fetch(server.url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'tools/list',
+              params: {},
+            }),
+            signal: AbortSignal.timeout(10000),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const data = await response.json() as MCPListToolsResponse;
+          
+          if (data.tools && Array.isArray(data.tools)) {
+            return data.tools.map((tool) => ({
+              name: tool.name,
+              description: tool.description || '',
+              inputSchema: tool.inputSchema || {},
+              serverId: server.id,
+              serverName: server.name,
+            }));
+          }
+          
+          return [];
+        } catch (error) {
+          console.error(`Failed to fetch tools from ${server.name}:`, error);
+          return [];
+        }
+      },
+
+      refreshAllTools: async () => {
+        const enabledServers = get().servers.filter((s) => s.enabled);
+        set({ isLoadingTools: true });
+        
+        const allTools: MCPTool[] = [];
+        
+        for (const server of enabledServers) {
+          const tools = await get().fetchServerTools(server);
+          allTools.push(...tools);
+        }
+        
+        set({ activeTools: allTools, isLoadingTools: false });
+      },
     }),
     {
       name: 'obc-mcp-servers',

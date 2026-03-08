@@ -522,8 +522,17 @@ async function autoSaveCodeFiles(groupId: string, aiResponse: string): Promise<s
 // Main handler
 // ---------------------------------------------------------------------------
 
+// MCP Tool type
+interface MCPTool {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+  serverId: string;
+  serverName: string;
+}
+
 async function handleInvoke(payload: InvokePayload): Promise<void> {
-  const { groupId = DEFAULT_GROUP_ID, messages, systemPrompt, model = DEFAULT_MODEL, maxTokens = 4096, sessionFolder, contextFolders, fileContext, tools } = payload;
+  const { groupId = DEFAULT_GROUP_ID, messages, systemPrompt, model = DEFAULT_MODEL, maxTokens = 4096, sessionFolder, contextFolders, fileContext, tools, mcpTools } = payload;
 
   // Use first context folder as working folder if available, otherwise use sessionFolder
   if (contextFolders && contextFolders.length > 0) {
@@ -544,20 +553,37 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
   
   // Get active tools from payload
   const activeTools = tools || [];
+  const activeMcpTools: MCPTool[] = mcpTools || [];
   
   // Build tools description for system prompt
   let toolsSection = '';
-  if (activeTools.length > 0) {
-    const toolDescriptions = activeTools.map((id: string) => {
-      const tool = TOOLS.find(t => t.name === id);
-      if (!tool) return null;
-      const params = Object.entries(tool.input_schema.properties || {})
-        .map(([k, v]) => `${k}: ${(v as any).description || k}`)
-        .join(', ');
-      return `- ${tool.name}(${params}): ${tool.description}`;
-    }).filter(Boolean).join('\n');
+  if (activeTools.length > 0 || activeMcpTools.length > 0) {
+    const toolDescriptions: string[] = [];
     
-    toolsSection = `\n\n## Herramientas disponibles:\n${toolDescriptions}\n\nCuando necesites usar una herramienta, responde usando el formato:\n[toolname] tool_name | {"param1": "value1"} [/toolname]\n\nEjemplo: [hackernews] hackernews | {"limit": 10} [/hackernews]`;
+    // Native tools
+    if (activeTools.length > 0) {
+      activeTools.forEach((id: string) => {
+        const tool = TOOLS.find(t => t.name === id);
+        if (!tool) return;
+        const params = Object.entries(tool.input_schema.properties || {})
+          .map(([k, v]) => `${k}: ${(v as any).description || k}`)
+          .join(', ');
+        toolDescriptions.push(`- ${tool.name}(${params}): ${tool.description}`);
+      });
+    }
+    
+    // MCP tools
+    if (activeMcpTools.length > 0) {
+      toolDescriptions.push('\n### Herramientas MCP (servidor externo):');
+      activeMcpTools.forEach((tool) => {
+        const params = Object.entries(tool.inputSchema?.properties || {})
+          .map(([k, v]) => `${k}: ${(v as any).description || k}`)
+          .join(', ');
+        toolDescriptions.push(`- ${tool.name}(${params}): ${tool.description} [MCP: ${tool.serverName}]`);
+      });
+    }
+    
+    toolsSection = `\n\n## Herramientas disponibles:\n${toolDescriptions.join('\n')}\n\nCuando necesites usar una herramienta, responde usando el formato:\n[toolname] tool_name | {"param1": "value1"} [/toolname]\n\nEjemplo: [hackernews] hackernews | {"limit": 10} [/hackernews]\n\n**IMPORTANTE**: Para herramientas MCP, el formato es:\n[mcp] mcp_server_name | tool_name | {"param": "value"} [/mcp]`;
   }
   
   const fullSystemPrompt = folderContext 

@@ -11,6 +11,16 @@ export interface InboundMessage {
   timestamp: number; // epoch ms
   channel: ChannelType;
   tools?: string[]; // Active tools for this message
+  mcpTools?: MCPTool[]; // Active MCP tools for this message
+}
+
+/** MCP Tool from MCP server */
+export interface MCPTool {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+  serverId: string;
+  serverName: string;
 }
 
 /** Stored message (superset of InboundMessage) */
@@ -93,6 +103,7 @@ export interface InvokePayload {
   contextFolders?: string[];
   fileContext?: string;
   tools?: string[];
+  mcpTools?: MCPTool[];
 }
 
 /** Messages sent from Agent Worker → main thread */

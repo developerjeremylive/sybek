@@ -18,6 +18,7 @@ import { ToolExecutionDisplay } from './ToolExecutionDisplay.js';
 import { ChatHistory, addToChatHistory, updateChatHistory, saveChatMessages, loadChatMessages } from './ChatHistory.js';
 import { getConfig } from '../../db.js';
 import { CONFIG_KEYS } from '../../config.js';
+import { useMCPStore, type MCPTool } from '../../stores/mcp-store.js';
 
 // Agent templates for prompt carousel
 const AGENT_TEMPLATES = [
@@ -549,7 +550,12 @@ export function ChatPage() {
 
         {/* Input */}
         <ChatInput
-          onSend={sendMessage}
+          onSend={(text, tools, mcpTools) => {
+            // Get MCP tools from store if not provided
+            const activeMcpTools = mcpTools || useMCPStore.getState().activeTools;
+            // Send message with tools including MCP tools
+            sendMessage(text, tools, activeMcpTools);
+          }}
           disabled={orchState !== 'idle'}
           initialValue={inputValue}
         />

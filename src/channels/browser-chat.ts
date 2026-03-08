@@ -5,6 +5,7 @@
 import type { Channel, InboundMessage } from '../types.js';
 import { DEFAULT_GROUP_ID } from '../config.js';
 import { ulid } from '../ulid.js';
+import type { MCPTool } from '../orchestrator.js';
 
 type MessageCallback = (msg: InboundMessage) => void;
 type TypingCallback = (groupId: string, typing: boolean) => void;
@@ -32,7 +33,7 @@ export class BrowserChatChannel implements Channel {
   /**
    * Called by the UI when the user submits a message.
    */
-  submit(text: string, groupId?: string, tools?: string[]): void {
+  submit(text: string, groupId?: string, tools?: string[], mcpTools?: MCPTool[]): void {
     const gid = groupId || this.activeGroupId;
     const msg: InboundMessage = {
       id: ulid(),
@@ -42,6 +43,7 @@ export class BrowserChatChannel implements Channel {
       timestamp: Date.now(),
       channel: 'browser',
       tools,
+      mcpTools,
     };
     this.messageCallback?.(msg);
   }

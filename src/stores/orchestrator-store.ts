@@ -13,6 +13,15 @@ import type { Orchestrator } from '../orchestrator.js';
 import { DEFAULT_GROUP_ID } from '../config.js';
 import { getRecentMessages } from '../db.js';
 
+// MCP Tool type
+interface MCPTool {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+  serverId: string;
+  serverName: string;
+}
+
 interface OrchestratorStoreState {
   // --- reactive state ---
   messages: StoredMessage[];
@@ -27,7 +36,7 @@ interface OrchestratorStoreState {
   apiResponse: string;
 
   // --- actions ---
-  sendMessage: (text: string, tools?: string[]) => void;
+  sendMessage: (text: string, tools?: string[], mcpTools?: MCPTool[]) => void;
   newSession: () => Promise<void>;
   compactContext: () => Promise<void>;
   clearError: () => void;
@@ -55,9 +64,9 @@ export const useOrchestratorStore = create<OrchestratorStoreState>((set, get) =>
   toolResults: [],
   apiResponse: '',
 
-  sendMessage: (text, tools) => {
+  sendMessage: (text, tools, mcpTools) => {
     const orch = getOrchestrator();
-    orch.submitMessage(text, get().activeGroupId, tools);
+    orch.submitMessage(text, get().activeGroupId, tools, mcpTools);
   },
 
   newSession: async () => {

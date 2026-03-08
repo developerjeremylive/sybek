@@ -20,6 +20,15 @@ import type {
   ConversationMessage,
   ThinkingLogEntry,
 } from './types.js';
+
+// MCP Tool type
+export interface MCPTool {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+  serverId: string;
+  serverName: string;
+}
 import {
   ASSISTANT_NAME,
   CONFIG_KEYS,
@@ -287,8 +296,8 @@ export class Orchestrator {
   /**
    * Submit a message from the browser chat UI.
    */
-  submitMessage(text: string, groupId?: string, tools?: string[]): void {
-    this.browserChat.submit(text, groupId, tools);
+  submitMessage(text: string, groupId?: string, tools?: string[], mcpTools?: MCPTool[]): void {
+    this.browserChat.submit(text, groupId, tools, mcpTools);
   }
 
   /**
@@ -416,7 +425,7 @@ export class Orchestrator {
     const msg = this.messageQueue.shift()!;
 
     try {
-      await this.invokeAgent(msg.groupId, msg.content, msg.tools);
+      await this.invokeAgent(msg.groupId, msg.content, msg.tools, msg.mcpTools);
     } catch (err) {
       console.error('Failed to invoke agent:', err);
     } finally {
@@ -428,7 +437,7 @@ export class Orchestrator {
     }
   }
 
-  private async invokeAgent(groupId: string, triggerContent: string, tools?: string[]): Promise<void> {
+  private async invokeAgent(groupId: string, triggerContent: string, tools?: string[], mcpTools?: MCPTool[]): Promise<void> {
     this.setState('thinking');
     this.router.setTyping(groupId, true);
     this.events.emit('typing', { groupId, typing: true });
@@ -481,6 +490,9 @@ export class Orchestrator {
     // Catalog skills don't map to tools - they add instructions to system prompt
     // User-selected tools are still available
     const allTools = tools || [];
+    
+    // Get MCP tools - passed from message or from store
+    const activeMcpTools = mcpTools || [];
 
     // Build conversation context
     const messages = await buildConversationMessages(groupId, CONTEXT_WINDOW_SIZE);
@@ -513,6 +525,7 @@ export class Orchestrator {
         contextFolders,
         fileContext,
         tools: allTools,
+        mcpTools: activeMcpTools,
       },
     });
   }

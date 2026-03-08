@@ -7,11 +7,11 @@ import { Send, Wrench, X, Bot, Check, Plug, ChevronDown } from 'lucide-react';
 import { MODELS, CONFIG_KEYS } from '../../config.js';
 import { getConfig } from '../../db.js';
 import { getOrchestrator } from '../../stores/orchestrator-store.js';
-import { useMCPStore, getEnabledMCPServers, type MCPServer } from '../../stores/mcp-store.js';
+import { useMCPStore, getEnabledMCPServers, type MCPServer, type MCPTool } from '../../stores/mcp-store.js';
 import type { LucideIcon } from 'lucide-react';
 
 interface Props {
-  onSend: (text: string, tools?: string[]) => void;
+  onSend: (text: string, tools?: string[], mcpTools?: MCPTool[]) => void;
   disabled: boolean;
   initialValue?: string;
 }
@@ -344,7 +344,14 @@ export function ChatInput({ onSend, disabled, initialValue }: Props) {
   function handleSend() {
     const trimmed = text.trim();
     if (!trimmed || disabled) return;
-    onSend(trimmed);
+    
+    // Get active MCP tools
+    const mcpTools = useMCPStore.getState().activeTools;
+    
+    // Pass both regular tools and MCP tools
+    const toolIds = ALL_TOOLS.map(t => t.id);
+    onSend(trimmed, toolIds, mcpTools);
+    
     setText('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
