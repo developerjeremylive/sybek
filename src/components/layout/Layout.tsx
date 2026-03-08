@@ -4,7 +4,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router';
-import { MessageSquare, FolderOpen, Clock, Settings, LayoutGrid, Wrench, GripVertical, Bot, MoreHorizontal } from 'lucide-react';
+import { MessageSquare, FolderOpen, Clock, Settings, LayoutGrid, Wrench, GripVertical, Bot, MoreHorizontal, Plug } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle.js';
 import { FileViewerModal } from '../files/FileViewerModal.js';
 import { useFileViewerStore } from '../../stores/file-viewer-store.js';
@@ -20,6 +20,7 @@ const mainNavItems = [
 ] as const;
 
 const moreNavItems = [
+  { to: '/mcp', label: 'MCP', icon: Plug },
   { to: '/tasks', label: 'Tasks', icon: Clock },
   { to: '/skills', label: 'Skills', icon: Wrench },
   { to: '/settings', label: 'Settings', icon: Settings },
@@ -261,14 +262,14 @@ export function Layout() {
         <div className="dropdown dropdown-top dropdown-end">
           <label tabIndex={0} className="dock-label flex flex-col items-center gap-0.5 cursor-pointer">
             <MoreHorizontal className="w-5 h-5" />
-            <span className="text-[10px]">Más</span>
+            <span className="text-[10px]">MCP</span>
           </label>
-          <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-200 rounded-box w-52 border border-base-300 mb-2">
+          <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-lg bg-zinc-900 rounded-box w-52 border border-zinc-700 mb-2">
             {moreNavItems.map(({ to, label, icon: Icon }) => (
               <li key={to}>
                 <NavLink
                   to={to}
-                  className={({ isActive }) => isActive ? 'active' : ''}
+                  className={({ isActive }) => isActive ? 'active bg-zinc-800' : 'text-zinc-300'}
                 >
                   <Icon className="w-4 h-4" />
                   {label}

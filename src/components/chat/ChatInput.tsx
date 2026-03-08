@@ -3,10 +3,11 @@
 // ---------------------------------------------------------------------------
 
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
-import { Send, Wrench, X, Bot, Check } from 'lucide-react';
+import { Send, Wrench, X, Bot, Check, Plug, ChevronDown } from 'lucide-react';
 import { MODELS, CONFIG_KEYS } from '../../config.js';
 import { getConfig } from '../../db.js';
 import { getOrchestrator } from '../../stores/orchestrator-store.js';
+import { useMCPStore, getEnabledMCPServers, type MCPServer } from '../../stores/mcp-store.js';
 import type { LucideIcon } from 'lucide-react';
 
 interface Props {
@@ -92,24 +93,24 @@ export function ModelSelector() {
       
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className="flex items-center gap-1.5 px-2 py-1.5 bg-base-200 hover:bg-base-300 rounded-lg text-xs transition-colors border border-base-300"
+        className="flex items-center gap-1.5 px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs transition-colors border border-zinc-700 text-zinc-200"
         title="Seleccionar modelo"
       >
-        <Bot className="w-3.5 h-3.5 text-primary" />
+        <Bot className="w-3.5 h-3.5 text-zinc-400" />
         <span className="hidden sm:inline max-w-[80px] truncate">{currentLabel}</span>
         <span className="sm:hidden">Modelo</span>
       </button>
       
       {/* Desktop dropdown */}
       {showDropdown && (
-        <div className="hidden sm:block absolute bottom-full mb-2 left-0 bg-base-100 border border-base-300 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto w-48">
+        <div className="hidden sm:block absolute bottom-full mb-2 left-0 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto w-48">
           {MODELS.map((model) => (
             <button
               key={model.value}
               onClick={() => !model.premium && selectModel(model.value)}
               disabled={model.premium}
-              className={`w-full text-left px-3 py-2 text-xs hover:bg-base-200 transition-colors flex items-center justify-between gap-2 ${
-                selectedModel === model.value ? 'bg-primary/20 text-primary' : ''
+              className={`w-full text-left px-3 py-2 text-xs hover:bg-zinc-800 transition-colors flex items-center justify-between gap-2 ${
+                selectedModel === model.value ? 'bg-purple-500/20 text-purple-400' : 'text-zinc-300'
               } ${model.premium ? 'opacity-40 cursor-not-allowed' : ''}`}
             >
               <span className="truncate">{model.label}</span>
@@ -168,6 +169,84 @@ export function ModelSelector() {
   );
 }
 
+// MCP Server selector component
+export function MCPSelector() {
+  const servers = useMCPStore((s) => s.servers);
+  const enabledServers = servers.filter((s) => s.enabled);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  if (enabledServers.length === 0) {
+    return (
+      <button
+        onClick={() => setShowDropdown(true)}
+        className="flex items-center gap-1.5 px-2 py-1.5 bg-zinc-800/50 hover:bg-zinc-700/50 rounded-lg text-xs transition-colors border border-zinc-700/50 text-zinc-500 cursor-pointer"
+        title="Sin MCP activos - Click para gestionar"
+      >
+        <Plug className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">MCP</span>
+        <ChevronDown className="w-3 h-3" />
+      </button>
+    );
+  }
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setShowDropdown(!showDropdown)}
+        className="flex items-center gap-1.5 px-2 py-1.5 bg-green-500/10 hover:bg-green-500/20 rounded-lg text-xs transition-colors border border-green-500/30 text-green-400 cursor-pointer"
+        title={`${enabledServers.length} MCP activo(s)`}
+      >
+        <Plug className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline max-w-[100px] truncate">
+          {enabledServers.map(s => s.name).join(', ')}
+        </span>
+        <span className="sm:hidden">{enabledServers.length}</span>
+        <ChevronDown className="w-3 h-3" />
+      </button>
+      
+      {showDropdown && (
+        <div className="absolute bottom-full mb-2 left-0 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto w-56">
+          <div className="px-3 py-2 border-b border-zinc-800">
+            <span className="text-xs text-zinc-400">Servidores MCP</span>
+          </div>
+          {servers.map((server) => (
+            <div
+              key={server.id}
+              className={`flex items-center gap-2 px-3 py-2 text-xs cursor-pointer ${
+                server.enabled 
+                  ? 'bg-green-500/10 text-green-400' 
+                  : 'text-zinc-400 hover:bg-zinc-800'
+              }`}
+            >
+              <span>{server.icon || '🔌'}</span>
+              <span className="flex-1 truncate">{server.name}</span>
+              {server.enabled && <span className="text-green-500">●</span>}
+            </div>
+          ))}
+          <a
+            href="/mcp"
+            className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 border-t border-zinc-800"
+          >
+            <Wrench className="w-3 h-3" />
+            <span>Gestionar MCP</span>
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ToolsModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -178,7 +257,7 @@ function ToolsModal({ onClose }: { onClose: () => void }) {
       />
       
       {/* Modal */}
-      <div className="relative bg-base-100 border border-purple-500/30 rounded-xl shadow-2xl shadow-purple-500/20 max-w-lg w-full mx-4 overflow-hidden max-h-[80vh] flex flex-col">
+      <div className="relative bg-zinc-900 border border-purple-500/30 rounded-xl shadow-2xl shadow-purple-500/20 max-w-lg w-full mx-4 overflow-hidden max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border-b border-purple-500/30 shrink-0">
           <div className="flex items-center gap-2">
@@ -200,16 +279,16 @@ function ToolsModal({ onClose }: { onClose: () => void }) {
             <h3 className="text-sm font-bold text-cyan-400 mb-2 flex items-center gap-2">
               ⚡ Herramientas del Agente
             </h3>
-            <p className="text-xs text-base-content/60 mb-3">
+            <p className="text-xs text-zinc-500 mb-3">
               Herramientas nativas disponibles para todas las conversaciones
             </p>
             <div className="space-y-2">
               {NATIVE_TOOLS.map((tool) => (
-                <div key={tool.id} className="flex items-start gap-3 p-2 bg-base-200/50 rounded-lg">
+                <div key={tool.id} className="flex items-start gap-3 p-2 bg-zinc-800/50 rounded-lg">
                   <span className="text-lg">{tool.icon}</span>
                   <div>
                     <div className="font-mono text-xs text-cyan-300">{tool.name}</div>
-                    <div className="text-xs text-base-content/60">{tool.description}</div>
+                    <div className="text-xs text-zinc-500">{tool.description}</div>
                   </div>
                 </div>
               ))}
@@ -221,16 +300,16 @@ function ToolsModal({ onClose }: { onClose: () => void }) {
             <h3 className="text-sm font-bold text-purple-400 mb-2 flex items-center gap-2">
               ☁️ Workers AI Tools
             </h3>
-            <p className="text-xs text-base-content/60 mb-3">
+            <p className="text-xs text-zinc-500 mb-3">
               Herramientas adicionales disponibles a través de Workers AI
             </p>
             <div className="grid grid-cols-2 gap-2">
               {WORKERS_AI_TOOLS.map((tool) => (
-                <div key={tool.id} className="flex items-center gap-2 p-2 bg-base-200/30 rounded-lg">
+                <div key={tool.id} className="flex items-center gap-2 p-2 bg-zinc-800/30 rounded-lg">
                   <span>{tool.icon}</span>
                   <div>
-                    <div className="font-medium text-xs">{tool.name}</div>
-                    <div className="text-[10px] text-base-content/50">{tool.description}</div>
+                    <div className="font-medium text-xs text-zinc-200">{tool.name}</div>
+                    <div className="text-[10px] text-zinc-600">{tool.description}</div>
                   </div>
                 </div>
               ))}
@@ -239,7 +318,7 @@ function ToolsModal({ onClose }: { onClose: () => void }) {
         </div>
         
         {/* Footer */}
-        <div className="px-4 py-3 bg-base-200/50 text-center text-xs text-base-content/50 shrink-0 border-t border-base-300">
+        <div className="px-4 py-3 bg-zinc-800/50 text-center text-xs text-zinc-500 shrink-0 border-t border-zinc-800">
           Las herramientas del agente siempre están disponibles. Workers AI proporciona herramientas adicionales.
         </div>
       </div>
@@ -282,21 +361,30 @@ export function ChatInput({ onSend, disabled, initialValue }: Props) {
   return (
     <>
       <div className="flex flex-col gap-2 p-2 sm:p-4 pb-2">
-        {/* MCP Tools available - clickable display */}
-        <button
-          onClick={() => setShowToolsModal(true)}
-          className="flex flex-wrap items-center gap-1.5 px-2 py-1.5 bg-base-200 rounded-lg text-xs hover:bg-base-300 transition-colors cursor-pointer"
-        >
-          <Wrench className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-          <span className="text-base-content/60 shrink-0">Disponibles:</span>
-          <span className="flex flex-wrap gap-0.5">
-            {ALL_TOOLS.map((tool) => (
-              <span key={tool.id} className="text-lg leading-none" title={tool.name}>
-                {tool.icon}
-              </span>
-            ))}
-          </span>
-        </button>
+        {/* Tools row - MCP + Native */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* MCP Selector */}
+          <MCPSelector />
+          
+          {/* Native Tools indicator - clickable to see all */}
+          <button
+            onClick={() => setShowToolsModal(true)}
+            className="flex flex-wrap items-center gap-1.5 px-2 py-1.5 bg-zinc-800/50 hover:bg-zinc-700/50 rounded-lg text-xs transition-colors cursor-pointer border border-zinc-700/50"
+          >
+            <Wrench className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+            <span className="text-zinc-500 shrink-0">Herramientas:</span>
+            <span className="flex flex-wrap gap-0.5">
+              {ALL_TOOLS.slice(0, 6).map((tool) => (
+                <span key={tool.id} className="text-lg leading-none" title={tool.name}>
+                  {tool.icon}
+                </span>
+              ))}
+              {ALL_TOOLS.length > 6 && (
+                <span className="text-xs text-zinc-500">+{ALL_TOOLS.length - 6}</span>
+              )}
+            </span>
+          </button>
+        </div>
         
         {/* Input row */}
         <div className="flex items-end gap-2">
