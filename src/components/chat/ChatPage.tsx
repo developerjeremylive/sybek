@@ -143,6 +143,7 @@ export function ChatPage() {
   }
   
   function confirmNewChat() {
+    setShowNewChatConfirm(false);
     setCurrentChatId(null);
     // Clear messages for fresh start
     setMessages([]);
@@ -180,15 +181,17 @@ export function ChatPage() {
     hasInitiallyLoaded.current = true;
     // Clear messages on page load - fresh start
     setMessages([]);
+    // Also clear current chat ID for fresh start
+    setCurrentChatId(null);
   }, [setMessages]);
   
   // Auto-create chat when first message is sent
   
-  // Auto-create chat when first message is sent
+  // Auto-create chat when first message is sent (not on page load)
   useEffect(() => {
-    if (!hasInitiallyLoaded.current || messages.length === 0) return;
+    if (!hasInitiallyLoaded.current) return;
     
-    // Only create new chat if there's no currentChatId and we have messages
+    // Don't create chat if there are no messages or already have a current chat
     if (!currentChatId && messages.length >= 1 && messages[0]?.content) {
       const firstMessage = messages[0].content?.slice(0, 100) || 'Nueva conversación';
       const title = firstMessage.slice(0, 40) + (firstMessage.length > 40 ? '...' : '');
