@@ -127,17 +127,26 @@ export function ChatPage() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   
   function handleNewChat() {
+    // Just deselect current chat and show empty chat
     setCurrentChatId(null);
     localStorage.removeItem('currentSessionFolder');
     localStorage.removeItem('contextFolders');
+    window.location.reload();
   }
   
   function handleSelectChat(sessionId: string) {
     setCurrentChatId(sessionId);
+    // TODO: Load messages from that chat when persistence is implemented
   }
   
-  // Update chat history when messages change
+  // Update chat history only when there are new messages (not on page load)
+  const hasInitiallyLoaded = useRef(false);
   useEffect(() => {
+    if (!hasInitiallyLoaded.current) {
+      hasInitiallyLoaded.current = true;
+      return;
+    }
+    
     if (messages.length > 0 && messages[0]?.content) {
       const firstMessage = messages[0].content?.slice(0, 100) || 'Nueva conversación';
       const title = firstMessage.slice(0, 40) + (firstMessage.length > 40 ? '...' : '');
