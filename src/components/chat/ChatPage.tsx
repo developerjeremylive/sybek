@@ -272,7 +272,7 @@ export function ChatPage() {
         <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full">
           {/* Messages area */}
           <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-1">
-        {showContinueBanner && (
+            {showContinueBanner && (
           <div className="hero min-h-full">
             <div className="hero-content text-center">
               <div className="max-w-md">
@@ -518,6 +518,8 @@ export function ChatPage() {
           </div>
         </div>
       )}
+      </div>
+      </div>
     </div>
   );
 }
