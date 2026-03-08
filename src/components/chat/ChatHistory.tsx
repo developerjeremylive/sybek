@@ -113,8 +113,8 @@ export function ChatHistory({ currentSessionId, onSelectSession, onNewChat, onNe
   }
 
   return (
-    <div className="w-72 border-r border-base-300 bg-base-200 flex flex-col h-full shrink-0">
-      <div className="p-3 border-b border-base-300">
+    <div className="w-72 sm:w-72 border-r border-base-300 bg-base-200 flex flex-col h-full shrink-0 fixed sm:relative inset-0 sm:inset-auto z-50 sm:z-auto">
+      <div className="p-3 border-b border-base-300 shrink-0 bg-base-200">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-bold text-sm flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
