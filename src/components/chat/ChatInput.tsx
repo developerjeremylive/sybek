@@ -172,6 +172,7 @@ export function ModelSelector() {
 // MCP Server selector component
 export function MCPSelector() {
   const servers = useMCPStore((s) => s.servers);
+  const activeTools = useMCPStore((s) => s.activeTools);
   const enabledServers = servers.filter((s) => s.enabled);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -205,11 +206,12 @@ export function MCPSelector() {
       <button
         onClick={() => setShowDropdown(!showDropdown)}
         className="flex items-center gap-1.5 px-2 py-1.5 bg-green-500/10 hover:bg-green-500/20 rounded-lg text-xs transition-colors border border-green-500/30 text-green-400 cursor-pointer"
-        title={`${enabledServers.length} MCP activo(s)`}
+        title={`${enabledServers.length} MCP(s) activo(s), ${activeTools.length} tools`}
       >
         <Plug className="w-3.5 h-3.5" />
         <span className="hidden sm:inline max-w-[100px] truncate">
           {enabledServers.map(s => s.name).join(', ')}
+          {activeTools.length > 0 && <span className="text-green-300"> ({activeTools.length} tools)</span>}
         </span>
         <span className="sm:hidden">{enabledServers.length}</span>
         <ChevronDown className="w-3 h-3" />

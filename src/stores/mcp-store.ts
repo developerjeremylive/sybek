@@ -173,10 +173,12 @@ export const useMCPStore = create<MCPState>()(
         if (!server) return;
 
         set({ isConnecting: true, connectionError: null });
+        console.log(`[MCP] Conectando a ${server.name} (${server.url})...`);
 
         try {
           // Try to fetch tools from MCP server using JSON-RPC
           const tools = await get().fetchServerTools(server);
+          console.log(`[MCP] ${server.name} - Tools obtenidos:`, tools.length, tools.map(t => t.name));
           
           set((state) => ({
             servers: state.servers.map((s) =>
@@ -186,7 +188,7 @@ export const useMCPStore = create<MCPState>()(
             isConnecting: false,
           }));
         } catch (error) {
-          console.error('Failed to connect MCP server:', error);
+          console.error(`[MCP] Error conectando a ${server.name}:`, error);
           // Even if tools fail, mark as enabled
           set((state) => ({
             servers: state.servers.map((s) =>
@@ -209,6 +211,7 @@ export const useMCPStore = create<MCPState>()(
       setServers: (servers) => set({ servers }),
 
       fetchServerTools: async (server: MCPServer): Promise<MCPTool[]> => {
+        console.log(`[MCP] Fetching tools from ${server.name} at ${server.url}`);
         try {
           // MCP protocol: POST to server with JSON-RPC request for tools
           const response = await fetch(server.url, {
@@ -225,11 +228,14 @@ export const useMCPStore = create<MCPState>()(
             signal: AbortSignal.timeout(10000),
           });
 
+          console.log(`[MCP] ${server.name} response status:`, response.status);
+          
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
           }
 
           const data = await response.json() as MCPListToolsResponse;
+          console.log(`[MCP] ${server.name} response data:`, data);
           
           if (data.tools && Array.isArray(data.tools)) {
             return data.tools.map((tool) => ({
@@ -241,9 +247,14 @@ export const useMCPStore = create<MCPState>()(
             }));
           }
           
+          // Check for error response
+          if ((data as any).error) {
+            console.error(`[MCP] ${server.name} error:`, (data as any).error);
+          }
+          
           return [];
         } catch (error) {
-          console.error(`Failed to fetch tools from ${server.name}:`, error);
+          console.error(`[MCP] Failed to fetch tools from ${server.name}:`, error);
           return [];
         }
       },
