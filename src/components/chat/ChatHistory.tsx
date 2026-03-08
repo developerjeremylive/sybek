@@ -77,9 +77,10 @@ interface ChatHistoryProps {
   currentSessionId: string | null;
   onSelectSession: (sessionId: string) => void;
   onNewChat: () => void;
+  onNewChatConfirm: () => void;
 }
 
-export function ChatHistory({ currentSessionId, onSelectSession, onNewChat }: ChatHistoryProps) {
+export function ChatHistory({ currentSessionId, onSelectSession, onNewChat, onNewChatConfirm }: ChatHistoryProps) {
   const [history, setHistory] = useState<ChatSession[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -119,7 +120,7 @@ export function ChatHistory({ currentSessionId, onSelectSession, onNewChat }: Ch
             <MessageSquare className="w-4 h-4" />
             Chats
           </h2>
-          <button onClick={onNewChat} className="btn btn-primary btn-xs btn-circle">
+          <button onClick={onNewChatConfirm} className="btn btn-primary btn-xs btn-circle">
             <Plus className="w-4 h-4" />
           </button>
         </div>

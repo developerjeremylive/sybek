@@ -283,6 +283,7 @@ export function ChatPage() {
           currentSessionId={currentChatId}
           onSelectSession={handleSelectChat}
           onNewChat={handleNewChat}
+          onNewChatConfirm={() => setShowNewChatConfirm(true)}
         />
       )}
       
