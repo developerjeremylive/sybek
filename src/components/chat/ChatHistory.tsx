@@ -13,6 +13,7 @@ export interface ChatSession {
 }
 
 const CHAT_HISTORY_KEY = 'obc_chat_history';
+const CHAT_MESSAGES_PREFIX = 'obc_chat_messages_';
 
 export function getChatHistory(): ChatSession[] {
   try {
@@ -20,6 +21,23 @@ export function getChatHistory(): ChatSession[] {
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
+  }
+}
+
+export function saveChatMessages(sessionId: string, messages: any[]): void {
+  try {
+    localStorage.setItem(CHAT_MESSAGES_PREFIX + sessionId, JSON.stringify(messages));
+  } catch (e) {
+    console.error('Error saving chat messages:', e);
+  }
+}
+
+export function loadChatMessages(sessionId: string): any[] | null {
+  try {
+    const stored = localStorage.getItem(CHAT_MESSAGES_PREFIX + sessionId);
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
   }
 }
 

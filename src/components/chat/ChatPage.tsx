@@ -15,7 +15,7 @@ import { ChatContextIndicator } from './ChatContextIndicator.js';
 import { ToolResultsPanel } from './ToolResultsPanel.js';
 import { AgentEditorFloating } from './AgentEditorFloating.js';
 import { ToolExecutionDisplay } from './ToolExecutionDisplay.js';
-import { ChatHistory, addToChatHistory, updateChatHistory } from './ChatHistory.js';
+import { ChatHistory, addToChatHistory, updateChatHistory, saveChatMessages, loadChatMessages } from './ChatHistory.js';
 import { getConfig } from '../../db.js';
 import { CONFIG_KEYS } from '../../config.js';
 
@@ -149,9 +149,23 @@ export function ChatPage() {
   }
   
   function handleSelectChat(sessionId: string) {
+    // Save current messages to current chat if exists
+    if (currentChatId && messages.length > 0) {
+      saveChatMessages(currentChatId, messages);
+    }
+    
     setCurrentChatId(sessionId);
-    // TODO: Load messages from that chat when persistence is implemented
-    // For now, just close sidebar
+    
+    // Load messages from selected chat
+    const loadedMessages = loadChatMessages(sessionId);
+    if (loadedMessages && loadedMessages.length > 0) {
+      // Replace messages in orchestrator store
+      orch.setMessages(loadedMessages);
+    } else {
+      // Clear messages if no saved messages
+      orch.setMessages([]);
+    }
+    
     setShowChatHistory(false);
   }
   
@@ -168,9 +182,13 @@ export function ChatPage() {
       const title = firstMessage.slice(0, 40) + (firstMessage.length > 40 ? '...' : '');
       if (currentChatId) {
         updateChatHistory(currentChatId, title, firstMessage);
+        // Save messages to storage
+        saveChatMessages(currentChatId, messages);
       } else if (messages.length >= 2) {
         const newChat = addToChatHistory(title, firstMessage);
         setCurrentChatId(newChat.id);
+        // Save messages to storage
+        saveChatMessages(newChat.id, messages);
       }
     }
   }, [messages.length]);
