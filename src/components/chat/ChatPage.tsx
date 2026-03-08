@@ -90,6 +90,7 @@ const AGENT_TEMPLATES = [
 
 export function ChatPage() {
   const messages = useOrchestratorStore((s) => s.messages);
+  const setMessages = useOrchestratorStore((s) => s.setMessages);
   const isTyping = useOrchestratorStore((s) => s.isTyping);
   const activityLog = useOrchestratorStore((s) => s.activityLog);
   const orchState = useOrchestratorStore((s) => s.state);
@@ -160,10 +161,10 @@ export function ChatPage() {
     const loadedMessages = loadChatMessages(sessionId);
     if (loadedMessages && loadedMessages.length > 0) {
       // Replace messages in orchestrator store
-      orch.setMessages(loadedMessages);
+      setMessages(loadedMessages);
     } else {
       // Clear messages if no saved messages
-      orch.setMessages([]);
+      setMessages([]);
     }
     
     setShowChatHistory(false);
