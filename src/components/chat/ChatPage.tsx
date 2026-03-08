@@ -170,8 +170,7 @@ export function ChatPage() {
       setMessages([]);
     }
     
-    // Close sidebar after setting messages
-    setTimeout(() => setShowChatHistory(false), 100);
+    // Don't close sidebar - let user see the chat
   }
   
   const hasInitiallyLoaded = useRef(false);
