@@ -117,7 +117,16 @@ export function Layout() {
     <div className="flex flex-col h-screen h-[100dvh]">
       {/* Desktop Top navbar - hidden on mobile */}
       <div className="navbar bg-base-200 border-b border-base-300 safe-area-top px-4 min-h-14 hidden sm:flex">
-        <div className="navbar-start">
+        <div className="navbar-start flex items-center gap-2">
+          {/* Chat history toggle button */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('toggle-chat-history'))}
+            className="btn btn-ghost btn-sm btn-circle"
+            title="Historial de chats"
+          >
+            <MessageSquare className="w-5 h-5" />
+          </button>
+          
           <span className="text-xl font-bold select-none flex items-center gap-1.5">
             <span className="text-lg">🦀</span>
             <span className="hidden sm:inline">BuilderLiveApp</span>
