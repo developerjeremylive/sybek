@@ -353,24 +353,35 @@ export function ChatPage() {
   }
 
   return (
-    <div className="flex h-full bg-zinc-950">
-      {/* Chat History Sidebar */}
+    <div className="flex h-full bg-zinc-950 overflow-hidden relative">
+      {/* Mobile backdrop when sidebar is open */}
       {showChatHistory && (
-        <ChatHistory 
-          currentSessionId={currentChatId}
-          onSelectSession={handleSelectChat}
-          onNewChat={handleNewChat}
-          onNewChatConfirm={() => setShowNewChatConfirm(true)}
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 sm:hidden backdrop-blur-sm"
+          onClick={() => setShowChatHistory(false)}
         />
       )}
       
+      {/* Chat History Sidebar - floating overlay */}
+      {showChatHistory && (
+        <div className="relative z-40 h-full sm:z-auto">
+          <ChatHistory 
+            currentSessionId={currentChatId}
+            onSelectSession={handleSelectChat}
+            onNewChat={handleNewChat}
+            onNewChatConfirm={() => setShowNewChatConfirm(true)}
+            onClose={() => setShowChatHistory(false)}
+          />
+        </div>
+      )}
+      
       {/* Main chat area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-zinc-950">
-        <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full">
+      <div className="flex-1 flex flex-col min-w-0 bg-zinc-950 h-full overflow-hidden">
+        <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full h-full overflow-hidden">
           {/* Messages area with professional scrolling */}
           <div 
             ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-4 space-y-1 scroll-smooth relative"
+            className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-4 space-y-1 scroll-smooth"
             onScroll={handleScroll}
           >
             {showContinueBanner && (
@@ -517,8 +528,8 @@ export function ChatPage() {
         )}
       </div>
 
-      {/* Bottom bar - Claude style */}
-      <div className="border-t border-zinc-800 bg-zinc-950">
+      {/* Bottom bar - Claude style - fixed at bottom */}
+      <div className="border-t border-zinc-800 bg-zinc-950 shrink-0">
         {/* Activity log (collapsible) */}
         {activityLog.length > 0 && <ActivityLog entries={activityLog} />}
 

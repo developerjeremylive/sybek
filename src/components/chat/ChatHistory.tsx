@@ -5,6 +5,15 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, Plus, Trash2, Search, X, PanelLeftClose, PanelLeft } from 'lucide-react';
 
+// Callback to close sidebar on mobile
+interface ChatHistoryProps {
+  currentSessionId: string | null;
+  onSelectSession: (sessionId: string) => void;
+  onNewChat: () => void;
+  onNewChatConfirm: () => void;
+  onClose?: () => void;
+}
+
 export interface ChatSession {
   id: string;
   title: string;
@@ -78,9 +87,10 @@ interface ChatHistoryProps {
   onSelectSession: (sessionId: string) => void;
   onNewChat: () => void;
   onNewChatConfirm: () => void;
+  onClose?: () => void;
 }
 
-export function ChatHistory({ currentSessionId, onSelectSession, onNewChat, onNewChatConfirm }: ChatHistoryProps) {
+export function ChatHistory({ currentSessionId, onSelectSession, onNewChat, onNewChatConfirm, onClose }: ChatHistoryProps) {
   const [history, setHistory] = useState<ChatSession[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -113,9 +123,9 @@ export function ChatHistory({ currentSessionId, onSelectSession, onNewChat, onNe
   }
 
   return (
-    <div className="w-64 sm:w-64 border-r border-zinc-800 bg-zinc-900 flex flex-col h-full shrink-0 fixed sm:relative inset-0 sm:inset-auto z-50 sm:z-auto">
+    <div className="w-64 sm:w-64 border-r border-zinc-800/50 bg-zinc-900/95 backdrop-blur-md flex flex-col h-full shrink-0 fixed sm:relative inset-y-0 sm:inset-auto left-0 z-40 sm:z-auto shadow-2xl sm:shadow-none">
       {/* Header - Claude style - sticky */}
-      <div className="p-3 border-b border-zinc-800 shrink-0 bg-zinc-900/95 backdrop-blur-sm sticky top-0 z-10">
+      <div className="p-3 border-b border-zinc-800/50 shrink-0 bg-zinc-900/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold text-sm text-zinc-200 flex items-center gap-2">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -123,13 +133,24 @@ export function ChatHistory({ currentSessionId, onSelectSession, onNewChat, onNe
             </svg>
             Historial
           </h2>
-          <button 
-            onClick={onNewChatConfirm} 
-            className="btn btn-ghost btn-xs btn-circle text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
-            title="Nuevo chat"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            {onClose && (
+              <button 
+                onClick={onClose}
+                className="btn btn-ghost btn-xs btn-circle text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 sm:hidden"
+                title="Cerrar"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+            <button 
+              onClick={onNewChatConfirm} 
+              className="btn btn-ghost btn-xs btn-circle text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+              title="Nuevo chat"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
         </div>
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
