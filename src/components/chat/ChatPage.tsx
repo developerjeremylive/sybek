@@ -2,8 +2,8 @@
 // OpenBrowserClaw — Chat page
 // ---------------------------------------------------------------------------
 
-import { useEffect, useRef, useState } from 'react';
-import { X, MessageSquare, Layout, Smartphone, Code, Zap, ChevronLeft, ChevronRight, Copy, Check, Trash2, Bot, Save } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { X, MessageSquare, Layout, Smartphone, Code, Zap, ChevronLeft, ChevronRight, ChevronDown, Copy, Check, Trash2, Bot, Save } from 'lucide-react';
 import { useOrchestratorStore } from '../../stores/orchestrator-store.js';
 import { MessageList } from './MessageList.js';
 import { ChatInput } from './ChatInput.js';
@@ -233,17 +233,57 @@ export function ChatPage() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [isNearBottom, setIsNearBottom] = useState(true);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  
+  // Track if user has scrolled up manually
+  const userScrolledUp = useRef(false);
   
   // Agent change confirmation state
   const [showAgentConfirm, setShowAgentConfirm] = useState(false);
   const [pendingTemplateAgentId, setPendingTemplateAgentId] = useState<string | null>(null);
   const [pendingTemplatePrompt, setPendingTemplatePrompt] = useState<string | null>(null);
 
-  // Scroll to bottom on new messages
+  // Professional scroll handling
+  const scrollToBottom = useCallback((behavior: 'smooth' | 'auto' = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+    userScrolledUp.current = false;
+    setShowScrollButton(false);
+  }, []);
+
+  // Handle scroll event to detect if user is near bottom
+  const handleScroll = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    const nearBottom = distanceFromBottom < 100;
+    
+    setIsNearBottom(nearBottom);
+    setShowScrollButton(!nearBottom && messages.length > 0);
+    
+    // Track if user manually scrolled up
+    if (!nearBottom && !userScrolledUp.current) {
+      userScrolledUp.current = true;
+    }
+  }, [messages.length]);
+
+  // Scroll to bottom on new messages (only if user hasn't scrolled up)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+    if (!userScrolledUp.current && (messages.length > 0 || isTyping)) {
+      scrollToBottom('auto');
+    }
+  }, [messages.length, isTyping, scrollToBottom]);
+
+  // Reset scroll state when switching chats
+  useEffect(() => {
+    userScrolledUp.current = false;
+    setShowScrollButton(false);
+    scrollToBottom('auto');
+  }, [currentChatId, scrollToBottom]);
 
   // Load history on mount
   useEffect(() => {
@@ -326,8 +366,12 @@ export function ChatPage() {
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0 bg-zinc-950">
         <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full">
-          {/* Messages area */}
-          <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-1">
+          {/* Messages area with professional scrolling */}
+          <div 
+            ref={messagesContainerRef}
+            className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-4 space-y-1 scroll-smooth relative"
+            onScroll={handleScroll}
+          >
             {showContinueBanner && (
           <div className="flex items-center justify-center min-h-[200px]">
             <div className="text-center">
@@ -457,7 +501,19 @@ export function ChatPage() {
 
         {isTyping && <TypingIndicator />}
 
-        <div ref={bottomRef} />
+        {/* Invisible element to scroll to */}
+        <div ref={messagesEndRef} />
+        
+        {/* Scroll to bottom button - positioned relative to messages container */}
+        {showScrollButton && (
+          <button
+            onClick={() => scrollToBottom()}
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 btn btn-primary btn-circle shadow-lg animate-fade-in z-10"
+            title="Ir al final"
+          >
+            <ChevronDown className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* Bottom bar - Claude style */}

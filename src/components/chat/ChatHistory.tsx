@@ -114,8 +114,8 @@ export function ChatHistory({ currentSessionId, onSelectSession, onNewChat, onNe
 
   return (
     <div className="w-64 sm:w-64 border-r border-zinc-800 bg-zinc-900 flex flex-col h-full shrink-0 fixed sm:relative inset-0 sm:inset-auto z-50 sm:z-auto">
-      {/* Header - Claude style */}
-      <div className="p-3 border-b border-zinc-800 shrink-0 bg-zinc-900/50 backdrop-blur-sm">
+      {/* Header - Claude style - sticky */}
+      <div className="p-3 border-b border-zinc-800 shrink-0 bg-zinc-900/95 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold text-sm text-zinc-200 flex items-center gap-2">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -143,8 +143,8 @@ export function ChatHistory({ currentSessionId, onSelectSession, onNewChat, onNe
         </div>
       </div>
       
-      {/* Chat list - Claude style */}
-      <div className="flex-1 overflow-y-auto py-2 px-2">
+      {/* Chat list - Claude style - separate scroll */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-2 scroll-smooth">
         {filteredHistory.length === 0 ? (
           <div className="text-center py-12 opacity-40">
             <MessageSquare className="w-10 h-10 mx-auto mb-3 text-zinc-500" />
