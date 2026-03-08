@@ -172,29 +172,38 @@ export function ChatPage() {
     setTimeout(() => setShowChatHistory(false), 100);
   }
   
-  // Update chat history only when there are new messages (not on page load)
   const hasInitiallyLoaded = useRef(false);
+  
+  // Initialize on mount
   useEffect(() => {
+    hasInitiallyLoaded.current = true;
+  }, []);
+  
+  // Auto-create chat when first message is sent
+  useEffect(() => {
+    if (!hasInitiallyLoaded.current || messages.length === 0) return;
+    
+    // Only create new chat if there's no currentChatId and we have messages
+    if (!currentChatId && messages.length >= 1 && messages[0]?.content) {
+      const firstMessage = messages[0].content?.slice(0, 100) || 'Nueva conversación';
+      const title = firstMessage.slice(0, 40) + (firstMessage.length > 40 ? '...' : '');
+      const newChat = addToChatHistory(title, firstMessage);
+      setCurrentChatId(newChat.id);
+    }
+  }, [messages, currentChatId]);
+  
+  // Save messages whenever they change (for current chat)
+  useEffect(() => {
+    // Don't save on initial load
     if (!hasInitiallyLoaded.current) {
-      hasInitiallyLoaded.current = true;
       return;
     }
     
-    if (messages.length > 0 && messages[0]?.content) {
-      const firstMessage = messages[0].content?.slice(0, 100) || 'Nueva conversación';
-      const title = firstMessage.slice(0, 40) + (firstMessage.length > 40 ? '...' : '');
-      if (currentChatId) {
-        updateChatHistory(currentChatId, title, firstMessage);
-        // Save messages to storage
-        saveChatMessages(currentChatId, messages);
-      } else if (messages.length >= 2) {
-        const newChat = addToChatHistory(title, firstMessage);
-        setCurrentChatId(newChat.id);
-        // Save messages to storage
-        saveChatMessages(newChat.id, messages);
-      }
+    // Save messages for current chat whenever they change
+    if (currentChatId && messages.length > 0) {
+      saveChatMessages(currentChatId, messages);
     }
-  }, [messages.length]);
+  }, [messages, messages.length, currentChatId]);
 
   const [activeSlide, setActiveSlide] = useState(0);
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
