@@ -235,7 +235,7 @@ export function ChatPage() {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full relative">
       {/* Chat History Sidebar */}
       <ChatHistory 
         currentSessionId={currentChatId}
@@ -243,19 +243,19 @@ export function ChatPage() {
         onNewChat={handleNewChat}
       />
       
-      {/* Toggle button */}
-      <button
-        onClick={() => setShowChatHistory(!showChatHistory)}
-        className="btn btn-ghost btn-sm btn-circle absolute left-3 top-3 z-10"
-        title={showChatHistory ? 'Ocultar historial' : 'Mostrar historial'}
-      >
-        {showChatHistory ? <PanelLeftClose className="w-5 h-5" /> : <PanelLeft className="w-5 h-5" />}
-      </button>
-      
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
+        {/* Toggle button */}
+        <button
+          onClick={() => setShowChatHistory(!showChatHistory)}
+          className="btn btn-ghost btn-sm btn-circle absolute left-3 top-3 z-10"
+          title={showChatHistory ? 'Ocultar historial' : 'Mostrar historial'}
+        >
+          {showChatHistory ? <PanelLeftClose className="w-5 h-5" /> : <PanelLeft className="w-5 h-5" />}
+        </button>
+        
         {/* Messages area */}
-        <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-1">
+        <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-1 max-w-3xl mx-auto w-full">
         {showContinueBanner && (
           <div className="hero min-h-full">
             <div className="hero-content text-center">
