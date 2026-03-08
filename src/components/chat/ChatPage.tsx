@@ -144,9 +144,10 @@ export function ChatPage() {
   
   function confirmNewChat() {
     setCurrentChatId(null);
+    // Clear messages for fresh start
+    setMessages([]);
     localStorage.removeItem('currentSessionFolder');
     localStorage.removeItem('contextFolders');
-    window.location.reload();
   }
   
   function handleSelectChat(sessionId: string) {
@@ -174,10 +175,14 @@ export function ChatPage() {
   
   const hasInitiallyLoaded = useRef(false);
   
-  // Initialize on mount
+  // Initialize on mount - clear messages and chat on page load
   useEffect(() => {
     hasInitiallyLoaded.current = true;
-  }, []);
+    // Clear messages on page load - fresh start
+    setMessages([]);
+  }, [setMessages]);
+  
+  // Auto-create chat when first message is sent
   
   // Auto-create chat when first message is sent
   useEffect(() => {
