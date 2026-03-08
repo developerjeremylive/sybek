@@ -141,7 +141,19 @@ export function Layout() {
 
         {/* Desktop tabs - only show in 1 column mode */}
         {showTabs && (
-          <div className="navbar-end flex items-center">
+          <div className="navbar-end flex items-center gap-2">
+            {/* Chat history toggle button */}
+            <button
+              onClick={() => {
+                // Dispatch custom event to toggle chat history
+                window.dispatchEvent(new CustomEvent('toggle-chat-history'));
+              }}
+              className="btn btn-ghost btn-sm btn-circle"
+              title="Historial de chats"
+            >
+              <MessageSquare className="w-5 h-5" />
+            </button>
+            
             <div role="tablist" className="tabs tabs-box">
               {mainNavItems.map(({ to, label, icon: Icon }) => (
                 <NavLink

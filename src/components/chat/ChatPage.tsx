@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef, useState } from 'react';
-import { X, MessageSquare, Layout, Smartphone, Code, Zap, ChevronLeft, ChevronRight, Copy, Check, Trash2, Bot, Save, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { X, MessageSquare, Layout, Smartphone, Code, Zap, ChevronLeft, ChevronRight, Copy, Check, Trash2, Bot, Save } from 'lucide-react';
 import { useOrchestratorStore } from '../../stores/orchestrator-store.js';
 import { MessageList } from './MessageList.js';
 import { ChatInput } from './ChatInput.js';
@@ -123,8 +123,15 @@ export function ChatPage() {
   }, [toolResults]);
 
   // Chat history state
-  const [showChatHistory, setShowChatHistory] = useState(true);
+  const [showChatHistory, setShowChatHistory] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  
+  // Listen for toggle event from Layout
+  useEffect(() => {
+    const handleToggle = () => setShowChatHistory(prev => !prev);
+    window.addEventListener('toggle-chat-history', handleToggle);
+    return () => window.removeEventListener('toggle-chat-history', handleToggle);
+  }, []);
   
   function handleNewChat() {
     // Just deselect current chat and show empty chat
@@ -253,14 +260,6 @@ export function ChatPage() {
       
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Toggle history button */}
-        <button
-          onClick={() => setShowChatHistory(!showChatHistory)}
-          className="btn btn-ghost btn-sm btn-circle absolute left-3 top-3 z-10"
-        >
-          {showChatHistory ? <PanelLeftClose className="w-5 h-5" /> : <PanelLeft className="w-5 h-5" />}
-        </button>
-        
         <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full">
           {/* Messages area */}
           <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-1">
