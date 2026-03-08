@@ -113,33 +113,43 @@ export function ChatHistory({ currentSessionId, onSelectSession, onNewChat, onNe
   }
 
   return (
-    <div className="w-72 sm:w-72 border-r border-base-300 bg-base-200 flex flex-col h-full shrink-0 fixed sm:relative inset-0 sm:inset-auto z-50 sm:z-auto">
-      <div className="p-3 border-b border-base-300 shrink-0 bg-base-200">
+    <div className="w-64 sm:w-64 border-r border-zinc-800 bg-zinc-900 flex flex-col h-full shrink-0 fixed sm:relative inset-0 sm:inset-auto z-50 sm:z-auto">
+      {/* Header - Claude style */}
+      <div className="p-3 border-b border-zinc-800 shrink-0 bg-zinc-900/50 backdrop-blur-sm">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-sm flex items-center gap-2">
-            <MessageSquare className="w-4 h-4" />
-            Chats
+          <h2 className="font-semibold text-sm text-zinc-200 flex items-center gap-2">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            Historial
           </h2>
-          <button onClick={onNewChatConfirm} className="btn btn-primary btn-xs btn-circle">
+          <button 
+            onClick={onNewChatConfirm} 
+            className="btn btn-ghost btn-xs btn-circle text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+            title="Nuevo chat"
+          >
             <Plus className="w-4 h-4" />
           </button>
         </div>
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
           <input
             type="text"
-            placeholder="Buscar..."
-            className="input input-sm input-bordered w-full pl-8"
+            placeholder="Buscar conversaciones..."
+            className="input input-sm w-full pl-9 bg-zinc-800/50 border-zinc-700 text-zinc-200 placeholder-zinc-500 focus:border-zinc-600 focus:outline-none focus:ring-0 rounded-md text-xs"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-2">
+      
+      {/* Chat list - Claude style */}
+      <div className="flex-1 overflow-y-auto py-2 px-2">
         {filteredHistory.length === 0 ? (
-          <div className="text-center py-8 opacity-50">
-            <MessageSquare className="w-8 h-8 mx-auto mb-2" />
-            <p className="text-sm">No hay chats</p>
+          <div className="text-center py-12 opacity-40">
+            <MessageSquare className="w-10 h-10 mx-auto mb-3 text-zinc-500" />
+            <p className="text-sm text-zinc-400">Sin conversaciones</p>
+            <p className="text-xs text-zinc-600 mt-1">Crea un nuevo chat para empezar</p>
           </div>
         ) : (
           <div className="space-y-1">
@@ -147,23 +157,26 @@ export function ChatHistory({ currentSessionId, onSelectSession, onNewChat, onNe
               <button
                 key={chat.id}
                 onClick={() => onSelectSession(chat.id)}
-                className={`w-full text-left p-2.5 rounded-lg transition-colors group ${
-                  currentSessionId === chat.id ? 'bg-primary/20 border border-primary/30' : 'hover:bg-base-300'
+                className={`w-full text-left p-3 rounded-lg transition-all duration-150 group ${
+                  currentSessionId === chat.id 
+                    ? 'bg-zinc-800/80 border border-zinc-700/50' 
+                    : 'hover:bg-zinc-800/40 border border-transparent'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm truncate">{chat.title}</div>
-                    <div className="text-xs opacity-50 truncate mt-0.5">{chat.lastMessage || 'Sin mensajes'}</div>
+                    <div className="font-medium text-sm text-zinc-100 truncate">{chat.title}</div>
+                    <div className="text-xs text-zinc-500 truncate mt-1 line-clamp-1">{chat.lastMessage || 'Sin mensajes'}</div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-[10px] opacity-40">{formatTime(chat.updatedAt)}</span>
+                    <span className="text-[10px] text-zinc-600">{formatTime(chat.updatedAt)}</span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setDeleteConfirmId(chat.id);
                       }}
-                      className="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 text-error"
+                      className="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-md"
+                      title="Eliminar"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
@@ -175,31 +188,31 @@ export function ChatHistory({ currentSessionId, onSelectSession, onNewChat, onNe
         )}
       </div>
       
-      {/* Delete Confirmation Popup */}
+      {/* Delete Confirmation Popup - Claude style */}
       {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-base-200 border border-error/30 rounded-xl shadow-2xl w-80 mx-4 overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-80 mx-4 overflow-hidden">
             {/* Header */}
-            <div className="p-4 border-b border-error/20 bg-error/10">
+            <div className="p-4 border-b border-zinc-800 bg-red-500/5">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-error/20 flex items-center justify-center">
-                  <Trash2 className="w-5 h-5 text-error" />
+                <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-400" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-error">¿Eliminar Chat?</h3>
-                  <p className="text-xs opacity-60">Esta acción no se puede deshacer</p>
+                  <h3 className="font-semibold text-zinc-100">Eliminar chat</h3>
+                  <p className="text-xs text-zinc-500">Esta acción no se puede deshacer</p>
                 </div>
               </div>
             </div>
             
             {/* Body */}
             <div className="p-4">
-              <p className="text-sm mb-3">
-                ¿Estás seguro de que deseas eliminar este chat?
+              <p className="text-sm text-zinc-300 mb-3">
+                ¿Eliminar esta conversación?
               </p>
-              <div className="bg-base-300/50 rounded-lg p-3 text-xs opacity-70">
-                <p className="font-medium mb-1">ℹ️ Nota:</p>
-                <p>Los archivos creados en <strong>Files</strong> no se eliminarán. Solo se borrará el historial de conversación.</p>
+              <div className="bg-zinc-800/50 rounded-lg p-3 text-xs text-zinc-400">
+                <p className="font-medium mb-1 text-zinc-300">ℹ️ Nota:</p>
+                <p>Los archivos en <strong className="text-zinc-300">Files</strong> no se eliminarán.</p>
               </div>
             </div>
             
@@ -207,7 +220,7 @@ export function ChatHistory({ currentSessionId, onSelectSession, onNewChat, onNe
             <div className="p-4 pt-0 flex gap-2">
               <button
                 onClick={() => setDeleteConfirmId(null)}
-                className="btn btn-ghost btn-sm flex-1"
+                className="btn btn-ghost btn-sm flex-1 text-zinc-300 hover:bg-zinc-800"
               >
                 Cancelar
               </button>
@@ -217,7 +230,7 @@ export function ChatHistory({ currentSessionId, onSelectSession, onNewChat, onNe
                   setHistory(getChatHistory());
                   setDeleteConfirmId(null);
                 }}
-                className="btn btn-error btn-sm flex-1"
+                className="btn btn-sm flex-1 bg-red-500 hover:bg-red-600 text-white border-none"
               >
                 Eliminar
               </button>

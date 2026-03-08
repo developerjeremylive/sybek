@@ -123,13 +123,30 @@ export function ChatPage() {
     setToolExecutions(executions);
   }, [toolResults]);
 
-  // Chat history state
-  const [showChatHistory, setShowChatHistory] = useState(false);
+  // Chat history state - sidebar always visible on desktop
+  const [showChatHistory, setShowChatHistory] = useState(true); // Start with sidebar open
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   
-  // Listen for toggle event from Layout
+  // Auto-show sidebar on desktop
   useEffect(() => {
-    const handleToggle = () => setShowChatHistory(prev => !prev);
+    const handleResize = () => {
+      if (window.innerWidth >= 640) {
+        setShowChatHistory(true);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  // Listen for toggle event from Layout (only toggle on mobile)
+  useEffect(() => {
+    const handleToggle = () => {
+      // Only toggle on mobile, on desktop sidebar is always visible
+      if (window.innerWidth < 640) {
+        setShowChatHistory(prev => !prev);
+      }
+    };
     window.addEventListener('toggle-chat-history', handleToggle);
     return () => window.removeEventListener('toggle-chat-history', handleToggle);
   }, []);
@@ -170,7 +187,8 @@ export function ChatPage() {
       setMessages([]);
     }
     
-    // Don't close sidebar - let user see the chat
+    // Sidebar stays visible - don't close it on desktop
+    // On mobile, user can toggle with the button
   }
   
   const hasInitiallyLoaded = useRef(false);
@@ -294,7 +312,7 @@ export function ChatPage() {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-zinc-950">
       {/* Chat History Sidebar */}
       {showChatHistory && (
         <ChatHistory 
@@ -306,42 +324,42 @@ export function ChatPage() {
       )}
       
       {/* Main chat area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-zinc-950">
         <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full">
           {/* Messages area */}
           <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-1">
             {showContinueBanner && (
-          <div className="hero min-h-full">
-            <div className="hero-content text-center">
-              <div className="max-w-md">
-                <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-30" />
-                <h2 className="text-2xl font-bold">Continúa la conversación</h2>
-                <p className="mt-2 opacity-60">Envía un mensaje para continuar</p>
-              </div>
+          <div className="flex items-center justify-center min-h-[200px]">
+            <div className="text-center">
+              <MessageSquare className="w-10 h-10 mx-auto mb-3 text-zinc-600" />
+              <h2 className="text-lg font-medium text-zinc-300">Continúa la conversación</h2>
+              <p className="mt-1 text-zinc-500 text-sm">Envía un mensaje para continuar</p>
             </div>
           </div>
         )}
 
         {showWelcome && (
-          <div className="space-y-6">
-            {/* Welcome message */}
-            <div className="text-center py-4">
-              <MessageSquare className="w-16 h-16 mx-auto mb-4 text-primary opacity-80" />
-              <h2 className="text-3xl font-bold">¡Hola! Soy {assistantName}</h2>
-              <p className="mt-2 opacity-60 text-lg">Selecciona una plantilla o escribe tu idea</p>
+          <div className="space-y-8">
+            {/* Welcome message - Claude style */}
+            <div className="text-center py-8">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-gradient-to-br from-zinc-700 to-zinc-900 flex items-center justify-center shadow-lg shadow-zinc-900/50">
+                <span className="text-3xl">⚡</span>
+              </div>
+              <h2 className="text-2xl font-semibold text-zinc-100">Soy {assistantName}</h2>
+              <p className="mt-2 text-zinc-500 text-lg">Selecciona una plantilla o cuéntame tu idea</p>
             </div>
 
-            {/* Agent Templates Carousel */}
-            <div className="relative max-w-4xl mx-auto">
+            {/* Agent Templates Carousel - Claude style */}
+            <div className="relative max-w-4xl mx-auto px-4">
               {/* Navigation arrows */}
               <button
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 btn btn-circle btn-sm btn-ghost"
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-10 btn btn-circle btn-sm btn-ghost text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800"
                 onClick={prevSlide}
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 btn btn-circle btn-sm btn-ghost"
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-10 btn btn-circle btn-sm btn-ghost text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800"
                 onClick={nextSlide}
               >
                 <ChevronRight className="w-5 h-5" />
@@ -357,26 +375,26 @@ export function ChatPage() {
                     const Icon = agent.icon;
                     return (
                       <div key={agent.id} className="w-full flex-shrink-0 px-2">
-                        <div className="card bg-base-200 border border-base-300">
-                          <div className="card-body p-4">
-                            <div className="flex items-center gap-2 mb-3">
-                              <div className={`p-2 rounded-lg ${agent.color}`}>
+                        <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl backdrop-blur-sm">
+                          <div className="p-5">
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className={`p-2.5 rounded-lg ${agent.color} shadow-lg`}>
                                 <Icon className="w-5 h-5 text-white" />
                               </div>
-                              <h3 className="font-bold text-lg">{agent.name}</h3>
+                              <h3 className="font-semibold text-lg text-zinc-100">{agent.name}</h3>
                             </div>
                             
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               {agent.prompts.map((prompt, idx) => (
                                 <button
                                   key={idx}
-                                  className="btn btn-outline btn-sm h-auto py-2 text-left justify-start items-start"
+                                  className="btn btn-outline btn-sm h-auto py-2.5 text-left justify-start items-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600 hover:text-zinc-100 rounded-lg"
                                   onClick={() => handleSelectPrompt(prompt, agent.agentId)}
                                 >
                                   {copiedPrompt === prompt ? (
-                                    <Check className="w-4 h-4 text-success shrink-0 mt-0.5" />
+                                    <Check className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
                                   ) : (
-                                    <Copy className="w-4 h-4 opacity-50 shrink-0 mt-0.5" />
+                                    <Copy className="w-4 h-4 text-zinc-500 shrink-0 mt-0.5" />
                                   )}
                                   <span className="line-clamp-2 text-xs">{prompt}</span>
                                 </button>
@@ -390,8 +408,8 @@ export function ChatPage() {
                 </div>
               </div>
 
-              {/* Dots indicator */}
-              <div className="flex justify-center items-center gap-2 mt-4">
+              {/* Dots indicator - Claude style */}
+              <div className="flex justify-center items-center gap-2 mt-6">
                 {AGENT_TEMPLATES.map((agent, idx) => (
                   <button
                     key={idx}
@@ -404,8 +422,8 @@ export function ChatPage() {
                     <span 
                       className={`block rounded-full transition-all duration-300 ${
                         idx === activeSlide 
-                          ? 'h-2 bg-primary shadow-md shadow-primary/40' 
-                          : 'h-2 bg-base-content/40 group-hover:bg-base-content/60'
+                          ? 'h-1.5 bg-zinc-200 shadow-md shadow-zinc-400/30' 
+                          : 'h-1.5 bg-zinc-700 group-hover:bg-zinc-600'
                       }`}
                     />
                   </button>
@@ -415,7 +433,7 @@ export function ChatPage() {
 
             {/* Quick actions */}
             <div className="text-center">
-              <p className="text-sm opacity-50 mb-3">O describe tu idea directamente</p>
+              <p className="text-sm text-zinc-600 mb-3">O describe tu idea directamente</p>
             </div>
           </div>
         )}
@@ -442,8 +460,8 @@ export function ChatPage() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Bottom bar */}
-      <div className="border-t border-base-300 bg-base-100">
+      {/* Bottom bar - Claude style */}
+      <div className="border-t border-zinc-800 bg-zinc-950">
         {/* Activity log (collapsible) */}
         {activityLog.length > 0 && <ActivityLog entries={activityLog} />}
 
@@ -461,10 +479,10 @@ export function ChatPage() {
         {/* Error display */}
         {error && (
           <div className="px-4 pb-2">
-            <div role="alert" className="alert alert-error">
+            <div role="alert" className="alert bg-red-500/10 border-red-500/30 text-red-400">
               <span>{error}</span>
               <button
-                className="btn btn-ghost btn-xs"
+                className="btn btn-ghost btn-xs text-red-400"
                 onClick={() => useOrchestratorStore.getState().clearError()}
               >
                 <X className="w-4 h-4" />
@@ -492,18 +510,20 @@ export function ChatPage() {
       {/* Agent Editor Floating Component */}
       <AgentEditorFloating />
       
-      {/* Agent Change Confirmation Popup for Templates */}
+      {/* Agent Change Confirmation Popup for Templates - Claude style */}
       {showAgentConfirm && pendingTemplateAgentId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-          <div className="bg-base-200 border border-base-300 rounded-lg shadow-xl w-72 p-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60]">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-xl w-72 p-4">
             <div className="text-center mb-4">
-              <Bot className="w-10 h-10 mx-auto mb-2 text-warning" />
-              <h3 className="font-bold">¿Cambiar Agente?</h3>
-              <p className="text-sm opacity-70 mt-2">
-                ¿Estás seguro de cambiar a <strong>{AGENT_TEMPLATES.find(t => t.agentId === pendingTemplateAgentId)?.name}</strong>?
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-amber-500/10 flex items-center justify-center">
+                <Bot className="w-6 h-6 text-amber-400" />
+              </div>
+              <h3 className="font-semibold text-zinc-100">Cambiar agente</h3>
+              <p className="text-sm text-zinc-400 mt-2">
+                Cambiar a <strong className="text-zinc-200">{AGENT_TEMPLATES.find(t => t.agentId === pendingTemplateAgentId)?.name}</strong>?
               </p>
-              <p className="text-xs opacity-50 mt-2">
-                Esto reemplazará el agent actual y pegará el template en el input.
+              <p className="text-xs text-zinc-500 mt-2">
+                El template se pegará en el input.
               </p>
             </div>
             <div className="flex gap-2">
@@ -513,13 +533,13 @@ export function ChatPage() {
                   setPendingTemplateAgentId(null);
                   setPendingTemplatePrompt(null);
                 }}
-                className="btn btn-ghost btn-sm flex-1"
+                className="btn btn-ghost btn-sm flex-1 text-zinc-300 hover:bg-zinc-800"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleConfirmTemplateAgent}
-                className="btn btn-primary btn-sm flex-1"
+                className="btn btn-sm flex-1 bg-zinc-100 text-zinc-900 hover:bg-zinc-200 border-none font-medium"
               >
                 <Save className="w-4 h-4" />
                 Confirmar
@@ -529,28 +549,28 @@ export function ChatPage() {
         </div>
       )}
       
-      {/* New Chat Confirmation Popup */}
+      {/* New Chat Confirmation Popup - Claude style */}
       {showNewChatConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-base-200 border border-base-300 rounded-xl shadow-2xl w-80 mx-4 overflow-hidden">
-            <div className="p-4 border-b border-base-300">
-              <h3 className="font-bold text-lg">¿Nueva Conversación?</h3>
-              <p className="text-sm opacity-60 mt-1">
-                Se borrarán los mensajes actuales y empezarás de cero.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-80 mx-4 overflow-hidden">
+            <div className="p-4 border-b border-zinc-800">
+              <h3 className="font-semibold text-lg text-zinc-100">Nueva conversación</h3>
+              <p className="text-sm text-zinc-500 mt-1">
+                Los mensajes actuales se borrarán.
               </p>
             </div>
             <div className="p-4 flex gap-2">
               <button
                 onClick={() => setShowNewChatConfirm(false)}
-                className="btn btn-ghost btn-sm flex-1"
+                className="btn btn-ghost btn-sm flex-1 text-zinc-300 hover:bg-zinc-800"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmNewChat}
-                className="btn btn-primary btn-sm flex-1"
+                className="btn btn-sm flex-1 bg-zinc-100 text-zinc-900 hover:bg-zinc-200 border-none font-medium"
               >
-                Nueva Conversación
+                Nueva conversación
               </button>
             </div>
           </div>
