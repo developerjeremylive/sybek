@@ -133,8 +133,15 @@ export function ChatPage() {
     return () => window.removeEventListener('toggle-chat-history', handleToggle);
   }, []);
   
+  // New chat confirmation
+  const [showNewChatConfirm, setShowNewChatConfirm] = useState(false);
+  
   function handleNewChat() {
-    // Just deselect current chat and show empty chat
+    // Show confirmation popup
+    setShowNewChatConfirm(true);
+  }
+  
+  function confirmNewChat() {
     setCurrentChatId(null);
     localStorage.removeItem('currentSessionFolder');
     localStorage.removeItem('contextFolders');
@@ -144,6 +151,8 @@ export function ChatPage() {
   function handleSelectChat(sessionId: string) {
     setCurrentChatId(sessionId);
     // TODO: Load messages from that chat when persistence is implemented
+    // For now, just close sidebar
+    setShowChatHistory(false);
   }
   
   // Update chat history only when there are new messages (not on page load)
@@ -481,8 +490,34 @@ export function ChatPage() {
           </div>
         </div>
       )}
+      
+      {/* New Chat Confirmation Popup */}
+      {showNewChatConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-base-200 border border-base-300 rounded-xl shadow-2xl w-80 mx-4 overflow-hidden">
+            <div className="p-4 border-b border-base-300">
+              <h3 className="font-bold text-lg">¿Nueva Conversación?</h3>
+              <p className="text-sm opacity-60 mt-1">
+                Se borrarán los mensajes actuales y empezarás de cero.
+              </p>
+            </div>
+            <div className="p-4 flex gap-2">
+              <button
+                onClick={() => setShowNewChatConfirm(false)}
+                className="btn btn-ghost btn-sm flex-1"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmNewChat}
+                className="btn btn-primary btn-sm flex-1"
+              >
+                Nueva Conversación
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
