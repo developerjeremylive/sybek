@@ -155,19 +155,21 @@ export function ChatPage() {
       saveChatMessages(currentChatId, messages);
     }
     
+    // Load messages from selected chat FIRST
+    const loadedMessages = loadChatMessages(sessionId);
+    console.log('Loading messages for chat', sessionId, loadedMessages);
+    
     setCurrentChatId(sessionId);
     
-    // Load messages from selected chat
-    const loadedMessages = loadChatMessages(sessionId);
+    // Then replace messages in orchestrator store
     if (loadedMessages && loadedMessages.length > 0) {
-      // Replace messages in orchestrator store
       setMessages(loadedMessages);
     } else {
-      // Clear messages if no saved messages
       setMessages([]);
     }
     
-    setShowChatHistory(false);
+    // Close sidebar after setting messages
+    setTimeout(() => setShowChatHistory(false), 100);
   }
   
   // Update chat history only when there are new messages (not on page load)
