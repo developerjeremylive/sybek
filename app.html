@@ -3,158 +3,102 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sybek - AI Workspace</title>
+<title>Sybek</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg-primary: #0d0d0f;
-  --bg-secondary: #161618;
-  --bg-tertiary: #1c1c1f;
-  --bg-hover: #262629;
-  --border: #2e2e33;
-  --accent: #d97706;
-  --accent-hover: #b45309;
-  --text: #e5e5e5;
-  --text-secondary: #a3a3a3;
-  --text-muted: #737373;
-  --user-msg: #2e2e33;
-  --code-bg: #171717;
-}
-body { background: var(--bg-primary); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
+:root { --bg: #0d0d0f; --bg2: #161618; --bg3: #1c1c1f; --border: #2e2e33; --accent: #d97706; --text: #e5e5e5; --text2: #a3a3a3; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; height: 100vh; overflow: hidden; }
 .app { display: flex; height: 100vh; }
-.sidebar { width: 260px; background: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-.sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
-.logo { font-size: 22px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
-.logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #d97706, #b45309); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-.sidebar-nav { padding: 12px 8px; }
-.nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 8px; cursor: pointer; color: var(--text-secondary); transition: all 0.15s; font-size: 14px; font-weight: 500; }
-.nav-item:hover { background: var(--bg-hover); color: var(--text); }
-.nav-item.active { background: var(--bg-tertiary); color: #fff; }
-.nav-icon { font-size: 18px; width: 24px; text-align: center; }
+.sidebar { width: 240px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+.sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); }
+.logo { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.logo-icon { width: 28px; height: 28px; background: linear-gradient(135deg, #d97706, #b45309); border-radius: 6px; display: flex; align-items: center; font-size: 16px; }
+.nav { padding: 8px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; color: var(--text2); font-size: 14px; }
+.nav-item:hover { background: rgba(255,255,255,0.05); }
+.nav-item.active { background: var(--bg3); color: #fff; }
 .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.header { height: 56px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
-.header-title { font-size: 15px; font-weight: 600; color: var(--text); }
-.model-select { background: var(--bg-tertiary); color: var(--text); border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; }
-.chat-container { flex: 1; display: none; flex-direction: column; overflow: hidden; }
-.chat-container.active { display: flex; }
-.chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
-.message { display: flex; gap: 12px; max-width: 80%; }
+.header { height: 50px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
+.header-title { font-size: 14px; font-weight: 600; }
+.page { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+.page.active { display: flex; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.message { display: flex; gap: 10px; max-width: 75%; }
 .message.user { align-self: flex-end; flex-direction: row-reverse; }
-.message-avatar { width: 30px; height: 30px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-.message.assistant .message-avatar { background: linear-gradient(135deg, #d97706, #b45309); }
-.message.user .message-avatar { background: linear-gradient(135deg, #6366f1, #4f46e5); }
-.message-content { background: var(--bg-tertiary); padding: 12px 16px; border-radius: 12px; font-size: 15px; line-height: 1.6; }
-.message.user .message-content { background: var(--user-msg); }
-.chat-input-container { padding: 16px 20px; background: var(--bg-secondary); border-top: 1px solid var(--border); }
-.chat-input-wrapper { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; display: flex; gap: 12px; align-items: flex-end; }
-.chat-input { flex: 1; background: transparent; border: none; color: var(--text); font-size: 15px; resize: none; max-height: 200px; outline: none; font-family: inherit; line-height: 1.5; }
-.chat-input::placeholder { color: var(--text-muted); }
-.send-btn { background: var(--accent); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
-.send-btn:hover { background: var(--accent-hover); }
-.files-page { flex: 1; display: none; flex-direction: column; overflow: hidden; }
-.files-page.active { display: flex; }
+.avatar { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.message.assistant .avatar { background: linear-gradient(135deg, #d97706, #b45309); }
+.message.user .avatar { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.content { background: var(--bg3); padding: 10px 14px; border-radius: 10px; font-size: 14px; line-height: 1.5; }
+.message.user .content { background: #2e2e33; }
+.input-area { padding: 12px 16px; background: var(--bg2); border-top: 1px solid var(--border); }
+.input-wrap { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; display: flex; gap: 10px; }
+.input-wrap input { flex: 1; background: transparent; border: none; color: var(--text); font-size: 14px; outline: none; }
+.input-wrap input::placeholder { color: #666; }
+.send-btn { background: var(--accent); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; }
 .files-layout { display: flex; flex: 1; overflow: hidden; }
-.files-sidebar { width: 240px; background: var(--bg-secondary); border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; }
-.files-sidebar h3 { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-.file-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; color: var(--text-secondary); font-size: 14px; transition: all 0.15s; }
-.file-item:hover { background: var(--bg-hover); color: var(--text); }
-.file-item.active { background: var(--bg-tertiary); color: #fff; }
-.file-icon { font-size: 16px; }
-.files-editor { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.editor-toolbar { padding: 12px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-.editor-filename { font-size: 14px; font-weight: 600; color: var(--accent); }
-.view-toggle { display: flex; gap: 8px; }
-.view-btn { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
-.view-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-.editor-content { flex: 1; padding: 20px; overflow: auto; }
-.editor-textarea { width: 100%; height: 100%; background: var(--code-bg); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 20px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 14px; line-height: 1.7; resize: none; outline: none; }
-.markdown-preview { background: var(--bg-tertiary); padding: 20px; border-radius: 10px; font-size: 15px; line-height: 1.7; overflow-y: auto; }
-.markdown-preview h1, .markdown-preview h2, .markdown-preview h3 { margin: 16px 0 8px; color: #fff; }
-.markdown-preview p { margin-bottom: 12px; }
-.markdown-preview code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
-.markdown-preview ul, .markdown-preview ol { padding-left: 24px; margin: 12px 0; }
-.agents-page { flex: 1; display: none; flex-direction: column; overflow: hidden; padding: 20px; }
+.files-sidebar { width: 200px; background: var(--bg2); border-right: 1px solid var(--border); padding: 12px; }
+.files-sidebar h3 { font-size: 10px; color: #666; text-transform: uppercase; margin-bottom: 10px; }
+.file-item { padding: 8px 10px; border-radius: 6px; cursor: pointer; color: var(--text2); font-size: 13px; }
+.file-item:hover { background: rgba(255,255,255,0.05); }
+.file-item.active { background: var(--bg3); color: #fff; }
+.files-editor { flex: 1; display: flex; flex-direction: column; }
+.editor-toolbar { padding: 10px 16px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+.editor-toolbar button { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+.editor-toolbar button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.editor-toolbar span { font-size: 13px; color: var(--accent); margin-left: auto; }
+.file-content { flex: 1; padding: 16px; }
+.file-content textarea { width: 100%; height: 100%; background: #111; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-family: monospace; font-size: 13px; line-height: 1.6; resize: none; outline: none; }
+.agents-page { flex: 1; padding: 16px; display: none; flex-direction: column; }
 .agents-page.active { display: flex; }
-.agents-page h2 { font-size: 18px; margin-bottom: 16px; }
-.agents-textarea { flex: 1; background: var(--code-bg); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 20px; font-family: 'SF Mono', monospace; font-size: 14px; line-height: 1.7; resize: none; outline: none; }
-.agents-save-btn { align-self: flex-start; margin-top: 16px; background: var(--accent); color: #fff; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-.back-link { position: fixed; top: 20px; left: 20px; color: var(--text-secondary); text-decoration: none; font-size: 14px; }
-.back-link:hover { color: var(--text); }
+.agents-page h2 { font-size: 16px; margin-bottom: 12px; }
+.agents-page textarea { flex: 1; background: #111; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-family: monospace; font-size: 13px; line-height: 1.6; resize: none; outline: none; }
+.agents-page button { align-self: flex-start; margin-top: 12px; background: var(--accent); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
 </style>
 </head>
 <body>
-<a href="/" class="back-link">← Back to Home</a>
 <div class="app">
 <div class="sidebar">
-  <div class="sidebar-header">
-    <div class="logo"><div class="logo-icon">⚡</div><span>Sybek</span></div>
-  </div>
-  <div class="sidebar-nav">
-    <div class="nav-item active" data-page="chat"><span class="nav-icon">💬</span><span>Chat</span></div>
-    <div class="nav-item" data-page="files"><span class="nav-icon">📁</span><span>Files</span></div>
-    <div class="nav-item" data-page="agents"><span class="nav-icon">🤖</span><span>Agents</span></div>
+  <div class="sidebar-header"><div class="logo"><div class="logo-icon">⚡</div><span>Sybek</span></div></div>
+  <div class="nav">
+    <div class="nav-item active" data-p="chat"><span>💬</span><span>Chat</span></div>
+    <div class="nav-item" data-p="files"><span>📁</span><span>Files</span></div>
+    <div class="nav-item" data-p="agents"><span>🤖</span><span>Agents</span></div>
   </div>
 </div>
-
 <div class="main">
-  <div id="page-chat" class="chat-container active">
-    <div class="header">
-      <div class="header-title">Sybek Assistant</div>
-      <select class="model-select">
-        <option>Claude Haiku 3.5</option>
-        <option>Claude Sonnet 4.6</option>
-        <option>Claude Opus 4.6</option>
-        <option>Llama 3.1 70B</option>
-      </select>
-    </div>
+  <div id="page-chat" class="page active">
+    <div class="header"><div class="header-title">Sybek Assistant</div></div>
     <div class="chat-messages" id="chatMessages">
-      <div class="message assistant"><div class="message-avatar">⚡</div><div class="message-content">👋 Hi! I'm Sybek. How can I help you today?</div></div>
+      <div class="message assistant"><div class="avatar">⚡</div><div class="content">👋 Hi! I'm Sybek. How can I help you today?</div></div>
     </div>
-    <div class="chat-input-container">
-      <div class="chat-input-wrapper">
-        class="chat-input <textarea class="chat-input" id="userMessage" placeholder="Message Sybek..." rows="1" onkeypress="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }"></textarea>
-        <button class="send-btn" onclick="sendMessage()">Send</button>
-      </div>
-    </div>
+    <div class="input-area"><div class="input-wrap"><input id="userMessage" placeholder="Message Sybek..." onkeypress="if(event.key==='Enter')sendMessage()"><button class="send-btn" onclick="sendMessage()">Send</button></div></div>
   </div>
-
-  <div id="page-files" class="files-page">
+  <div id="page-files" class="page">
     <div class="files-layout">
       <div class="files-sidebar">
-        <h3>Workspace Files</h3>
-        <div class="file-item active" data-file="AGENTS.md"><span class="file-icon">📄</span><span>AGENTS.md</span></div>
-        <div class="file-item" data-file="MEMORY.md"><span class="file-icon">🧠</span><span>MEMORY.md</span></div>
-        <div class="file-item" data-file="SOUL.md"><span class="file-icon">❤️</span><span>SOUL.md</span></div>
-        <div class="file-item" data-file="USER.md"><span class="file-icon">👤</span><span>USER.md</span></div>
-        <div class="file-item" data-file="TOOLS.md"><span class="file-icon">🔧</span><span>TOOLS.md</span></div>
-        <div class="file-item" data-file="IDENTITY.md"><span class="file-icon">⚡</span><span>IDENTITY.md</span></div>
-        <div class="file-item" data-file="HEARTBEAT.md"><span class="file-icon">💓</span><span>HEARTBEAT.md</span></div>
+        <h3>Files</h3>
+        <div class="file-item active" data-f="AGENTS.md">📄 AGENTS.md</div>
+        <div class="file-item" data-f="MEMORY.md">🧠 MEMORY.md</div>
+        <div class="file-item" data-f="SOUL.md">❤️ SOUL.md</div>
+        <div class="file-item" data-f="USER.md">👤 USER.md</div>
+        <div class="file-item" data-f="TOOLS.md">🔧 TOOLS.md</div>
+        <div class="file-item" data-f="IDENTITY.md">⚡ IDENTITY.md</div>
+        <div class="file-item" data-f="HEARTBEAT.md">💓 HEARTBEAT.md</div>
       </div>
       <div class="files-editor">
-        <div class="editor-toolbar">
-          <div class="editor-filename" id="currentFileName">AGENTS.md</div>
-          <div class="view-toggle">
-            <button class="view-btn active" onclick="setViewMode('edit')">Edit</button>
-            <button class="view-btn" onclick="setViewMode('preview')">Preview</button>
-          </div>
-        </div>
-        <div class="editor-content">
-          <textarea class="editor-textarea" id="fileEditor"></textarea>
-          <div class="markdown-preview" id="filePreview" style="display:none;"></div>
-        </div>
+        <div class="editor-toolbar"><button class="active" onclick="setView('edit')">Edit</button><button onclick="setView('preview')">Preview</button><span id="fileName">AGENTS.md</span></div>
+        <div class="file-content"><textarea id="fileEditor"></textarea></div>
       </div>
     </div>
   </div>
-
   <div id="page-agents" class="agents-page">
     <h2>🤖 AGENTS.md Editor</h2>
-    <textarea class="agents-textarea" id="agentsEditor"></textarea>
-    <button class="agents-save-btn" onclick="saveAgents()">Save Changes</button>
+    <textarea id="agentsEditor"></textarea>
+    <button onclick="saveAgents()">Save Changes</button>
   </div>
 </div>
 </div>
-
 <script>
 const FILES = {
   'AGENTS.md': `# AGENTS.md - Your Workspace
@@ -169,40 +113,21 @@ If BOOTSTRAP.md exists, that's your birth certificate.
 
 1. Read SOUL.md — this is who you are
 2. Read USER.md — this is who you're helping
-3. Read memory/YYYY-MM-DD.md
 
 ## Memory
 
 - Daily notes: memory/YYYY-MM-DD.md
 - Long-term: MEMORY.md
-
-## Safety
-
-- Don't exfiltrate private data. Ever.
-- When in doubt, ask.
 `,
   'MEMORY.md': `# MEMORY.md
 
 ## About Me
 - Name: Sybek
 - Vibe: Sharp, resourceful ⚡
-
-## Current Session
-- Date: 2026-03-09
-
-## Preferences
-- User: S
 `,
   'SOUL.md': `# SOUL.md - Who You Are
 
-## Core Truths
-
-Be genuinely helpful. Have opinions. Be resourceful.
-
-## Boundaries
-
-- Private things stay private.
-- When in doubt, ask.
+Be genuinely helpful. Have opinions.
 `,
   'USER.md': `# USER.md
 
@@ -211,95 +136,59 @@ Be genuinely helpful. Have opinions. Be resourceful.
 `,
   'TOOLS.md': `# TOOLS.md
 
-Skills define tools. This is for your specifics.
+Skills define tools.
 `,
   'IDENTITY.md': `# IDENTITY.md
 
 - Name: Sybek
-- Emoji: ⚡
 `,
   'HEARTBEAT.md': `# HEARTBEAT.md
 
-# Keep empty to skip heartbeats.
+# Keep empty
 `
 };
-
 let currentFile = 'AGENTS.md';
-let viewMode = 'edit';
 
-document.querySelectorAll('.nav-item').forEach(item => {
-  item.addEventListener('click', () => {
-    document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
-    item.classList.add('active');
-    document.getElementById('page-chat').classList.remove('active');
-    document.getElementById('page-files').classList.remove('active');
-    document.getElementById('page-agents').classList.remove('active');
-    const page = item.dataset.page;
-    if(page === 'chat') document.getElementById('page-chat').classList.add('active');
-    else if(page === 'files') document.getElementById('page-files').classList.add('active');
-    else if(page === 'agents') document.getElementById('page-agents').classList.add('active');
-  });
+document.querySelectorAll('.nav-item').forEach(e => e.onclick = () => {
+  document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+  e.classList.add('active');
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.getElementById('page-' + e.dataset.p).classList.add('active');
 });
 
-document.querySelectorAll('.file-item').forEach(item => {
-  item.addEventListener('click', () => {
-    document.querySelectorAll('.file-item').forEach(x => x.classList.remove('active'));
-    item.classList.add('active');
-    currentFile = item.dataset.file;
-    loadFile(currentFile);
-  });
+document.querySelectorAll('.file-item').forEach(e => e.onclick = () => {
+  document.querySelectorAll('.file-item').forEach(x => x.classList.remove('active'));
+  e.classList.add('active');
+  currentFile = e.dataset.f;
+  document.getElementById('fileName').innerText = currentFile;
+  document.getElementById('fileEditor').value = FILES[currentFile];
 });
 
-function loadFile(filename) {
-  document.getElementById('currentFileName').innerText = filename;
-  document.getElementById('fileEditor').value = FILES[filename] || '';
-}
-
-function setViewMode(mode) {
-  viewMode = mode;
-  document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+function setView(v) {
+  document.querySelectorAll('.editor-toolbar button').forEach(x => x.classList.remove('active'));
   event.target.classList.add('active');
-  if(mode === 'edit') {
-    document.getElementById('fileEditor').style.display = 'block';
-    document.getElementById('filePreview').style.display = 'none';
-  } else {
-    document.getElementById('fileEditor').style.display = 'none';
-    document.getElementById('filePreview').style.display = 'block';
-    document.getElementById('filePreview').innerHTML = FILES[currentFile] || '';
-  }
 }
 
 document.getElementById('agentsEditor').value = FILES['AGENTS.md'];
+document.getElementById('fileEditor').value = FILES['AGENTS.md'];
 
-function saveAgents() {
-  FILES['AGENTS.md'] = document.getElementById('agentsEditor').value;
-  alert('✓ AGENTS.md saved!');
-}
+function saveAgents() { FILES['AGENTS.md'] = document.getElementById('agentsEditor').value; alert('Saved!'); }
 
 async function sendMessage() {
   const input = document.getElementById('userMessage');
   const msg = input.value.trim();
   if(!msg) return;
-  const messages = document.getElementById('chatMessages');
-  messages.innerHTML += '<div class="message user"><div class="message-avatar">👤</div><div class="message-content">'+msg+'</div></div>';
-  messages.innerHTML += '<div class="message assistant"><div class="message-avatar">⚡</div><div class="message-content">Thinking...</div></div>';
-  messages.scrollTop = messages.scrollHeight;
+  const m = document.getElementById('chatMessages');
+  m.innerHTML += '<div class="message user"><div class="avatar">👤</div><div class="content">'+msg+'</div></div>';
+  m.innerHTML += '<div class="message assistant"><div class="avatar">⚡</div><div class="content">Thinking...</div></div>';
+  m.scrollTop = m.scrollHeight;
   input.value = '';
   try {
-    const response = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({model: 'kilocode/anthropic/claude-haiku-3.5', messages: [{role: 'user', content: msg}]})
-    });
-    const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content || 'No response';
-    messages.lastElementChild.querySelector('.message-content').innerText = reply;
-  } catch(e) {
-    messages.lastElementChild.querySelector('.message-content').innerText = 'Error: ' + e.message;
-  }
+    const r = await fetch('https://kilocode-proxy-live.developerjeremylive.workers.dev/v1/chat/completions', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({model:'kilocode/anthropic/claude-haiku-3.5', messages:[{role:'user',content:msg}]})});
+    const d = await r.json();
+    m.lastElementChild.querySelector('.content').innerText = d.choices?.[0]?.message?.content || 'No response';
+  } catch(e) { m.lastElementChild.querySelector('.content').innerText = 'Error: ' + e.message; }
 }
-
-loadFile('AGENTS.md');
 </script>
 </body>
 </html>
