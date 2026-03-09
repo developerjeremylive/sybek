@@ -1,9 +1,112 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  meta http-equiv="refresh" content="0;url=payground.html">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sybek - Intelligent AI Workspace</title>
+  <meta name="description" content="OpenClaw workspace with AI, Cloudflare Workers, and MCP servers">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #fff;
+      background: #202031;
+      min-height: 100vh;
+    }
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+      background: linear-gradient(135deg, #1a1625 0%, #2d1f47 50%, #1a1625 100%);
+    }
+    .hero-badge {
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: #888;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+    h1 {
+      font-size: 64px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      background: linear-gradient(90deg, #c084fc, #6366f1, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    p1 {
+      font-size: 20px;
+      line-height: 1.6;
+      color: #a1a1aa;
+      max-width: 600px;
+      margin-bottom: 40px;
+    }
+    .cta-button {
+      display: inline-block;
+      padding: 18px 48px;
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 40px rgba(124, 58, 237, 0.4);
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      max-width: 1000px;
+      margin-top: 80px;
+    }
+    .feature {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 24px;
+    }
+    .feature h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: #c084fc;
+    }
+    .feature p {
+      font-size: 14px;
+      color: #71717a;
+    }
+  </style>
 </head>
-$
-<biody>
-  Predicting to <a href="playground.html">playground.html</a>
+<body>
+  <div class="hero">
+    <span class="hero-badge">⚡ Powered by OpenClaw</span>
+    <h1>Sybek</h1>
+    <p1>Your intelligent AI workspace built with Cloudflare Workers, MCP servers, and modern web technologies. Chat with AI models, manage MCP servers, and deploy instantly.</p1>
+    <a href="/playground" class="cta-button">Open Playground →</a>
+    <div class="features">
+      <div class="feature">
+        <h3>🤖 AI Chat</h3>
+        <p>Conversational AI interface with multiple models via Cloudflare Workers AI</p>
+      </div>
+      <div class="feature">
+        <h3>🔌 MCP Servers</h3>
+        <p>Manage and connect to Model Context Protocol servers</p>
+      </div>
+      <div class="feature">
+        <h3>☁️ Serverless</h3>
+        <p>Deploy instantly with Cloudflare Workers - no infrastructure needed</p>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
