@@ -22,11 +22,6 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Build
-        run: |
-          npm run build
-          cp worker.js dist/_worker.js
-
       - name: Create Cloudflare Pages Deployment
         uses: cloudflare/pages-action@v1
         with:
