@@ -1,1 +1,6 @@
-# No submodules configured
+[submodule "kilocode-proxy"]
+    path = kilocode-proxy
+    url = https://github.com/developerjeremylive/kilocode-proxy.git
+[submodule "sybek"]
+    path = sybek
+    url = https://github.com/developerjeremylive/sybek.git
