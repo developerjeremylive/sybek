@@ -22,9 +22,15 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Deploy to Cloudflare
-        uses: cloudflare/wrangler-action@v3
+      - name: Build
+        run: |
+          npm run build
+          cp worker.js dist/_worker.js
+
+      - name: Create Cloudflare Pages Deployment
+        uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: deploy worker.js
+          projectName: sybek
+          directory: dist
