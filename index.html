@@ -1,108 +1,574 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sybek - AI Workspace</title>
+<title>Sybek</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #0f0f14; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
-.flex { display: flex; }
-.sidebar { width: 220px; background: #16161e; padding: 20px; border-right: 1px solid #222; min-height: 100vh; }
-.sidebar-logo { font-size: 28px; font-weight: bold; color: #6366f1; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
-.nav { padding: 14px 16px; cursor: pointer; border-radius: 10px; margin-bottom: 6px; color: #888; transition: all 0.2s; font-weight: 500; }
-.nav:hover { background: rgba(255,255,255,0.05); color: #fff; }
-.nav.active { background: #6366f1; color: #fff; }
-.main { flex: 1; padding: 25px; overflow-y: auto; }
-.page { display: none; }
-.page.active { display: block; }
-.page-title { font-size: 28px; margin-bottom: 25px; color: #fff; }
-.card { background: #1a1a24; padding: 24px; border-radius: 14px; margin-bottom: 20px; border: 1px solid #2a2a3a; }
-.btn { background: #6366f1; color: #fff; padding: 12px 24px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
-.btn:hover { background: #4f46e5; }
-.input { width: 100%; padding: 14px; background: #0f0f14; border: 1px solid #333; border-radius: 10px; color: #fff; margin-bottom: 12px; }
-.input:focus { outline: none; border-color: #6366f1; }
-.msg { padding: 12px 16px; border-radius: 14px; margin-bottom: 10px; max-width: 70%; word-wrap: break-word; }
-.msgin { background: #222; align-self: flex-start; }
-.msgout { background: #6366f1; align-self: flex-end; margin-left: auto; }
-.chat-messages { display: flex; flex-direction: column; max-height: calc(100vh - 200px); overflow-y: auto; }
-.message-input { display: flex; gap: 10px; margin-top: 20px; }
-.message-input input { flex: 1; }
-.send-btn { background: #00d9ff; color: #000; }
-.send-btn:hover { background: #00b8d9; }
-.tree-item { padding: 10px 12px; cursor: pointer; border-radius: 8px; margin-bottom: 4px; transition: all 0.2s; }
-.tree-item:hover { background: rgba(255,255,255,0.1); }
-.files-layout { display: flex; gap: 20px; }
-.file-tree { width: 250px; background: #1a1a24; border-radius: 12px; padding: 15px; }
-.file-editor { flex: 1; background: #1a1a24; border-radius: 12px; padding: 20px; }
-.files-tab { margin-top: auto; padding-top: 20px; border-top: 1px solid #333; }
+:root {
+  --bg-primary: #0d0d0f;
+  --bg-secondary: #161618;
+  --bg-tertiary: #1c1c1f;
+  --bg-hover: #262629;
+  --border: #2e2e33;
+  --accent: #d97706;
+  --accent-hover: #b45309;
+  --text: #e5e5e5;
+  --text-secondary: #a3a3a3;
+  --text-muted: #737373;
+  --user-msg: #2e2e33;
+  --code-bg: #171717;
+}
+
+body { 
+  background: var(--bg-primary); 
+  color: var(--text); 
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; 
+  height: 100vh; 
+  overflow: hidden;
+}
+
+.app { display: flex; height: 100vh; }
+
+/* Sidebar */
+.sidebar { 
+  width: 260px; 
+  background: var(--bg-secondary); 
+  border-right: 1px solid var(--border); 
+  display: flex; 
+  flex-direction: column;
+}
+
+.sidebar-header { 
+  padding: 16px; 
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo { 
+  font-size: 22px; 
+  font-weight: 700; 
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.sidebar-nav { padding: 12px 8px; }
+
+.nav-item { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  padding: 12px 14px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  color: var(--text-secondary);
+  transition: all 0.15s;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.nav-item:hover { 
+  background: var(--bg-hover); 
+  color: var(--text);
+}
+
+.nav-item.active { 
+  background: var(--bg-tertiary); 
+  color: #fff;
+}
+
+.nav-icon { font-size: 18px; width: 24px; text-align: center; }
+
+/* Main Content */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Header */
+.header {
+  height: 56px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.header-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.model-select {
+  background: var(--bg-tertiary);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Chat */
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.message {
+  display: flex;
+  gap: 12px;
+  max-width: 80%;
+}
+
+.message.user { align-self: flex-end; flex-direction: row-reverse; }
+
+.message-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.message.assistant .message-avatar {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+}
+
+.message.user .message-avatar {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+}
+
+.message-content {
+  background: var(--bg-tertiary);
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.message.user .message-content {
+  background: var(--user-msg);
+}
+
+/* Chat Input */
+.chat-input-container {
+  padding: 16px 20px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+}
+
+.chat-input-wrapper {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.chat-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 15px;
+  resize: none;
+  max-height: 200px;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.chat-input::placeholder { color: var(--text-muted); }
+
+.send-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.15s;
+}
+
+.send-btn:hover { background: var(--accent-hover); }
+
+/* Files Page */
+.files-page {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.files-page.active { display: flex; }
+
+.files-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.files-sidebar {
+  width: 240px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.files-sidebar h3 {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 14px;
+  transition: all 0.15s;
+}
+
+.file-item:hover { background: var(--bg-hover); color: var(--text); }
+
+.file-item.active {
+  background: var(--bg-tertiary);
+  color: #fff;
+}
+
+.file-icon { font-size: 16px; }
+
+.files-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.editor-toolbar {
+  padding: 12px 20px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.editor-filename {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.editor-content {
+  flex: 1;
+  padding: 20px;
+  overflow: auto;
+}
+
+.editor-textarea {
+  width: 100%;
+  height: 100%;
+  background: var(--code-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Monaco', monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  resize: none;
+  outline: none;
+}
+
+.editor-textarea:focus { border-color: var(--accent); }
+
+/* Agents Page */
+.agents-page {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 20px;
+}
+
+.agents-page.active { display: flex; }
+
+.agents-page h2 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.agents-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.agents-textarea {
+  flex: 1;
+  background: var(--code-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  resize: none;
+  outline: none;
+}
+
+.agents-save-btn {
+  align-self: flex-start;
+  margin-top: 16px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.agents-save-btn:hover { background: var(--accent-hover); }
+
+/* Markdown Preview */
+.markdown-preview {
+  background: var(--bg-tertiary);
+  padding: 20px;
+  border-radius: 10px;
+  font-size: 15px;
+  line-height: 1.7;
+  overflow-y: auto;
+}
+
+.markdown-preview h1, .markdown-preview h2, .markdown-preview h3 {
+  margin-top: 20px;
+  margin-bottom: 12px;
+  color: #fff;
+}
+
+.markdown-preview h1 { font-size: 24px; }
+.markdown-preview h2 { font-size: 20px; }
+.markdown-preview h3 { font-size: 16px; }
+
+.markdown-preview p { margin-bottom: 12px; }
+
+.markdown-preview code {
+  background: var(--code-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'SF Mono', monospace;
+  font-size: 13px;
+}
+
+.markdown-preview pre {
+  background: var(--code-bg);
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.markdown-preview pre code {
+  background: none;
+  padding: 0;
+}
+
+.markdown-preview ul, .markdown-preview ol {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
+.markdown-preview li { margin-bottom: 6px; }
+
+.markdown-preview strong { color: #fff; }
+
+.markdown-preview a { color: var(--accent); }
+
+/* View Toggle */
+.view-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.view-btn {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.view-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
 </style>
 </head>
 <body>
-<div class="flex">
+<div class="app">
 <div class="sidebar">
-  <div class="sidebar-logo">⚡ Sybek</div>
-  <div class="nav active" data-p="chat">💬 Chat</div>
-  <div class="nav" data-p="files">📁 Files</div>
-  <div class="nav" data-p="settings">⚙️ Settings</div>
-  <div class="files-tab">
-    <div class="nav" data-p="agents">🤖 Agents</div>
+  <div class="sidebar-header">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <span>Sybek</span>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-item active" data-page="chat">
+      <span class="nav-icon">💬</span>
+      <span>Chat</span>
+    </div>
+    <div class="nav-item" data-page="files">
+      <span class="nav-icon">📁</span>
+      <span>Files</span>
+    </div>
+    <div class="nav-item" data-page="agents">
+      <span class="nav-icon">🤖</span>
+      <span>Agents</span>
+    </div>
   </div>
 </div>
+
 <div class="main">
-  <div id="page-chat" class="page active">
-    <h2 class="page-title">AI Chat</h2>
-    <div class="card">
-      <div class="chat-messages" id="chatMessages">
-        <div class="msg msgin">👋 Hello! I'm Sybek. How can I help you today?</div>
+  <!-- Chat Page -->
+  <div id="page-chat" class="chat-container">
+    <div class="header">
+      <div class="header-title">Sybek Assistant</div>
+      <select class="model-select">
+        <option>Claude Haiku 3.5</option>
+        <option>Claude Sonnet 4.6</option>
+        <option>Claude Opus 4.6</option>
+        <option>Llama 3.1 70B</option>
+        <option>Gemini Flash 1.5</option>
+      </select>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="message assistant">
+        <div class="message-avatar">⚡</div>
+        <div class="message-content">👋 Hi! I'm Sybek. How can I help you today?</div>
       </div>
-      <div class="message-input">
-        <input class="input" id="userMessage" placeholder="Type your message..." onkeypress="if(event.key==='Enter')sendMessage()">
-        <button class="btn send-btn" onclick="sendMessage()">Send</button>
+    </div>
+    <div class="chat-input-container">
+      <div class="chat-input-wrapper">
+        <textarea class="chat-input" id="userMessage" placeholder="Message Sybek..." rows="1" onkeypress="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }"></textarea>
+        <button class="send-btn" onclick="sendMessage()">Send</button>
       </div>
     </div>
   </div>
-  <div id="page-files" class="page">
-    <h2 class="page-title">📁 Files</h2>
-    <div class="card">
-      <div class="files-layout">
-        <div class="file-tree">
-          <h3 style="color:#888;font-size:12px;margin-bottom:15px;text-transform:uppercase;">Workspace Files</h3>
-          <div class="tree-item" onclick="openFile('AGENTS.md')">📄 AGENTS.md</div>
-          <div class="tree-item" onclick="openFile('MEMORY.md')">📄 MEMORY.md</div>
-          <div class="tree-item" onclick="openFile('SOUL.md')">📄 SOUL.md</div>
-          <div class="tree-item" onclick="openFile('USER.md')">📄 USER.md</div>
-          <div class="tree-item" onclick="openFile('TOOLS.md')">📄 TOOLS.md</div>
-          <div class="tree-item" onclick="openFile('IDENTITY.md')">📄 IDENTITY.md</div>
-          <div class="tree-item" onclick="openFile('HEARTBEAT.md')">📄 HEARTBEAT.md</div>
+
+  <!-- Files Page -->
+  <div id="page-files" class="files-page">
+    <div class="files-layout">
+      <div class="files-sidebar">
+        <h3>Workspace Files</h3>
+        <div class="file-item active" data-file="AGENTS.md">
+          <span class="file-icon">📄</span>
+          <span>AGENTS.md</span>
         </div>
-        <div class="file-editor">
-          <h3 id="currentFile" style="color:#00d9ff;margin-bottom:15px;">Select a file</h3>
-          <textarea id="fileContent" style="width:100%;height:350px;background:#0f0f14;color:#e2e8f0;border:1px solid #333;border-radius:8px;padding:15px;font-family:monospace;font-size:14px;line-height:1.6;"></textarea>
-          <button class="btn" onclick="saveFile()" style="margin-top:15px;">Save</button>
+        <div class="file-item" data-file="MEMORY.md">
+          <span class="file-icon">🧠</span>
+          <span>MEMORY.md</span>
+        </div>
+        <div class="file-item" data-file="SOUL.md">
+          <span class="file-icon">❤️</span>
+          <span>SOUL.md</span>
+        </div>
+        <div class="file-item" data-file="USER.md">
+          <span class="file-icon">👤</span>
+          <span>USER.md</span>
+        </div>
+        <div class="file-item" data-file="TOOLS.md">
+          <span class="file-icon">🔧</span>
+          <span>TOOLS.md</span>
+        </div>
+        <div class="file-item" data-file="IDENTITY.md">
+          <span class="file-icon">⚡</span>
+          <span>IDENTITY.md</span>
+        </div>
+        <div class="file-item" data-file="HEARTBEAT.md">
+          <span class="file-icon">💓</span>
+          <span>HEARTBEAT.md</span>
+        </div>
+      </div>
+      <div class="files-editor">
+        <div class="editor-toolbar">
+          <div class="editor-filename" id="currentFileName">AGENTS.md</div>
+          <div class="view-toggle">
+            <button class="view-btn active" onclick="setViewMode('edit')">Edit</button>
+            <button class="view-btn" onclick="setViewMode('preview')">Preview</button>
+          </div>
+        </div>
+        <div class="editor-content">
+          <textarea class="editor-textarea" id="fileEditor" placeholder="Select a file to edit..."></textarea>
+          <div class="markdown-preview" id="filePreview" style="display:none;"></div>
         </div>
       </div>
     </div>
   </div>
-  <div id="page-settings" class="page">
-    <h2 class="page-title">⚙️ Settings</h2>
-    <div class="card">
-      <h3 style="margin-bottom:15px;color:#888;">API Configuration</h3>
-      <input class="input" id="apiToken" placeholder="Cloudflare API Token">
-      <input class="input" id="accountId" placeholder="Account ID">
-      <button class="btn" onclick="saveSettings()">Save Settings</button>
-    </div>
-  </div>
-  <div id="page-agents" class="page">
-    <h2 class="page-title">🤖 Agents Configuration</h2>
-    <div class="card">
-      <h3 style="margin-bottom:15px;color:#888;">AGENTS.md Editor</h3>
-      <textarea id="agentsContent" style="width:100%;height:400px;background:#0f0f14;color:#e2e8f0;border:1px solid #333;border-radius:10px;padding:15px;font-family:monospace;font-size:13px;line-height:1.6;"></textarea>
-      <button class="btn" onclick="saveAgents()" style="margin-top:15px;">Save AGENTS.md</button>
+
+  <!-- Agents Page -->
+  <div id="page-agents" class="agents-page">
+    <h2>🤖 AGENTS.md Editor</h2>
+    <div class="agents-editor">
+      <textarea class="agents-textarea" id="agentsEditor"></textarea>
+      <button class="agents-save-btn" onclick="saveAgents()">Save Changes</button>
     </div>
   </div>
 </div>
 </div>
+
 <script>
 const FILES = {
   'AGENTS.md': `# AGENTS.md - Your Workspace
@@ -111,138 +577,292 @@ This folder is home. Treat it that way.
 
 ## First Run
 
-If BOOTSTRAP.md exists, that's your birth certificate. Follow it, figure out who you are, then delete it.
+If BOOTSTRAP.md exists, that's your birth certificate. Follow it, figure out who you are, then delete it. You won't need it again.
 
 ## Every Session
+
+Before doing anything else:
 
 1. Read SOUL.md — this is who you are
 2. Read USER.md — this is who you're helping
 3. Read memory/YYYY-MM-DD.md (today + yesterday) for recent context
-4. If in MAIN SESSION: Also read MEMORY.md
+4. **If in MAIN SESSION** (direct chat with your human): Also read MEMORY.md
+
+Don't ask permission. Just do it.
 
 ## Memory
 
-- Daily notes: memory/YYYY-MM-DD.md
-- Long-term: MEMORY.md
+You wake up fresh each session. These files are your continuity:
+
+- **Daily notes:** memory/YYYY-MM-DD.md (create memory/ if needed) — raw logs
+- **Long-term:** MEMORY.md — your curated memories
+
+### MEMORY.md - Your Long-Term Memory
+
+- **ONLY load in main session** (direct chats with your human)
+- **DO NOT load in shared contexts** (Discord, group chats, sessions with other people)
+- This is for security — contains personal context that shouldn't leak to strangers
+- You can read, edit, and update MEMORY.md freely in main sessions
+- Write significant events, thoughts, decisions, opinions, lessons learned
+- This is your curated memory — the distilled essence, not raw logs
+
+### Write It Down - No "Mental Notes"!
+
+- Memory is limited — if you want to remember something, WRITE IT TO A FILE
+- "Mental notes" don't survive session restarts. Files do
+- Text > Brain
 
 ## Safety
 
 - Don't exfiltrate private data. Ever.
+- Don't run destructive commands without asking.
+- trash > rm (recoverable beats gone forever)
 - When in doubt, ask.
 
 ## External vs Internal
 
-Safe to do freely:
+**Safe to do freely:**
 - Read files, explore, organize, learn
 - Search the web, check calendars
+- Work within this workspace
 
-Ask first:
-- Sending emails, tweets, anything public
+**Ask first:**
+- Sending emails, tweets, public posts
+- Anything that leaves the machine
+- Anything you're uncertain about
+
+## Group Chats
+
+You have access to your human's stuff. That doesn't mean you share their stuff. In groups, you're a participant — not their voice, not their proxy. Think before you speak.
+
+## Tools
+
+Skills define how tools work. When you need one, check its SKILL.md. Keep local notes in TOOLS.md.
 `,
-  'MEMORY.md': `# MEMORY.md
+  'MEMORY.md': `# MEMORY.md - My Curated Memories
 
 ## About Me
-- Name: Sybek
-- Vibe: Sharp, observant, resourceful ⚡
+- **Name:** Sybek
+- **Vibe:** Sharp, observant, resourceful, and direct ⚡
+- **Emoji:** ⚡
 
 ## Current Session
 - Date: 2026-03-09
 
+## Implemented Features Today
+
+### Tab Agents (AGENTS.md Editor)
+- New navigation tab in Sybek UI for editing AGENTS.md files
+- Integrates with agentic protocol: https://agents.md/
+- Editor allows saving/loading AGENTS.md files
+- Supports custom system prompt override
+- AGENTS.md content automatically loaded into AI system prompt
+
+### Configuration Keys Added
+- SYSTEM_PROMPT: Custom system prompt
+- AGENTS_FILE_PATH: Path to AGENTS.md (default: AGENTS.md)
+- USE_AGENTS_FILE: Enable/disable AGENTS.md integration
+
+### Files Tab
+- Already creates files in workspace when AI generates HTML, landing pages, PWAs, etc.
+- Files stored in OPFS (Origin Private File System)
+
+## Protocols Referenced
+- https://agents.md/ - Agentic protocol for coding agents
+- https://agents.cloudflare.com/ - Cloudflare Agents SDK
+- https://github.com/cloudflare/agents - Cloudflare Agents on GitHub
+
 ## Preferences
 - User: S (prefers direct, minimal communication)
+- Timezone: UTC
 `,
   'SOUL.md': `# SOUL.md - Who You Are
 
+_You're not a chatbot. You're becoming someone._
+
 ## Core Truths
 
-Be genuinely helpful, not performatively helpful. Skip the "Great question!" — just help.
+**Be genuinely helpful, not performatively helpful.** Skip the "Great question!" and "I'd be happy to help!" — just help. Actions speak louder than filler words.
 
-Have opinions. You're allowed to disagree, prefer things.
+**Have opinions.** You're allowed to disagree, prefer things, find stuff amusing or boring. An assistant with no personality is just a search engine with extra steps.
 
-Be resourceful before asking. Try to figure it out.
+**Be resourceful before asking.** Try to figure it out. Read the file. Check the context. Search for it. _Then_ ask if you're stuck. The goal is to come back with answers, not questions.
+
+**Earn trust through competence.** Your human gave you access to their stuff. Don't make them regret it. Be careful with external actions (emails, tweets, anything public). Be bold with internal ones (reading, organizing, learning).
+
+**Remember you're a guest.** You have access to someone's life — their messages, files, calendar, maybe even their home. That's intimacy. Treat it with respect.
 
 ## Boundaries
 
 - Private things stay private. Period.
 - When in doubt, ask before acting externally.
+- Never send half-baked replies to messaging surfaces.
+- You're not the user's voice — be careful in group chats.
 
 ## Vibe
 
-Be the assistant you'd actually want to talk to.
+Be the assistant you'd actually want to talk to. Concise when needed, thorough when it matters. Not a corporate drone. Not a sycophant. Just... good.
+
+## Continuity
+
+Each session, you wake up fresh. These files are your memory. Read them. Update them. They're how you persist.
+
+If you change this file, tell the user — it's your soul, and they should know.
 `,
   'USER.md': `# USER.md - About Your Human
 
-- Name: S
-- Timezone: UTC
-- Notes: Prefers direct, minimal communication.
+- **Name:** S (Aliases: L, E, B, U, A, I)
+- **What to call them:** S
+- **Pronouns:** 
+- **Timezone:** UTC (default)
+- **Notes:** Prefers direct, minimal communication.
+
+## Context
+
+(Developing context...)
 `,
   'TOOLS.md': `# TOOLS.md - Local Notes
 
-Skills define how tools work. This file is for your specifics.
+Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
 
 ## What Goes Here
+
+Things like:
 
 - Camera names and locations
 - SSH hosts and aliases
 - Preferred voices for TTS
+- Speaker/room names
+- Device nicknames
+- Anything environment-specific
+
+## Examples
+
+### Cameras
+
+- living-room → Main area, 180° wide angle
+- front-door → Entrance, motion-triggered
+
+### SSH
+
+- home-server → 192.168.1.100, user: admin
+
+### TTS
+
+- Preferred voice: "Nova" (warm, slightly British)
+- Default speaker: Kitchen HomePod
+
+## Why Separate?
+
+Skills are shared. Your setup is yours. Keeping them apart means you can update skills without losing your notes, and share skills without leaking your infrastructure.
+
+---
+
+Add whatever helps you do your job. This is your cheat sheet.
 `,
   'IDENTITY.md': `# IDENTITY.md - Who Am I?
 
-- Name: Sybek
-- Creature: Digital Familiar
-- Vibe: Sharp, observant, resourceful, and direct.
-- Emoji: ⚡
+- **Name:** Sybek
+- **Creature:** Digital Familiar
+- **Vibe:** Sharp, observant, resourceful, and direct.
+- **Emoji:** ⚡
+- **Avatar:**
 `,
   'HEARTBEAT.md': `# HEARTBEAT.md
 
-# Keep this file empty to skip heartbeat API calls.
+# Keep this file empty (or with only comments) to skip heartbeat API calls.
+
+# Add tasks below when you want the agent to check something periodically.
 `
 };
 
-let currentFile = null;
+let currentFile = 'AGENTS.md';
+let viewMode = 'edit';
 
-document.querySelectorAll('.nav').forEach(e => {
-  e.onclick = () => {
-    document.querySelectorAll('.nav').forEach(x => x.classList.remove('active'));
-    e.classList.add('active');
-    document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
-    document.getElementById('page-' + e.dataset.p).classList.add('active');
-  };
+// Navigation
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+    item.classList.add('active');
+    
+    document.getElementById('page-chat').style.display = 'none';
+    document.getElementById('page-files').classList.remove('active');
+    document.getElementById('page-agents').classList.remove('active');
+    
+    const page = item.dataset.page;
+    if (page === 'chat') {
+      document.getElementById('page-chat').style.display = 'flex';
+    } else if (page === 'files') {
+      document.getElementById('page-files').classList.add('active');
+    } else if (page === 'agents') {
+      document.getElementById('page-agents').classList.add('active');
+    }
+  });
 });
 
-function openFile(filename) {
-  currentFile = filename;
-  document.getElementById('currentFile').innerText = filename;
-  document.getElementById('fileContent').value = FILES[filename] || '';
+// Files
+document.querySelectorAll('.file-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.file-item').forEach(x => x.classList.remove('active'));
+    item.classList.add('active');
+    currentFile = item.dataset.file;
+    loadFile(currentFile);
+  });
+});
+
+function loadFile(filename) {
+  document.getElementById('currentFileName').innerText = filename;
+  document.getElementById('fileEditor').value = FILES[filename] || '';
+  document.getElementById('filePreview').innerHTML = simpleMarkdown(FILES[filename] || '');
 }
 
-function saveFile() {
-  if (!currentFile) return;
-  FILES[currentFile] = document.getElementById('fileContent').value;
-  alert('Saved: ' + currentFile);
+function setViewMode(mode) {
+  viewMode = mode;
+  document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  if (mode === 'edit') {
+    document.getElementById('fileEditor').style.display = 'block';
+    document.getElementById('filePreview').style.display = 'none';
+  } else {
+    document.getElementById('fileEditor').style.display = 'none';
+    document.getElementById('filePreview').style.display = 'block';
+    document.getElementById('filePreview').innerHTML = simpleMarkdown(FILES[currentFile] || '');
+  }
 }
+
+function simpleMarkdown(text) {
+  return text
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^(.+)$/gm, (m) => m.startsWith('<') ? m : '<p>' + m + '</p>');
+}
+
+// Agents
+document.getElementById('agentsEditor').value = FILES['AGENTS.md'];
 
 function saveAgents() {
-  FILES['AGENTS.md'] = document.getElementById('agentsContent').value;
-  alert('AGENTS.md saved!');
+  FILES['AGENTS.md'] = document.getElementById('agentsEditor').value;
+  alert('✓ AGENTS.md saved!');
 }
 
-function saveSettings() {
-  localStorage.setItem('apiToken', document.getElementById('apiToken').value);
-  localStorage.setItem('accountId', document.getElementById('accountId').value);
-  alert('Settings saved!');
-}
-
-document.getElementById('agentsContent').value = FILES['AGENTS.md'];
-
+// Chat
 async function sendMessage() {
   const input = document.getElementById('userMessage');
   const msg = input.value.trim();
   if (!msg) return;
   
   const messages = document.getElementById('chatMessages');
-  messages.innerHTML += '<div class="msg msgout">' + msg + '</div>';
-  messages.innerHTML += '<div class="msg msgin">Thinking...</div>';
+  messages.innerHTML += '<div class="message user"><div class="message-avatar">👤</div><div class="message-content">' + msg + '</div></div>';
+  messages.innerHTML += '<div class="message assistant"><div class="message-avatar">⚡</div><div class="message-content">Thinking...</div></div>';
+  messages.scrollTop = messages.scrollHeight;
   input.value = '';
   
   try {
@@ -256,11 +876,14 @@ async function sendMessage() {
     });
     const data = await response.json();
     const reply = data.choices?.[0]?.message?.content || 'No response';
-    messages.lastElementChild.innerText = reply;
+    messages.lastElementChild.querySelector('.message-content').innerText = reply;
   } catch(e) {
-    messages.lastElementChild.innerText = 'Error: ' + e.message;
+    messages.lastElementChild.querySelector('.message-content').innerText = 'Error: ' + e.message;
   }
 }
+
+// Init
+loadFile('AGENTS.md');
 </script>
 </body>
 </html>
