@@ -125,6 +125,39 @@
     .sidebar-header {
       padding: 16px;
       border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sidebar-header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sidebar-minimize-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: all 0.2s;
+      line-height: 1;
+    }
+
+    .sidebar-minimize-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .sidebar.collapsed {
+      width: 0;
+      padding: 0;
+      overflow: hidden;
+      border-right: none;
     }
 
     .sidebar-title {
@@ -732,6 +765,7 @@
   <!-- Header -->
   <header class="header">
     <div class="logo">
+      <button class="sidebar-minimize-btn" onclick="toggleSidebar()" id="sidebarToggleHeader" style="display: none;" title="Show sidebar">→</button>
       <div class="logo-icon">⚡</div>
       <span>MCP Playground</span>
     </div>
@@ -747,12 +781,15 @@
 
   <div class="main-container">
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <div class="sidebar-title">MCP Servers</div>
-        <button class="new-chat-btn" onclick="showNewChat()">
-          <span>+</span> New Conversation
-        </button>
+        <div class="sidebar-header-left">
+          <div class="sidebar-title">MCP Servers</div>
+          <button class="new-chat-btn" onclick="showNewChat()">
+            <span>+</span> New Conversation
+          </button>
+        </div>
+        <button class="sidebar-minimize-btn" onclick="toggleSidebar()" title="Minimize sidebar">←</button>
       </div>
       <div class="servers-section">
         <div class="sidebar-title" style="margin-top: 0;">Available Servers</div>
@@ -1169,6 +1206,18 @@
 
     function closeModal() {
       document.getElementById('serverModal').classList.remove('active');
+    }
+
+    let sidebarCollapsed = false;
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.querySelector('.sidebar-minimize-btn');
+      const headerBtn = document.getElementById('sidebarToggleHeader');
+      sidebarCollapsed = !sidebarCollapsed;
+      sidebar.classList.toggle('collapsed', sidebarCollapsed);
+      btn.textContent = sidebarCollapsed ? '→' : '←';
+      btn.title = sidebarCollapsed ? 'Show sidebar' : 'Minimize sidebar';
+      headerBtn.style.display = sidebarCollapsed ? 'inline-flex' : 'none';
     }
 
     function showNewChat() {
