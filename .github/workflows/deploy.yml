@@ -18,6 +18,9 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
       - name: Deploy to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:
