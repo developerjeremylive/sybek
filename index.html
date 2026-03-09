@@ -46,10 +46,16 @@
       max-width: 600px;
       margin-bottom: 40px;
     }
+    .button-group {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
     .cta-button {
       display: inline-block;
-      padding: 18px 48px;
-      font-size: 20px;
+      padding: 18px 36px;
+      font-size: 18px;
       font-weight: 600;
       color: #fff;
       background: linear-gradient(135deg, #7c3aed, #4f46e5);
@@ -62,6 +68,13 @@
     .cta-button:hover {
       transform: translateY(-2px);
       box-shadow: 0 20px 40px rgba(124, 58, 237, 0.4);
+    }
+    .cta-button-secondary {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .cta-button-secondary:hover {
+      box-shadow: 0 20px 40px rgba(255,255,255,0.1);
     }
     .features {
       display: grid;
@@ -92,7 +105,10 @@
     <span class="hero-badge">⚡ Powered by OpenClaw</span>
     <h1>Sybek</h1>
     <p1>Your intelligent AI workspace built with Cloudflare Workers, MCP servers, and modern web technologies. Chat with AI models, manage MCP servers, and deploy instantly.</p1>
-    <a href="/playground" class="cta-button">Open Playground →</a>
+    <div class="button-group">
+      <a href="/playground" class="cta-button">Open Playground →</a>
+      <a href="https://sybek.pages.dev/" target="_blank" rel="noopener noreferrer" class="cta-button cta-button-secondary">Agent Playground ↗</a>
+    </div>
     <div class="features">
       <div class="feature">
         <h3>🤖 AI Chat</h3>
