@@ -1,0 +1,40 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install and Build
+        run: |
+          npm install
+          npm run build
+
+      - name: Copy functions
+        run: |
+          mkdir -p dist/functions
+          if [ -d "functions" ]; then cp functions/[[path]].ts dist/functions/; fi
+
+      - name: Create Cloudflare Pages Deployment
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          projectName: sybek-ui
+          directory: dist
+          production: true
