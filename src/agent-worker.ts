@@ -759,6 +759,9 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       // Auto-save code files from response
       const savedFiles = await autoSaveCodeFiles(groupId, responseContent);
       
+      // DEBUG: Log MCP execution start
+      log(groupId, 'info', 'MCP DEBUG', `mcpToolCalls: ${mcpToolCalls.length}, activeMcpTools: ${activeMcpTools.length}`);
+      
       // Generate response - show LLM response AND saved files
       let finalText = responseContent;
       if (savedFiles.length > 0) {
@@ -823,7 +826,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         
         // Execute MCP tool calls
         log(groupId, 'info', 'MCP tools found', `${mcpToolCalls.length} calls`);
-        for (const mcpCall of mcpToolCalls) {
+        try {
+          for (const mcpCall of mcpToolCalls) {
           const { serverName, toolName, arguments: mcpArgs } = mcpCall;
           
           log(groupId, 'mcp-tool', `MCP: ${serverName}/${toolName}`, JSON.stringify(mcpArgs).slice(0, 100));
@@ -879,6 +883,9 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
             post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: errorText } });
             currentMessages.push({ role: 'user', content: `MCP Tool error: ${errorText}` });
           }
+        }
+        } catch (mcpExecError) {
+          log(groupId, 'mcp-tool', 'MCP execution error', String(mcpExecError));
         }
         
         // Make another API call with tool results to get final response
