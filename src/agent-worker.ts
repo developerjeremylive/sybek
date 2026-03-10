@@ -759,6 +759,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
 
       // Auto-save code files from response
       const savedFiles = await autoSaveCodeFiles(groupId, responseContent);
+      log(groupId, 'info', 'After autoSaveCodeFiles', `saved ${savedFiles.length} files`);
       
       // Generate response - show LLM response AND saved files
       let finalText = responseContent;
