@@ -46,6 +46,13 @@ export default defineConfig({
   build: {
     target: 'es2022',
     outDir: 'dist',
+    rollupOptions: {
+      output: {
+        entryFileNames: 'assets/index-v2.js',
+        chunkFileNames: 'assets/index-v2.js',
+        assetFileNames: 'assets/index-v2.[ext]',
+      },
+    },
   },
   worker: {
     format: 'es',
