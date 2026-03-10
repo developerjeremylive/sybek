@@ -734,10 +734,11 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         }
       }
 
-      // Extract MCP tool calls from text response
+        // Extract MCP tool calls from text response
       // Format: [mcp] server_name | tool_name | {"args"} [/mcp]
       const mcpToolCalls: Array<{serverName: string, toolName: string, arguments: Record<string, any>}> = [];
       if (activeMcpTools.length > 0) {
+        log(groupId, 'info', 'MCP active tools', activeMcpTools.map(t => t.name).join(', '));
         const mcpRegex = /\[mcp\]\s*(\w+)\s*\|\s*(\w+)\s*\|\s*(\{[^}]*\})\s*\[\/mcp\]/g;
         let mcpMatch;
         while ((mcpMatch = mcpRegex.exec(responseContent)) !== null) {
@@ -747,12 +748,13 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
           try {
             const args = JSON.parse(argsStr);
             mcpToolCalls.push({ serverName, toolName, arguments: args });
-            log(groupId, 'info', 'Extracted MCP tool from text', `${serverName}/${toolName}: ${argsStr}`);
+            log(groupId, 'info', 'Extracted MCP', `${serverName}/${toolName}`);
           } catch {
             // Invalid JSON, skip
           }
         }
       }
+      log(groupId, 'info', 'MCP calls to execute', `${mcpToolCalls.length}`);
 
       // Auto-save code files from response
       const savedFiles = await autoSaveCodeFiles(groupId, responseContent);
