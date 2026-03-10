@@ -5,9 +5,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// MCP API base URL - uses Cloudflare Worker for mcporter
-const MCP_API_BASE = 'https://sybek-mcporter-worker.developerjeremylive.workers.dev';
-console.log('[MCP] Using API base:', MCP_API_BASE);
+// Cloudflare Worker URL for MCP server management
+const MCPORTER_WORKER_URL = 'https://sybek-mcporter-worker.developerjeremylive.workers.dev';
+
+// Debug: log the actual URL being used
+console.log('[MCP] Worker URL:', MCPORTER_WORKER_URL);
+
+// Check we're using the right API
+const _MCPORTER_WORKER_URL = MCPORTER_WORKER_URL;
 
 export interface MCPServer {
   id: string;
@@ -169,7 +174,7 @@ export const useMCPStore = create<MCPState>()(
         if (server.url.startsWith('mcporter:')) {
           const serverName = server.url.replace('mcporter:', '');
           try {
-            const response = await fetch(`${MCP_API_BASE}/${serverName}/tools`);
+            const response = await fetch(`${MCPORTER_WORKER_URL}/${serverName}/tools`);
             const data = await response.json();
             
             if (data.tools && Array.isArray(data.tools)) {
@@ -258,7 +263,7 @@ export const useMCPStore = create<MCPState>()(
         
         try {
           // Call the mcporter API to install the server
-          const response = await fetch(`${MCP_API_BASE}/install`, {
+          const response = await fetch(`${MCPORTER_WORKER_URL}/install`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ server: serverName }),
