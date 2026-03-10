@@ -9,9 +9,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      devOptions: {
-        enabled: true,
-      },
+      devOptions: { enabled: true },
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'OpenBrowserClaw',
@@ -23,22 +21,9 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-          },
-          {
-            src: 'pwa-maskable-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
+          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'pwa-maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
     }),
@@ -46,15 +31,14 @@ export default defineConfig({
   build: {
     target: 'es2022',
     outDir: 'dist',
+    emptyOutDir: true,
     rollupOptions: {
       output: {
-        entryFileNames: 'assets/index-v3.js',
-        chunkFileNames: 'assets/index-v3.js',
-        assetFileNames: 'assets/index-v3.[ext]',
+        entryFileNames: 'assets/index-[hash].js',
+        chunkFileNames: 'assets/index-[hash].js',
+        assetFileNames: 'assets/index-[hash].[ext]',
       },
     },
   },
-  worker: {
-    format: 'es',
-  },
+  worker: { format: 'es' },
 });
