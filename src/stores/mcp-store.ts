@@ -7,6 +7,7 @@ import { persist } from 'zustand/middleware';
 
 // MCP API base URL - uses Cloudflare Worker for mcporter
 const MCP_API_BASE = 'https://sybek-mcporter-worker.developerjeremylive.workers.dev';
+console.log('[MCP] Using API base:', MCP_API_BASE);
 
 export interface MCPServer {
   id: string;
