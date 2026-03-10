@@ -815,8 +815,11 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
           }
 
           try {
-            // Call MCP tool via mcporter API
-            const mcpResponse = await fetch('/api/mcporter/call', {
+            // Call MCP tool via mcporter Worker API
+            // Note: The worker doesn't actually execute Puppeteer - it just returns metadata
+            // For actual browser automation, we'd need a different architecture
+            const mcpWorkerUrl = 'https://sybek-mcporter-worker.developerjeremylive.workers.dev';
+            const mcpResponse = await fetch(`${mcpWorkerUrl}/call`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
