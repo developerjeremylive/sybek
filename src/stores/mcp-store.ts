@@ -233,14 +233,3 @@ export function getEnabledMCPServers(): MCPServer[] {
 export function getActiveMCPTools(): MCPTool[] {
   return useMCPStore.getState().activeTools;
 }
-
-
-// Helper to get enabled servers
-export function getEnabledMCPServers(): MCPServer[] {
-  return useMCPStore.getState().servers.filter((s) => s.enabled);
-}
-
-// Helper to get active MCP tools
-export function getActiveMCPTools(): MCPTool[] {
-  return useMCPStore.getState().activeTools;
-}
