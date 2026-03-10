@@ -597,7 +597,12 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
           .join(', ');
         toolDescriptions.push(`- ${tool.name}(${params}): ${tool.description} [MCP: ${tool.serverName}]`);
       });
-      toolDescriptions.push('\n**Cómo usar herramientas MCP (solo si el servidor está corriendo):**\nUsa: [mcp] servidor | herramienta | {"param": "valor"} [/mcp]');
+      
+      // Get unique server names
+      const serverNames = [...new Set(activeMcpTools.map(t => t.serverName))];
+      toolDescriptions.push('\n**Cómo usar herramientas MCP (solo si el servidor está corriendo):**');
+      toolDescriptions.push(`Usa el servidor: ${serverNames.join(' o ')}`);
+      toolDescriptions.push(`Ejemplo: [mcp] ${serverNames[0]} | nombre_tool | {"param": "valor"} [/mcp]`);
     }
     
     toolsSection = `\n\n## Herramientas disponibles:\n${toolDescriptions.join('\n')}`;
