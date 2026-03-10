@@ -5,8 +5,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// MCP API base URL - uses external API for mcporter
-const MCP_API_BASE = 'https://sybek.pages.dev';
+// MCP API base URL - uses Cloudflare Worker for mcporter
+const MCP_API_BASE = 'https://sybek-mcporter-worker.developerjeremylive.workers.dev';
 
 export interface MCPServer {
   id: string;
