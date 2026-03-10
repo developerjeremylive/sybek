@@ -755,6 +755,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         }
       }
 
+      log(groupId, 'info', 'After MCP extraction', 'Continuing...');
+
       // Auto-save code files from response
       const savedFiles = await autoSaveCodeFiles(groupId, responseContent);
       
