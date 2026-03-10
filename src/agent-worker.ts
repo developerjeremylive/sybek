@@ -883,9 +883,6 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
             currentMessages.push({ role: 'user', content: `MCP Tool error: ${errorText}` });
           }
         }
-        } catch (mcpExecError) {
-          log(groupId, 'mcp-tool', 'MCP execution error', String(mcpExecError));
-        }
         
         // Make another API call with tool results to get final response
         post({ type: 'typing', payload: { groupId } });
