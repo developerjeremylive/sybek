@@ -808,6 +808,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         }
         
         // Execute MCP tool calls
+        log(groupId, 'info', 'MCP Loop', `mcpToolCalls.length=${mcpToolCalls.length}`);
         for (const mcpCall of mcpToolCalls) {
           const { serverName, toolName, arguments: mcpArgs } = mcpCall;
           
