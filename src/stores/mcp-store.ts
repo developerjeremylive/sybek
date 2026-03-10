@@ -169,7 +169,7 @@ export const useMCPStore = create<MCPState>()(
         if (server.url.startsWith('mcporter:')) {
           const serverName = server.url.replace('mcporter:', '');
           try {
-            const response = await fetch(`${MCP_API_BASE}/api/mcporter/${serverName}/tools`);
+            const response = await fetch(`${MCP_API_BASE}/${serverName}/tools`);
             const data = await response.json();
             
             if (data.tools && Array.isArray(data.tools)) {
@@ -258,7 +258,7 @@ export const useMCPStore = create<MCPState>()(
         
         try {
           // Call the mcporter API to install the server
-          const response = await fetch(`${MCP_API_BASE}/api/mcporter/install`, {
+          const response = await fetch(`${MCP_API_BASE}/install`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ server: serverName }),
