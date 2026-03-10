@@ -771,6 +771,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       }
 
       // Only log if there are actual tool calls
+      log(groupId, 'info', 'Tool check', `toolCalls.length=${toolCalls.length}`);
       if (toolCalls.length > 0) {
         for (const toolCall of toolCalls) {
           let toolName = '';
