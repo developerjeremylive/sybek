@@ -48,9 +48,9 @@ export default defineConfig({
     outDir: 'dist',
     rollupOptions: {
       output: {
-        entryFileNames: 'assets/index-v2.js',
-        chunkFileNames: 'assets/index-v2.js',
-        assetFileNames: 'assets/index-v2.[ext]',
+        entryFileNames: 'assets/index-v3.js',
+        chunkFileNames: 'assets/index-v3.js',
+        assetFileNames: 'assets/index-v3.[ext]',
       },
     },
   },
