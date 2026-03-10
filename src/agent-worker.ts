@@ -600,9 +600,15 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       
       // Get unique server names
       const serverNames = [...new Set(activeMcpTools.map(t => t.serverName))];
-      toolDescriptions.push('\n**Cómo usar herramientas MCP (solo si el servidor está corriendo):**');
-      toolDescriptions.push(`Usa el servidor: ${serverNames.join(' o ')}`);
-      toolDescriptions.push(`Ejemplo: [mcp] ${serverNames[0]} | nombre_tool | {"param": "valor"} [/mcp]`);
+      if (serverNames.length > 0) {
+        toolDescriptions.push('\n**HERRAMIENTAS MCP - FORMATO OBLIGATORIO:**');
+        toolDescriptions.push(`Servidores disponibles: ${serverNames.join(', ')}`);
+        toolDescriptions.push('**USA ESTE FORMATO EXACTO - NO OTRO:**');
+        toolDescriptions.push(`[mcp] ${serverNames[0]} | nombre_de_tool | {"param": "valor"} [/mcp]`);
+        toolDescriptions.push('**ERROR COMÚN: No pongas solo el nombre de la herramienta después de [mcp]**');
+        toolDescriptions.push('**CORRECTO:** [mcp] Puppeteer | puppeteer_navigate | {"url": "youtube.com"} [/mcp]');
+        toolDescriptions.push('**INCORRECTO:** [mcp] puppeteer_navigate | {"url": "youtube.com"} [/mcp]');
+      }
     }
     
     toolsSection = `\n\n## Herramientas disponibles:\n${toolDescriptions.join('\n')}`;
