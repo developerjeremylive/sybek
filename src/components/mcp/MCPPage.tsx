@@ -139,6 +139,14 @@ export function MCPPage() {
               </button>
             )}
           </div>
+
+          {/* Connection Status - Show only when servers are enabled */}
+          {enabledServers.length > 0 && (
+            <div className="mt-3 p-2 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+              <span className="text-xs text-green-400">Conectado</span>
+            </div>
+          )}
           
           {/* Quick Stats */}
           <div className="flex gap-3 mt-5">
