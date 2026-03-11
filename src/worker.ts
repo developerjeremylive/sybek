@@ -494,6 +494,20 @@ async function handleMcporterRequest(request: Request, url: URL): Promise<Respon
 // Get MCP tools for a server - returns Puppeteer tools
 async function getMcpTools(serverName: string): Promise<any[]> {
   if (serverName === 'puppeteer') {
+    // Try to get tools from external mcporter worker first
+    try {
+      const response = await fetch(`${MCPORTER_WORKER_URL}/puppeteer/tools`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tools && data.tools.length > 0) {
+          return data.tools;
+        }
+      }
+    } catch (e) {
+      console.log('[Mcporter] Could not fetch tools from worker, using static tools');
+    }
+    
+    // Fallback to static tools
     return [
       {
         name: 'browser_navigate',
@@ -593,13 +607,153 @@ async function getMcpTools(serverName: string): Promise<any[]> {
 }
 
 // Call an MCP tool
+// External MCPorter worker URL
+const MCPORTER_WORKER_URL = 'https://sybek-mcporter-worker.developerjeremylive.workers.dev';
+
+// Cloudflare API credentials for REST fallback (set via wrangler secrets)
+const CF_ACCOUNT_ID = ''; // Set via env.CF_ACCOUNT_ID
+const CF_API_TOKEN = '';  // Set via env.CF_API_TOKEN
+
 async function callMcpTool(serverName: string, toolName: string, args: Record<string, any>): Promise<any> {
-  // This would normally call the actual MCP server
-  // For now, return a placeholder
+  // For puppeteer, call the external mcporter worker with REST API fallback
+  if (serverName === 'puppeteer') {
+    try {
+      // Try calling the mcporter worker first
+      const response = await fetch(`${MCPORTER_WORKER_URL}/call`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          server: serverName,
+          tool: toolName,
+          args: args,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        
+        // Check if rate limited, try REST API fallback
+        if (response.status === 429 || response.status === 500 || errorText.includes('Rate limit')) {
+          console.log('[Mcporter] Rate limited, trying REST API fallback...');
+          return await callMcpToolViaRestAPI(toolName, args);
+        }
+        
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error: any) {
+      // If mcporter fails, try REST API fallback
+      if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
+        console.log('[Mcporter] Error indicates rate limit, trying REST API fallback...');
+        return await callMcpToolViaRestAPI(toolName, args);
+      }
+      throw error;
+    }
+  }
+
+  // Fallback for other servers
   return {
-    success: true,
+    success: false,
+    error: `Server ${serverName} not supported`,
     tool: toolName,
-    args,
-    message: `Tool ${toolName} called on ${serverName}`
   };
+}
+
+// REST API fallback - use Cloudflare Browser Rendering REST API when Worker binding is rate limited
+async function callMcpToolViaRestAPI(toolName: string, args: Record<string, any>): Promise<any> {
+  const url = args.url as string;
+  
+  if (!url && !['browser_title', 'browser_getContent'].includes(toolName)) {
+    return {
+      success: false,
+      error: 'URL is required for this operation',
+      tool: toolName,
+    };
+  }
+
+  try {
+    // Use Cloudflare REST API for browser rendering
+    // Note: CF_ACCOUNT_ID and CF_API_TOKEN must be configured
+    const accountId = 'b7a628f29ce7b9e4d28128bf5b4442b6'; // From wrangler.toml
+    
+    let result: any;
+
+    switch (toolName) {
+      case 'browser_navigate':
+      case 'puppeteer_navigate':
+      case 'browser_getContent':
+      case 'puppeteer_getContent':
+      case 'browser_title':
+      case 'puppeteer_title':
+        // Use scrape endpoint to get page content
+        const scrapeResponse = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${accountId}/browser-rendering/scrape`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              url: url || 'about:blank',
+              scrapeOptions: {
+                js: true,
+                skipImages: false,
+              }
+            }),
+          }
+        );
+
+        if (!scrapeResponse.ok) {
+          const error = await scrapeResponse.json();
+          throw new Error(error.errors?.[0]?.message || `HTTP ${scrapeResponse.status}`);
+        }
+
+        const scrapeResult = await scrapeResponse.json();
+        
+        if (toolName === 'browser_title' || toolName === 'puppeteer_title') {
+          const titleMatch = scrapeResult.result?.html?.match(/<title[^>]*>([^<]+)<\/title>/i);
+          result = { title: titleMatch ? titleMatch[1].trim() : '' };
+        } else if (toolName === 'browser_getContent' || toolName === 'puppeteer_getContent') {
+          result = { content: scrapeResult.result?.html || '' };
+        } else {
+          result = { 
+            url: url, 
+            title: scrapeResult.result?.html?.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] || '',
+            html: scrapeResult.result?.html || ''
+          };
+        }
+        break;
+
+      case 'browser_screenshot':
+      case 'puppeteer_screenshot':
+        // Note: Screenshot returns binary data, not suitable for JSON response
+        result = { 
+          message: 'Screenshot not supported via REST API fallback',
+          url: url,
+        };
+        break;
+
+      default:
+        result = { 
+          error: `Tool '${toolName}' not supported via REST API fallback`,
+          supported: ['browser_navigate', 'browser_getContent', 'browser_title'],
+        };
+    }
+
+    return {
+      success: true,
+      tool: toolName,
+      result: result,
+      source: 'rest_api',
+    };
+  } catch (error) {
+    console.error('[Mcporter] REST API fallback error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'REST API fallback failed',
+      tool: toolName,
+    };
+  }
 }
