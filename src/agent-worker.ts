@@ -597,7 +597,18 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
           .join(', ');
         toolDescriptions.push(`- ${tool.name}(${params}): ${tool.description} [MCP: ${tool.serverName}]`);
       });
-      toolDescriptions.push('\n**Cómo usar herramientas MCP (solo si el servidor está corriendo):**\nUsa: [mcp] servidor | herramienta | {"param": "valor"} [/mcp]');
+      
+      // Get unique server names
+      const serverNames = [...new Set(activeMcpTools.map(t => t.serverName))];
+      if (serverNames.length > 0) {
+        toolDescriptions.push('\n**HERRAMIENTAS MCP - FORMATO OBLIGATORIO:**');
+        toolDescriptions.push(`Servidores disponibles: ${serverNames.join(', ')}`);
+        toolDescriptions.push('**USA ESTE FORMATO EXACTO - NO OTRO:**');
+        toolDescriptions.push(`[mcp] ${serverNames[0]} | nombre_de_tool | {"param": "valor"} [/mcp]`);
+        toolDescriptions.push('**ERROR COMÚN: No pongas solo el nombre de la herramienta después de [mcp]**');
+        toolDescriptions.push('**CORRECTO:** [mcp] Puppeteer | puppeteer_navigate | {"url": "youtube.com"} [/mcp]');
+        toolDescriptions.push('**INCORRECTO:** [mcp] puppeteer_navigate | {"url": "youtube.com"} [/mcp]');
+      }
     }
     
     toolsSection = `\n\n## Herramientas disponibles:\n${toolDescriptions.join('\n')}`;
@@ -726,6 +737,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       // Extract MCP tool calls from text response
       // Format: [mcp] server_name | tool_name | {"args"} [/mcp]
       const mcpToolCalls: Array<{serverName: string, toolName: string, arguments: Record<string, any>}> = [];
+      log(groupId, 'info', 'MCP Debug', `activeMcpTools: ${activeMcpTools.length}`);
       if (activeMcpTools.length > 0) {
         const mcpRegex = /\[mcp\]\s*(\w+)\s*\|\s*(\w+)\s*\|\s*(\{[^}]*\})\s*\[\/mcp\]/g;
         let mcpMatch;
@@ -743,8 +755,11 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         }
       }
 
+      log(groupId, 'info', 'After MCP extraction', 'Continuing...');
+
       // Auto-save code files from response
       const savedFiles = await autoSaveCodeFiles(groupId, responseContent);
+      log(groupId, 'info', 'After autoSaveCodeFiles', `saved ${savedFiles.length} files`);
       
       // Generate response - show LLM response AND saved files
       let finalText = responseContent;
@@ -756,7 +771,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       }
 
       // Only log if there are actual tool calls
-      if (toolCalls.length > 0) {
+      log(groupId, 'info', 'Tool check', `toolCalls.length=${toolCalls.length}, mcpToolCalls.length=${mcpToolCalls.length}`);
+      if (toolCalls.length > 0 || mcpToolCalls.length > 0) {
         for (const toolCall of toolCalls) {
           let toolName = '';
           let toolInput: Record<string, any> = {};
@@ -795,103 +811,112 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
           currentMessages.push({ role: 'user', content: `Tool result: ${toolResult}` });
         }
         
-        // Execute MCP tool calls
-        for (const mcpCall of mcpToolCalls) {
-          const { serverName, toolName, arguments: mcpArgs } = mcpCall;
-          
-          log(groupId, 'mcp-tool', `MCP: ${serverName}/${toolName}`, JSON.stringify(mcpArgs).slice(0, 100));
-          post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'running' } });
-
-          // Find the server config from mcpServers in payload
-          const server = mcpServers.find(s => s.name.toLowerCase() === serverName.toLowerCase());
-          
-          if (!server) {
-            const errorResult = `Error: MCP server "${serverName}" not found. Available: ${mcpServers.map(s => s.name).join(', ')}`;
-            log(groupId, 'mcp-tool', `Error: ${serverName}`, errorResult);
-            post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
-            post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: errorResult } });
-            currentMessages.push({ role: 'user', content: `MCP Tool error: ${errorResult}` });
-            continue;
-          }
-
-          try {
-            // Call MCP tool via mcporter API
-            const mcpResponse = await fetch('/api/mcporter/call', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                server: serverName,
-                tool: toolName,
-                args: mcpArgs,
-              }),
-              signal: AbortSignal.timeout(60000), // Longer timeout for mcporter
-            });
-
-            if (!mcpResponse.ok) {
-              throw new Error(`HTTP ${mcpResponse.status}: ${mcpResponse.statusText}`);
-            }
-
-            const mcpResult = await mcpResponse.json();
+        // Execute MCP tool calls (outside toolCalls check so they run even without regular tools)
+        if (mcpToolCalls.length > 0) {
+          log(groupId, 'info', 'MCP Before Loop', `mcpToolCalls=${JSON.stringify(mcpToolCalls.slice(0,2))}`);
+          log(groupId, 'info', 'MCP Loop', `mcpToolCalls.length=${mcpToolCalls.length}`);
+          for (const mcpCall of mcpToolCalls) {
+            const { serverName, toolName, arguments: mcpArgs } = mcpCall;
             
-            if (mcpResult.error) {
-              throw new Error(mcpResult.error);
+            log(groupId, 'mcp-tool', `MCP: ${serverName}/${toolName}`, JSON.stringify(mcpArgs).slice(0, 100));
+            post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'running' } });
+
+            // Find the server config from mcpServers in payload
+            const server = mcpServers.find(s => s.name.toLowerCase() === serverName.toLowerCase());
+            
+            if (!server) {
+              const errorResult = `Error: MCP server "${serverName}" not found. Available: ${mcpServers.map(s => s.name).join(', ')}`;
+              log(groupId, 'mcp-tool', `Error: ${serverName}`, errorResult);
+              post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
+              post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: errorResult } });
+              currentMessages.push({ role: 'user', content: `MCP Tool error: ${errorResult}` });
+              continue;
             }
 
-            const resultText = mcpResult.result || JSON.stringify(mcpResult);
-            log(groupId, 'mcp-tool', `Result: ${serverName}/${toolName}`, resultText.slice(0, 200));
-            post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
-            post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: resultText } });
-            currentMessages.push({ role: 'user', content: `MCP Tool result (${serverName}/${toolName}): ${resultText}` });
-          } catch (mcpError: any) {
-            const errorText = `Error calling MCP tool: ${mcpError.message}`;
-            log(groupId, 'mcp-tool', `Error: ${serverName}/${toolName}`, errorText);
-            post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
-            post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: errorText } });
-            currentMessages.push({ role: 'user', content: `MCP Tool error: ${errorText}` });
+            try {
+              // Call MCP tool via mcporter Worker API
+              // Note: The worker doesn't actually execute Puppeteer - it just returns metadata
+              // For actual browser automation, we'd need a different architecture
+              const mcpWorkerUrl = 'https://sybek-mcporter-worker.developerjeremylive.workers.dev';
+              const mcpResponse = await fetch(`${mcpWorkerUrl}/call`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  server: serverName,
+                  tool: toolName,
+                  args: mcpArgs,
+                }),
+                signal: AbortSignal.timeout(60000), // Longer timeout for mcporter
+              });
+
+              if (!mcpResponse.ok) {
+                throw new Error(`HTTP ${mcpResponse.status}: ${mcpResponse.statusText}`);
+              }
+
+              const mcpResult = await mcpResponse.json();
+              
+              if (mcpResult.error) {
+                throw new Error(mcpResult.error);
+              }
+
+              const resultText = mcpResult.result || JSON.stringify(mcpResult);
+              log(groupId, 'mcp-tool', `Result: ${serverName}/${toolName}`, resultText.slice(0, 200));
+              post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
+              post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: resultText } });
+              currentMessages.push({ role: 'user', content: `MCP Tool result (${serverName}/${toolName}): ${resultText}` });
+            } catch (mcpError: any) {
+              const errorText = `Error calling MCP tool: ${mcpError.message}`;
+              log(groupId, 'mcp-tool', `Error: ${serverName}/${toolName}`, errorText);
+              post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
+              post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: errorText } });
+              currentMessages.push({ role: 'user', content: `MCP Tool error: ${errorText}` });
+            }
           }
         }
         
         // Make another API call with tool results to get final response
-        post({ type: 'typing', payload: { groupId } });
-        
-        const finalRequestBody = {
-          messages: currentMessages,
-          model,
-          max_tokens: maxTokens,
-        };
-        
-        const finalRes = await fetch(CHAT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(finalRequestBody),
-        });
-        
-        const finalResult = await finalRes.json();
-        log(groupId, 'info', 'Final API result', JSON.stringify(finalResult).slice(0, 200));
-        let finalResponseContent = '';
-        
-        if (finalResult.response) {
-          finalResponseContent = typeof finalResult.response === 'string' ? finalResult.response : JSON.stringify(finalResult.response);
-        } else if (finalResult.result?.response) {
-          finalResponseContent = typeof finalResult.result.response === 'string' ? finalResult.result.response : JSON.stringify(finalResult.result.response);
-        } else {
-          finalResponseContent = JSON.stringify(finalResult).slice(0, 500);
-        }
-        
-        let cleaned = finalResponseContent.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
-        // If cleaned is empty, try extracting content from inside <internal> tags
-        if (!cleaned) {
-          const internalMatch = finalResponseContent.match(/<internal>([\s\S]*?)<\/internal>/);
-          if (internalMatch && internalMatch[1]) {
-            cleaned = internalMatch[1].trim();
+        if (toolCalls.length > 0 || mcpToolCalls.length > 0) {
+          post({ type: 'typing', payload: { groupId } });
+          
+          const finalRequestBody = {
+            messages: currentMessages,
+            model,
+            max_tokens: maxTokens,
+          };
+          
+          const finalRes = await fetch(CHAT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(finalRequestBody),
+          });
+          
+          const finalResult = await finalRes.json();
+          log(groupId, 'info', 'Final API result', JSON.stringify(finalResult).slice(0, 200));
+          let finalResponseContent = '';
+          
+          if (finalResult.response) {
+            finalResponseContent = typeof finalResult.response === 'string' ? finalResult.response : JSON.stringify(finalResult.response);
+          } else if (finalResult.result?.response) {
+            finalResponseContent = typeof finalResult.result.response === 'string' ? finalResult.result.response : JSON.stringify(finalResult.result.response);
+          } else {
+            finalResponseContent = JSON.stringify(finalResult).slice(0, 500);
           }
+          
+          let cleaned = finalResponseContent.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
+          // If cleaned is empty, try extracting content from inside <internal> tags
+          if (!cleaned) {
+            const internalMatch = finalResponseContent.match(/<internal>([\s\S]*?)<\/internal>/);
+            if (internalMatch && internalMatch[1]) {
+              cleaned = internalMatch[1].trim();
+            }
+          }
+          // If still empty, show raw response for debugging
+          if (!cleaned) {
+            cleaned = finalResponseContent.trim() || '(sin respuesta - response vacía)';
+          }
+          post({ type: 'response', payload: { groupId, text: cleaned } });
+          return;
         }
-        // If still empty, show raw response for debugging
-        if (!cleaned) {
-          cleaned = finalResponseContent.trim() || '(sin respuesta - response vacía)';
-        }
-        post({ type: 'response', payload: { groupId, text: cleaned } });
-        return;
       } else {
         // Final response - extract content from <internal> tags if response is empty
         let cleaned = finalText.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
