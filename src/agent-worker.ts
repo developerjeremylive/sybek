@@ -771,8 +771,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       }
 
       // Only log if there are actual tool calls
-      log(groupId, 'info', 'Tool check', `toolCalls.length=${toolCalls.length}`);
-      if (toolCalls.length > 0) {
+      log(groupId, 'info', 'Tool check', `toolCalls.length=${toolCalls.length}, mcpToolCalls.length=${mcpToolCalls.length}`);
+      if (toolCalls.length > 0 || mcpToolCalls.length > 0) {
         for (const toolCall of toolCalls) {
           let toolName = '';
           let toolInput: Record<string, any> = {};
