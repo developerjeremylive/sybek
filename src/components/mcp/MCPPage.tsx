@@ -139,6 +139,14 @@ export function MCPPage() {
               </button>
             )}
           </div>
+
+          {/* Debug Info - API URL */}
+          <div className="mt-3 p-2 bg-zinc-900/60 border border-zinc-800 rounded-lg">
+            <p className="text-xs text-zinc-500">
+              <span className="text-zinc-600">API:</span>{' '}
+              <code className="text-green-400 font-mono">https://sybek-mcporter-worker.developerjeremylive.workers.dev</code>
+            </p>
+          </div>
           
           {/* Quick Stats */}
           <div className="flex gap-3 mt-5">

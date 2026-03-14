@@ -448,10 +448,12 @@ export class Orchestrator {
       const mcpData = localStorage.getItem('obc-mcp-servers');
       if (mcpData) {
         const parsed = JSON.parse(mcpData);
+        console.log('[Orchestrator] MCP state:', JSON.stringify(parsed.state?.servers || []).slice(0, 500));
         // Extract only enabled servers with their URLs
         mcpServers = (parsed.state?.servers || [])
           .filter((s: any) => s.enabled)
           .map((s: any) => ({ id: s.id, name: s.name, url: s.url }));
+        console.log('[Orchestrator] Enabled MCP servers:', mcpServers);
       }
     } catch (e) {
       console.warn('Failed to get MCP servers:', e);

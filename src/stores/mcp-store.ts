@@ -5,8 +5,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// MCP API base URL - uses external API for mcporter
-const MCP_API_BASE = 'https://sybek.pages.dev';
+// Direct Worker URL - NO PROXY
+const WORKER_URL = 'https://sybek-mcporter-worker.developerjeremylive.workers.dev';
+
+// Debug
+console.log('[MCP] Using Worker URL:', WORKER_URL);
 
 export interface MCPServer {
   id: string;
@@ -27,38 +30,7 @@ export interface MCPTool {
   serverName: string;
 }
 
-// MCP Protocol types
-interface MCPListToolsResponse {
-  tools: Array<{
-    name: string;
-    description?: string;
-    inputSchema?: Record<string, unknown>;
-  }>;
-}
-
-interface MCPState {
-  servers: MCPServer[];
-  activeTools: MCPTool[];
-  isConnecting: boolean;
-  isLoadingTools: boolean;
-  isInstalling: boolean;
-  installationError: string | null;
-  
-  // Actions
-  addServer: (server: Omit<MCPServer, 'id' | 'createdAt'>) => void;
-  removeServer: (id: string) => void;
-  toggleServer: (id: string) => Promise<void>;
-  updateServer: (id: string, updates: Partial<MCPServer>) => void;
-  connectServer: (id: string) => Promise<void>;
-  disconnectServer: (id: string) => void;
-  setServers: (servers: MCPServer[]) => void;
-  fetchServerTools: (server: MCPServer) => Promise<MCPTool[]>;
-  refreshAllTools: () => Promise<void>;
-  installAndAddServer: (pubServer: typeof PUBLIC_MCP_SERVERS[0]) => Promise<void>;
-  getToolsForServer: (serverId: string) => MCPTool[];
-}
-
-// Default MCP servers - Only Puppeteer for now
+// Default MCP servers
 export const PUBLIC_MCP_SERVERS: Omit<MCPServer, 'id' | 'createdAt'>[] = [
   {
     name: 'Puppeteer',
@@ -68,7 +40,147 @@ export const PUBLIC_MCP_SERVERS: Omit<MCPServer, 'id' | 'createdAt'>[] = [
     description: '🌐 Automatización del navegador (browser.tools)',
     icon: '🌐',
   },
+  {
+    name: 'Cloudflare Browser Rendering',
+    url: 'cf-browser-rendering',
+    type: 'http',
+    enabled: false,
+    description: '☁️ REST API para screenshots, HTML, PDF, crawling con Cloudflare',
+    icon: '☁️',
+  },
 ];
+
+// Cloudflare Browser Rendering Worker URL
+const CF_BROWSER_WORKER_URL = 'https://sybek-mcporter-worker.developerjeremylive.workers.dev';
+
+// Cloudflare Browser Rendering Tools
+export const CF_BROWSER_TOOLS = [
+  {
+    name: 'cf_screenshot',
+    description: 'Captura una screenshot de una página web',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página a capturar' },
+        options: { type: 'object', description: 'Opciones: format, fullPage, quality' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_html',
+    description: 'Obtiene el HTML de una página web',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_markdown',
+    description: 'Extrae el contenido en Markdown de una página web',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_pdf',
+    description: 'Renderiza una página web como PDF',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página' },
+        options: { type: 'object', description: 'Opciones: format, landscape, printBackground' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_links',
+    description: 'Obtiene todos los enlaces de una página web',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_json',
+    description: 'Extrae datos estructurados usando IA (JSON)',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página' },
+        prompt: { type: 'string', description: 'Prompt para extracción' },
+        response_format: { type: 'object', description: 'JSON schema' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_crawl',
+    description: 'Inicia un trabajo de crawl (asíncrono)',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL inicial para crawling' },
+        limit: { type: 'number', description: 'Máximo de páginas' },
+        depth: { type: 'number', description: 'Profundidad máxima' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_crawl_status',
+    description: 'Obtiene el estado/resultados de un trabajo de crawl',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', description: 'ID del trabajo de crawl' },
+        limit: { type: 'number', description: 'Límite de resultados' },
+      },
+      required: ['jobId'],
+    },
+  },
+  {
+    name: 'cf_crawl_cancel',
+    description: 'Cancela un trabajo de crawl en progreso',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', description: 'ID del trabajo de crawl' },
+      },
+      required: ['jobId'],
+    },
+  },
+];
+
+interface MCPState {
+  servers: MCPServer[];
+  activeTools: MCPTool[];
+  isConnecting: boolean;
+  isLoadingTools: boolean;
+  isInstalling: boolean;
+  installationError: string | null;
+  
+  addServer: (server: Omit<MCPServer, 'id' | 'createdAt'>) => void;
+  removeServer: (id: string) => void;
+  toggleServer: (id: string) => Promise<void>;
+  connectServer: (id: string) => Promise<void>;
+  disconnectServer: (id: string) => void;
+  fetchServerTools: (server: MCPServer) => Promise<MCPTool[]>;
+  refreshAllTools: () => Promise<void>;
+  installAndAddServer: (pubServer: typeof PUBLIC_MCP_SERVERS[0]) => Promise<void>;
+  getToolsForServer: (serverId: string) => MCPTool[];
+}
 
 export const useMCPStore = create<MCPState>()(
   persist(
@@ -103,7 +215,6 @@ export const useMCPStore = create<MCPState>()(
       toggleServer: async (id) => {
         const server = get().servers.find((s) => s.id === id);
         if (!server) return;
-
         if (server.enabled) {
           get().disconnectServer(id);
         } else {
@@ -111,25 +222,15 @@ export const useMCPStore = create<MCPState>()(
         }
       },
 
-      updateServer: (id, updates) => {
-        set((state) => ({
-          servers: state.servers.map((s) =>
-            s.id === id ? { ...s, ...updates } : s
-          ),
-        }));
-      },
-
       connectServer: async (id) => {
         const server = get().servers.find((s) => s.id === id);
         if (!server) return;
-
         set({ isConnecting: true });
-        console.log(`[MCP] Conectando a ${server.name} (${server.url})...`);
+        console.log('[MCP] Connecting to', server.name);
 
         try {
-          // Try to fetch tools from MCP server using JSON-RPC
           const tools = await get().fetchServerTools(server);
-          console.log(`[MCP] ${server.name} - Tools obtenidos:`, tools.length, tools.map(t => t.name));
+          console.log('[MCP] Tools fetched:', tools.length);
           
           set((state) => ({
             servers: state.servers.map((s) =>
@@ -139,8 +240,7 @@ export const useMCPStore = create<MCPState>()(
             isConnecting: false,
           }));
         } catch (error) {
-          console.error(`[MCP] Error conectando a ${server.name}:`, error);
-          // Even if tools fail, mark as enabled
+          console.error('[MCP] Error:', error);
           set((state) => ({
             servers: state.servers.map((s) =>
               s.id === id ? { ...s, enabled: true } : s
@@ -159,17 +259,29 @@ export const useMCPStore = create<MCPState>()(
         }));
       },
 
-      setServers: (servers) => set({ servers }),
-
       fetchServerTools: async (server: MCPServer): Promise<MCPTool[]> => {
-        console.log(`[MCP] Fetching tools from ${server.name} via mcporter`);
+        console.log('[MCP] fetchServerTools called for', server.name, 'URL:', server.url);
         
-        // If it's a mcporter server, use the API
+        // Cloudflare Browser Rendering - return built-in tools
+        if (server.url === 'cf-browser-rendering') {
+          return CF_BROWSER_TOOLS.map((tool) => ({
+            name: tool.name,
+            description: tool.description,
+            inputSchema: tool.inputSchema,
+            serverId: server.id,
+            serverName: server.name,
+          }));
+        }
+        
         if (server.url.startsWith('mcporter:')) {
           const serverName = server.url.replace('mcporter:', '');
+          const url = `${WORKER_URL}/${serverName}/tools`;
+          console.log('[MCP] Fetching from:', url);
+          
           try {
-            const response = await fetch(`${MCP_API_BASE}/api/mcporter/${serverName}/tools`);
+            const response = await fetch(url);
             const data = await response.json();
+            console.log('[MCP] Response:', data);
             
             if (data.tools && Array.isArray(data.tools)) {
               return data.tools.map((tool: any) => ({
@@ -182,57 +294,11 @@ export const useMCPStore = create<MCPState>()(
             }
             return [];
           } catch (error) {
-            console.error(`[MCP] Failed to fetch tools from mcporter ${server.name}:`, error);
+            console.error('[MCP] Fetch error:', error);
             return [];
           }
         }
-        
-        // Fallback: try HTTP connection for non-mcporter servers
-        try {
-          // MCP protocol: POST to server with JSON-RPC request for tools
-          const response = await fetch(server.url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              jsonrpc: '2.0',
-              id: 1,
-              method: 'tools/list',
-              params: {},
-            }),
-            signal: AbortSignal.timeout(10000),
-          });
-
-          console.log(`[MCP] ${server.name} response status:`, response.status);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-          }
-
-          const data = await response.json() as MCPListToolsResponse;
-          console.log(`[MCP] ${server.name} response data:`, data);
-          
-          if (data.tools && Array.isArray(data.tools)) {
-            return data.tools.map((tool) => ({
-              name: tool.name,
-              description: tool.description || '',
-              inputSchema: tool.inputSchema || {},
-              serverId: server.id,
-              serverName: server.name,
-            }));
-          }
-          
-          // Check for error response
-          if ((data as any).error) {
-            console.error(`[MCP] ${server.name} error:`, (data as any).error);
-          }
-          
-          return [];
-        } catch (error) {
-          console.error(`[MCP] Failed to fetch tools from ${server.name}:`, error);
-          return [];
-        }
+        return [];
       },
 
       refreshAllTools: async () => {
@@ -240,7 +306,6 @@ export const useMCPStore = create<MCPState>()(
         set({ isLoadingTools: true });
         
         const allTools: MCPTool[] = [];
-        
         for (const server of enabledServers) {
           const tools = await get().fetchServerTools(server);
           allTools.push(...tools);
@@ -250,28 +315,34 @@ export const useMCPStore = create<MCPState>()(
       },
 
       installAndAddServer: async (pubServer) => {
+        // Cloudflare Browser Rendering doesn't need installation - just add it
+        if (pubServer.url === 'cf-browser-rendering') {
+          get().addServer({
+            ...pubServer,
+            enabled: false,
+          });
+          return;
+        }
+        
         const serverName = pubServer.url.replace('mcporter:', '');
         set({ isInstalling: true, installationError: null });
         
-        console.log(`[MCP] Instalando ${serverName} con mcporter...`);
+        console.log('[MCP] Installing from:', WORKER_URL, '/install');
         
         try {
-          // Call the mcporter API to install the server
-          const response = await fetch(`${MCP_API_BASE}/api/mcporter/install`, {
+          const response = await fetch(`${WORKER_URL}/install`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ server: serverName }),
           });
           
           const result = await response.json();
+          console.log('[MCP] Install result:', result);
           
           if (!response.ok) {
-            throw new Error(result.error || 'Error al instalar');
+            throw new Error(result.error || 'Error');
           }
           
-          console.log(`[MCP] ${serverName} instalado:`, result);
-          
-          // Add the server to installed list
           get().addServer({
             ...pubServer,
             enabled: false,
@@ -279,10 +350,10 @@ export const useMCPStore = create<MCPState>()(
           
           set({ isInstalling: false });
         } catch (error) {
-          console.error(`[MCP] Error instalando ${serverName}:`, error);
+          console.error('[MCP] Install error:', error);
           set({ 
             isInstalling: false, 
-            installationError: error instanceof Error ? error.message : 'Error desconocido' 
+            installationError: error instanceof Error ? error.message : 'Error' 
           });
         }
       },
@@ -291,18 +362,15 @@ export const useMCPStore = create<MCPState>()(
         return get().activeTools.filter(t => t.serverId === serverId);
       },
     }),
-    {
-      name: 'obc-mcp-servers',
-    }
+    { name: 'obc-mcp-servers' }
   )
 );
 
-// Helper to get enabled servers
+// Helper functions
 export function getEnabledMCPServers(): MCPServer[] {
   return useMCPStore.getState().servers.filter((s) => s.enabled);
 }
 
-// Helper to get active MCP tools
 export function getActiveMCPTools(): MCPTool[] {
   return useMCPStore.getState().activeTools;
 }
