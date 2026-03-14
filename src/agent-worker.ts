@@ -991,22 +991,31 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   // If HTML is larger than 10KB, save to file
                   if (htmlSize > 10000) {
                     const timestamp = Date.now();
-                    const fileName = `mcp-screenshots/screenshot-${timestamp}.html`;
-                    const domain = new URL(mcpArgs.url).hostname;
+                    // Save directly in chat folder (not in subfolder)
+                    const fileName = `screenshot-${timestamp}.html`;
                     const summary = extractHtmlSummary(htmlContent);
-                    const sizeInfo = `HTML muy grande (${Math.round(htmlSize/1024)}KB) guardado en archivo.`;
+                    const sizeInfo = `HTML muy grande (${Math.round(htmlSize/1024)}KB) guardado en archivo del chat.`;
                     
                     try {
                       await writeGroupFile(groupId, fileName, htmlContent);
-                      log(groupId, 'mcp-tool', 'HTML saved to file', fileName);
-                      resultToShow = `${sizeInfo}\n\n${summary}\n\nArchivo guardado en: ${fileName}\n\nIMPORTANTE: Usa ESTA información (título, secciones, contenido) para responder la pregunta del usuario. No hables de Cloudflare ni del tamaño - explica el CONTENIDO de la página basada en la información extraída.`;
+                      log(groupId, 'mcp-tool', 'HTML saved to chat folder', fileName);
+                      resultToShow = `${sizeInfo}\n\n${summary}\n\nArchivo guardado en carpeta del chat: ${fileName}\n\nIMPORTANTE: El archivo está en la carpeta de este chat. USA ESTA información (título, secciones, contenido) para responder la pregunta. No hables de Cloudflare - explica el CONTENIDO de la página.`;
                     } catch (saveError) {
                       log(groupId, 'mcp-tool', 'Failed to save HTML', String(saveError));
                       resultToShow = `${sizeInfo}\n\n${summary}\n(Nota: No se pudo guardar el archivo)`;
                     }
                   } else {
                     // Small HTML - include directly but with instructions
-                    resultToShow = `Contenido de la página:\n\n${htmlContent.slice(0, 5000)}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
+                    const timestamp = Date.now();
+                    const fileName = `screenshot-${timestamp}.html`;
+                    try {
+                      await writeGroupFile(groupId, fileName, htmlContent);
+                      log(groupId, 'mcp-tool', 'HTML saved to chat folder', fileName);
+                      const summary = extractHtmlSummary(htmlContent);
+                      resultToShow = `${summary}\n\nArchivo guardado en carpeta del chat: ${fileName}`;
+                    } catch (saveError) {
+                      resultToShow = `Contenido de la página:\n\n${htmlContent.slice(0, 5000)}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
+                    }
                   }
                 }
                 
