@@ -315,6 +315,15 @@ export const useMCPStore = create<MCPState>()(
       },
 
       installAndAddServer: async (pubServer) => {
+        // Cloudflare Browser Rendering doesn't need installation - just add it
+        if (pubServer.url === 'cf-browser-rendering') {
+          get().addServer({
+            ...pubServer,
+            enabled: false,
+          });
+          return;
+        }
+        
         const serverName = pubServer.url.replace('mcporter:', '');
         set({ isInstalling: true, installationError: null });
         
