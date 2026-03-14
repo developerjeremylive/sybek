@@ -990,15 +990,22 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   
                   // Use the actual chat folder (currentSessionFolder) instead of groupId
                   const chatFolder = currentSessionFolder || groupId;
+                  
+                  // Create unique filename with timestamp and domain
+                  let domain = 'page';
+                  try {
+                    const url = new URL(mcpArgs.url);
+                    domain = url.hostname.replace(/\./g, '-');
+                  } catch {}
                   const timestamp = Date.now();
-                  const fileName = `screenshot-${timestamp}.html`;
+                  const fileName = `mcp-${domain}-${timestamp}.html`;
                   const summary = extractHtmlSummary(htmlContent);
                   
-                  log(chatFolder, 'mcp-tool', 'Saving HTML to chat folder', `folder=${chatFolder}, file=${fileName}, size=${htmlSize}bytes`);
+                  log(chatFolder, 'mcp-tool', 'Saving MCP HTML to chat folder', `folder=${chatFolder}, file=${fileName}, size=${htmlSize}bytes`);
                   
                   try {
                     await writeGroupFile(chatFolder, fileName, htmlContent);
-                    log(chatFolder, 'mcp-tool', 'HTML saved successfully', fileName);
+                    log(chatFolder, 'mcp-tool', 'MCP HTML saved successfully', fileName);
                     
                     if (htmlSize > 10000) {
                       resultToShow = `HTML guardado en carpeta del chat (${chatFolder}): ${fileName}\n\n${summary}\n\nLee el archivo en Files > ${chatFolder} para ver el contenido completo. NO menciones browser rendering - solo explica el contenido de la página en detalle.`;
@@ -1006,7 +1013,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                       resultToShow = `HTML guardado en ${chatFolder}: ${fileName}\n\n${summary}\n\nVer en Files > ${chatFolder}`;
                     }
                   } catch (saveError) {
-                    log(chatFolder, 'mcp-tool', 'Failed to save HTML', String(saveError));
+                    log(chatFolder, 'mcp-tool', 'Failed to save MCP HTML', String(saveError));
                     resultToShow = `${summary}\n(Nota: No se pudo guardar el archivo)`;
                   }
                 }
