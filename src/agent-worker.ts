@@ -988,12 +988,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   const htmlContent = cfResult.html;
                   const htmlSize = htmlContent.length;
                   
-                  // Debug: log the folder being used
-                  log(groupId, 'mcp-tool', 'DEBUG folder info', `currentSessionFolder="${currentSessionFolder}", groupId="${groupId}"`);
-                  
                   // Use the actual chat folder (currentSessionFolder) instead of groupId
                   const chatFolder = currentSessionFolder || groupId;
-                  log(groupId, 'mcp-tool', 'DEBUG using chatFolder', chatFolder);
                   
                   // Create unique filename with timestamp and domain
                   let domain = 'page';
@@ -1008,7 +1004,6 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   log(chatFolder, 'mcp-tool', 'Saving MCP HTML to chat folder', `folder=${chatFolder}, file=${fileName}, size=${htmlSize}bytes`);
                   
                   try {
-                    log(chatFolder, 'mcp-tool', 'Attempting to save', `${fileName}, size=${htmlSize}`);
                     await writeGroupFile(chatFolder, fileName, htmlContent);
                     log(chatFolder, 'mcp-tool', 'MCP HTML saved successfully', fileName);
                     
