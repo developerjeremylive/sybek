@@ -991,28 +991,30 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   // If HTML is larger than 10KB, save to file
                   if (htmlSize > 10000) {
                     const timestamp = Date.now();
-                    // Save directly in chat folder (not in subfolder)
-                    const fileName = `screenshot-${timestamp}.html`;
+                    // Create a subfolder for MCP screenshots
+                    const folderName = `mcp-screenshots-${timestamp}`;
+                    const fileName = `${folderName}/screenshot.html`;
                     const summary = extractHtmlSummary(htmlContent);
-                    const sizeInfo = `HTML muy grande (${Math.round(htmlSize/1024)}KB) guardado en archivo del chat.`;
+                    const sizeInfo = `HTML muy grande (${Math.round(htmlSize/1024)}KB).`;
                     
                     try {
                       await writeGroupFile(groupId, fileName, htmlContent);
-                      log(groupId, 'mcp-tool', 'HTML saved to chat folder', fileName);
-                      resultToShow = `${sizeInfo}\n\n${summary}\n\nArchivo guardado en carpeta del chat: ${fileName}\n\nIMPORTANTE: El archivo está en la carpeta de este chat. USA ESTA información (título, secciones, contenido) para responder la pregunta. No hables de Cloudflare - explica el CONTENIDO de la página.`;
+                      log(groupId, 'mcp-tool', 'HTML saved to folder', folderName);
+                      resultToShow = `${sizeInfo}\n\n${summary}\n\nCarpeta creada: ${folderName}/\nArchivo: ${folderName}/screenshot.html\n\nIMPORTANTE: Tienes el HTML completo en la carpeta "${folderName}" en la pestaña Files. USA esa información para dar una explicación detallada y completa del contenido de la página web.`;
                     } catch (saveError) {
                       log(groupId, 'mcp-tool', 'Failed to save HTML', String(saveError));
                       resultToShow = `${sizeInfo}\n\n${summary}\n(Nota: No se pudo guardar el archivo)`;
                     }
                   } else {
-                    // Small HTML - include directly but with instructions
+                    // Small HTML - save to file
                     const timestamp = Date.now();
-                    const fileName = `screenshot-${timestamp}.html`;
+                    const folderName = `mcp-screenshots-${timestamp}`;
+                    const fileName = `${folderName}/screenshot.html`;
                     try {
                       await writeGroupFile(groupId, fileName, htmlContent);
-                      log(groupId, 'mcp-tool', 'HTML saved to chat folder', fileName);
+                      log(groupId, 'mcp-tool', 'HTML saved to folder', folderName);
                       const summary = extractHtmlSummary(htmlContent);
-                      resultToShow = `${summary}\n\nArchivo guardado en carpeta del chat: ${fileName}`;
+                      resultToShow = `${summary}\n\nCarpeta: ${folderName}/\nArchivo: ${folderName}/screenshot.html\n\nTienes el HTML en la carpeta Files para más detalles.`;
                     } catch (saveError) {
                       resultToShow = `Contenido de la página:\n\n${htmlContent.slice(0, 5000)}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
                     }
