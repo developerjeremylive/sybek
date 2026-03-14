@@ -991,22 +991,33 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   // If HTML is larger than 10KB, save to file
                   if (htmlSize > 10000) {
                     const timestamp = Date.now();
-                    const fileName = `mcp-screenshots/screenshot-${timestamp}.html`;
-                    const domain = new URL(mcpArgs.url).hostname;
+                    // Create a subfolder for MCP screenshots
+                    const folderName = `mcp-screenshots-${timestamp}`;
+                    const fileName = `${folderName}/screenshot.html`;
                     const summary = extractHtmlSummary(htmlContent);
-                    const sizeInfo = `HTML muy grande (${Math.round(htmlSize/1024)}KB) guardado en archivo.`;
+                    const sizeInfo = `HTML muy grande (${Math.round(htmlSize/1024)}KB).`;
                     
                     try {
                       await writeGroupFile(groupId, fileName, htmlContent);
-                      log(groupId, 'mcp-tool', 'HTML saved to file', fileName);
-                      resultToShow = `${sizeInfo}\n\n${summary}\n\nArchivo guardado en: ${fileName}\n\nIMPORTANTE: Usa ESTA información (título, secciones, contenido) para responder la pregunta del usuario. No hables de Cloudflare ni del tamaño - explica el CONTENIDO de la página basada en la información extraída.`;
+                      log(groupId, 'mcp-tool', 'HTML saved to folder', folderName);
+                      resultToShow = `HTML guardado en carpeta: ${folderName}/screenshot.html\n\n${summary}\n\nLee el archivo HTML completo desde la carpeta Files para dar una respuesta completa y detallada sobre el contenido de la página. NO hables de browser rendering ni del tamaño del archivo - explica qué es y qué contiene la página web basándote en el HTML guardado.`;
                     } catch (saveError) {
                       log(groupId, 'mcp-tool', 'Failed to save HTML', String(saveError));
                       resultToShow = `${sizeInfo}\n\n${summary}\n(Nota: No se pudo guardar el archivo)`;
                     }
                   } else {
-                    // Small HTML - include directly but with instructions
-                    resultToShow = `Contenido de la página:\n\n${htmlContent.slice(0, 5000)}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
+                    // Small HTML - save to file
+                    const timestamp = Date.now();
+                    const folderName = `mcp-screenshots-${timestamp}`;
+                    const fileName = `${folderName}/screenshot.html`;
+                    try {
+                      await writeGroupFile(groupId, fileName, htmlContent);
+                      log(groupId, 'mcp-tool', 'HTML saved to folder', folderName);
+                      const summary = extractHtmlSummary(htmlContent);
+                      resultToShow = `HTML guardado en carpeta: ${folderName}/screenshot.html\n\n${summary}\n\nLee el archivo desde Files para dar una respuesta detallada. NO menciones browser rendering - solo explica el contenido de la página.`;
+                    } catch (saveError) {
+                      resultToShow = `Contenido de la página:\n\n${htmlContent.slice(0, 5000)}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
+                    }
                   }
                 }
                 
