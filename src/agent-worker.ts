@@ -91,10 +91,19 @@ function extractHtmlSummary(html: string): string {
     const links = linkMatches.map(m => {
       const hrefMatch = m.match(/href=["']([^"']+)["']/);
       const textMatch = m.match(/>([^<]+)</);
-      return hrefMatch ? `${textMatch ? textMatch[1] : 'Sin texto'} -> ${hrefMatch[1]}` : null;
-    }).filter(Boolean).slice(0, 15);
+      return hrefMatch ? { text: textMatch ? textMatch[1].trim() : 'Sin texto', url: hrefMatch[1] } : null;
+    }).filter(Boolean);
+    
     if (links.length > 0) {
-      parts.push(`\nENLACES (${links.length}): ${links.join(' | ')}`);
+      // Show anchor text
+      const linkTexts = links.slice(0, 15).map(l => l!.text);
+      parts.push(`\nENLACES - Texto (${links.length}): ${linkTexts.join(' | ')}`);
+      
+      // Show full URLs separately (only external ones)
+      const externalLinks = links.filter(l => l!.url.startsWith('http')).slice(0, 10).map(l => l!.url);
+      if (externalLinks.length > 0) {
+        parts.push(`\nENLACES - URLs Externas:\n${externalLinks.join('\n')}`);
+      }
     }
   }
   
