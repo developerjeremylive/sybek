@@ -9,6 +9,9 @@ import { ulid } from './ulid.js';
 // MCP endpoint for AI chat - use Cloudflare Worker proxy
 const CHAT_URL = 'https://kilocode-proxy-live.developerjeremylive.workers.dev/api/ai';
 
+// Cloudflare Browser Rendering Worker URL
+const CF_BROWSER_WORKER_URL = 'https://sybek-mcporter-worker.developerjeremylive.workers.dev';
+
 const OPFS_ROOT = 'openbrowserclaw';
 
 self.onmessage = async (event: MessageEvent<WorkerInbound>) => {
@@ -25,6 +28,42 @@ self.onmessage = async (event: MessageEvent<WorkerInbound>) => {
       break;
   }
 };
+
+// Helper to extract summary info from HTML
+function extractHtmlSummary(html: string): string {
+  const parts: string[] = [];
+  
+  // Extract title
+  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  if (titleMatch) parts.push(`Título: ${titleMatch[1].trim()}`);
+  
+  // Extract meta description
+  const descMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i) 
+                || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i);
+  if (descMatch) parts.push(`Descripción: ${descMatch[1].trim().slice(0, 200)}`);
+  
+  // Extract main h1 headings
+  const h1Matches = html.match(/<h1[^>]*>([^<]+)<\/h1>/gi);
+  if (h1Matches) {
+    const h1Texts = h1Matches.map(m => m.replace(/<[^>]+>/g, '').trim()).slice(0, 3);
+    parts.push(`Encabezados H1: ${h1Texts.join(', ')}`);
+  }
+  
+  // Extract h2 headings
+  const h2Matches = html.match(/<h2[^>]*>([^<]+)<\/h2>/gi);
+  if (h2Matches) {
+    const h2Texts = h2Matches.map(m => m.replace(/<[^>]+>/g, '').trim()).slice(0, 5);
+    parts.push(`Secciones: ${h2Texts.join(', ')}`);
+  }
+  
+  // Extract main content text (first paragraph after body or main)
+  const pMatch = html.match(/<p[^>]*>([^<]{50,})<\/p>/i);
+  if (pMatch) {
+    parts.push(`Contenido: ${pMatch[1].replace(/<[^>]+>/g, '').trim().slice(0, 300)}...`);
+  }
+  
+  return parts.join('\n');
+}
 
 // ---------------------------------------------------------------------------
 // Tool definitions for the AI
@@ -597,7 +636,30 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
           .join(', ');
         toolDescriptions.push(`- ${tool.name}(${params}): ${tool.description} [MCP: ${tool.serverName}]`);
       });
-      toolDescriptions.push('\n**Cómo usar herramientas MCP (solo si el servidor está corriendo):**\nUsa: [mcp] servidor | herramienta | {"param": "valor"} [/mcp]');
+      
+      // Get unique server names
+      const serverNames = [...new Set(activeMcpTools.map(t => t.serverName))];
+      if (serverNames.length > 0) {
+        toolDescriptions.push('\n**HERRAMIENTAS MCP - FORMATO OBLIGATORIO:**');
+        toolDescriptions.push(`Servidores disponibles: ${serverNames.join(', ')}`);
+        
+        // Add specific examples for Cloudflare Browser Rendering
+        const cfTools = activeMcpTools.filter(t => t.serverName.toLowerCase().includes('cloudflare'));
+        if (cfTools.length > 0) {
+          toolDescriptions.push('\n**EJEMPLOS Cloudflare Browser Rendering:**');
+          toolDescriptions.push('- [mcp] cloudflare | cf_html | {"url": "https://example.com"} [/mcp]');
+          toolDescriptions.push('- [mcp] cloudflare | cf_screenshot | {"url": "https://example.com"} [/mcp]');
+          toolDescriptions.push('- [mcp] cloudflare | cf_markdown | {"url": "https://example.com"} [/mcp]');
+          toolDescriptions.push('- [mcp] cloudflare | cf_json | {"url": "https://example.com", "prompt": "extrae el título"} [/mcp]');
+          toolDescriptions.push('\n**Tools disponibles:** ' + cfTools.map(t => t.name).join(', '));
+        }
+        
+        toolDescriptions.push('\n**USA ESTE FORMATO EXACTO - NO OTRO:**');
+        toolDescriptions.push(`[mcp] ${serverNames[0]} | nombre_de_tool | {"param": "valor"} [/mcp]`);
+        toolDescriptions.push('**ERROR COMÚN: No pongas solo el nombre de la herramienta después de [mcp]**');
+        toolDescriptions.push('**CORRECTO:** [mcp] Puppeteer | puppeteer_navigate | {"url": "youtube.com"} [/mcp]');
+        toolDescriptions.push('**INCORRECTO:** [mcp] puppeteer_navigate | {"url": "youtube.com"} [/mcp]');
+      }
     }
     
     toolsSection = `\n\n## Herramientas disponibles:\n${toolDescriptions.join('\n')}`;
@@ -726,13 +788,30 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       // Extract MCP tool calls from text response
       // Format: [mcp] server_name | tool_name | {"args"} [/mcp]
       const mcpToolCalls: Array<{serverName: string, toolName: string, arguments: Record<string, any>}> = [];
+      log(groupId, 'info', 'MCP Debug', `activeMcpTools: ${activeMcpTools.length}`);
       if (activeMcpTools.length > 0) {
-        const mcpRegex = /\[mcp\]\s*(\w+)\s*\|\s*(\w+)\s*\|\s*(\{[^}]*\})\s*\[\/mcp\]/g;
+        // Updated regex to handle spaces and special chars in server names
+        const mcpRegex = /\[mcp\]\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(\{[^}]*\})\s*\[\/mcp\]/g;
         let mcpMatch;
         while ((mcpMatch = mcpRegex.exec(responseContent)) !== null) {
-          const serverName = mcpMatch[1];
-          const toolName = mcpMatch[2];
+          let serverName = mcpMatch[1].trim();
+          const toolName = mcpMatch[2].trim();
           const argsStr = mcpMatch[3];
+          
+          // Normalize server name - try to match against active MCP servers
+          const normalizedServerName = serverName.toLowerCase().replace(/\s+/g, '');
+          const cfMatch = normalizedServerName.includes('cloudflare') || normalizedServerName === 'cf';
+          
+          if (cfMatch) {
+            // Map "cloudflare", "cf", etc. to the CF Browser Rendering server
+            const cfServer = mcpServers.find(s => 
+              s.name.toLowerCase().includes('cloudflare') || s.url === 'cf-browser-rendering'
+            );
+            if (cfServer) {
+              serverName = cfServer.name;
+            }
+          }
+          
           try {
             const args = JSON.parse(argsStr);
             mcpToolCalls.push({ serverName, toolName, arguments: args });
@@ -743,8 +822,11 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         }
       }
 
+      log(groupId, 'info', 'After MCP extraction', 'Continuing...');
+
       // Auto-save code files from response
       const savedFiles = await autoSaveCodeFiles(groupId, responseContent);
+      log(groupId, 'info', 'After autoSaveCodeFiles', `saved ${savedFiles.length} files`);
       
       // Generate response - show LLM response AND saved files
       let finalText = responseContent;
@@ -756,7 +838,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       }
 
       // Only log if there are actual tool calls
-      if (toolCalls.length > 0) {
+      log(groupId, 'info', 'Tool check', `toolCalls.length=${toolCalls.length}, mcpToolCalls.length=${mcpToolCalls.length}`);
+      if (toolCalls.length > 0 || mcpToolCalls.length > 0) {
         for (const toolCall of toolCalls) {
           let toolName = '';
           let toolInput: Record<string, any> = {};
@@ -795,103 +878,246 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
           currentMessages.push({ role: 'user', content: `Tool result: ${toolResult}` });
         }
         
-        // Execute MCP tool calls
-        for (const mcpCall of mcpToolCalls) {
-          const { serverName, toolName, arguments: mcpArgs } = mcpCall;
-          
-          log(groupId, 'mcp-tool', `MCP: ${serverName}/${toolName}`, JSON.stringify(mcpArgs).slice(0, 100));
-          post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'running' } });
-
-          // Find the server config from mcpServers in payload
-          const server = mcpServers.find(s => s.name.toLowerCase() === serverName.toLowerCase());
-          
-          if (!server) {
-            const errorResult = `Error: MCP server "${serverName}" not found. Available: ${mcpServers.map(s => s.name).join(', ')}`;
-            log(groupId, 'mcp-tool', `Error: ${serverName}`, errorResult);
-            post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
-            post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: errorResult } });
-            currentMessages.push({ role: 'user', content: `MCP Tool error: ${errorResult}` });
-            continue;
-          }
-
-          try {
-            // Call MCP tool via mcporter API
-            const mcpResponse = await fetch('/api/mcporter/call', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                server: serverName,
-                tool: toolName,
-                args: mcpArgs,
-              }),
-              signal: AbortSignal.timeout(60000), // Longer timeout for mcporter
-            });
-
-            if (!mcpResponse.ok) {
-              throw new Error(`HTTP ${mcpResponse.status}: ${mcpResponse.statusText}`);
-            }
-
-            const mcpResult = await mcpResponse.json();
+        // Execute MCP tool calls (outside toolCalls check so they run even without regular tools)
+        if (mcpToolCalls.length > 0) {
+          log(groupId, 'info', 'MCP Before Loop', `mcpToolCalls=${JSON.stringify(mcpToolCalls.slice(0,2))}`);
+          log(groupId, 'info', 'MCP Loop', `mcpToolCalls.length=${mcpToolCalls.length}`);
+          for (const mcpCall of mcpToolCalls) {
+            const { serverName, toolName, arguments: mcpArgs } = mcpCall;
             
-            if (mcpResult.error) {
-              throw new Error(mcpResult.error);
+            log(groupId, 'mcp-tool', `MCP: ${serverName}/${toolName}`, JSON.stringify(mcpArgs).slice(0, 100));
+            post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'running' } });
+
+            // Find the server config from mcpServers in payload
+            const server = mcpServers.find(s => s.name.toLowerCase() === serverName.toLowerCase());
+            
+            if (!server) {
+              const errorResult = `Error: MCP server "${serverName}" not found. Available: ${mcpServers.map(s => s.name).join(', ')}`;
+              log(groupId, 'mcp-tool', `Error: ${serverName}`, errorResult);
+              post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
+              post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: errorResult } });
+              currentMessages.push({ role: 'user', content: `MCP Tool error: ${errorResult}` });
+              continue;
             }
 
-            const resultText = mcpResult.result || JSON.stringify(mcpResult);
-            log(groupId, 'mcp-tool', `Result: ${serverName}/${toolName}`, resultText.slice(0, 200));
-            post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
-            post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: resultText } });
-            currentMessages.push({ role: 'user', content: `MCP Tool result (${serverName}/${toolName}): ${resultText}` });
-          } catch (mcpError: any) {
-            const errorText = `Error calling MCP tool: ${mcpError.message}`;
-            log(groupId, 'mcp-tool', `Error: ${serverName}/${toolName}`, errorText);
-            post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
-            post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: errorText } });
-            currentMessages.push({ role: 'user', content: `MCP Tool error: ${errorText}` });
+            // Special handling for Cloudflare Browser Rendering MCP
+            if (serverName.toLowerCase().includes('cloudflare') || server.url === 'cf-browser-rendering') {
+              try {
+                log(groupId, 'mcp-tool', `CF Browser: ${toolName}`, 'Calling REST API...');
+                
+                const endpointMap: Record<string, { method: string, path: string }> = {
+                  'cf_screenshot': { method: 'POST', path: '/rest/screenshot' },
+                  'cf_html': { method: 'POST', path: '/rest/html' },
+                  'cf_markdown': { method: 'POST', path: '/rest/markdown' },
+                  'cf_pdf': { method: 'POST', path: '/rest/pdf' },
+                  'cf_links': { method: 'POST', path: '/rest/links' },
+                  'cf_json': { method: 'POST', path: '/rest/json' },
+                  'cf_crawl': { method: 'POST', path: '/rest/crawl' },
+                };
+                
+                // Handle status/cancel
+                if (toolName === 'cf_crawl_status') {
+                  const jobId = mcpArgs.jobId || mcpArgs[0];
+                  const cfResponse = await fetch(`${CF_BROWSER_WORKER_URL}/rest/crawl/${jobId}?limit=${mcpArgs.limit || 10}`, {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(60000),
+                  });
+                  const cfResult = await cfResponse.json();
+                  const resultText = JSON.stringify(cfResult, null, 2);
+                  post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
+                  post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: resultText } });
+                  currentMessages.push({ role: 'user', content: `MCP Tool result: ${resultText}` });
+                  continue;
+                }
+                
+                if (toolName === 'cf_crawl_cancel') {
+                  const jobId = mcpArgs.jobId || mcpArgs[0];
+                  const cfResponse = await fetch(`${CF_BROWSER_WORKER_URL}/rest/crawl/${jobId}`, {
+                    method: 'DELETE',
+                    signal: AbortSignal.timeout(60000),
+                  });
+                  const cfResult = await cfResponse.json();
+                  const resultText = JSON.stringify(cfResult, null, 2);
+                  post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
+                  post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: resultText } });
+                  currentMessages.push({ role: 'user', content: `MCP Tool result: ${resultText}` });
+                  continue;
+                }
+                
+                const endpoint = endpointMap[toolName];
+                if (!endpoint) {
+                  throw new Error(`Unknown CF Browser tool: ${toolName}`);
+                }
+                
+                const requestBody: Record<string, unknown> = {};
+                if (mcpArgs.url) {
+                  // Normalize URL - add https:// if missing
+                  let url = mcpArgs.url;
+                  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'https://' + url;
+                  }
+                  requestBody.url = url;
+                }
+                if (mcpArgs.options) requestBody.options = mcpArgs.options;
+                if (mcpArgs.prompt) requestBody.prompt = mcpArgs.prompt;
+                if (mcpArgs.response_format) requestBody.response_format = mcpArgs.response_format;
+                if (mcpArgs.limit) requestBody.limit = mcpArgs.limit;
+                if (mcpArgs.depth) requestBody.depth = mcpArgs.depth;
+                
+                log(groupId, 'mcp-tool', `CF Request`, `${CF_BROWSER_WORKER_URL}${endpoint.path} -> ${JSON.stringify(requestBody)}`);
+                
+                const cfResponse = await fetch(`${CF_BROWSER_WORKER_URL}${endpoint.path}`, {
+                  method: endpoint.method,
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(requestBody),
+                  signal: AbortSignal.timeout(60000),
+                });
+                
+                log(groupId, 'mcp-tool', `CF Response`, `status=${cfResponse.status}`);
+                
+                if (!cfResponse.ok) {
+                  const error = await cfResponse.json();
+                  throw new Error(error.error || `HTTP ${cfResponse.status}`);
+                }
+                
+                const cfResult = await cfResponse.json();
+                
+                // For cf_html, check if response is too large and save to file
+                let resultToShow = JSON.stringify(cfResult, null, 2);
+                if (toolName === 'cf_html' && cfResult.success && cfResult.html) {
+                  const htmlContent = cfResult.html;
+                  const htmlSize = htmlContent.length;
+                  
+                  // If HTML is larger than 10KB, save to file
+                  if (htmlSize > 10000) {
+                    const timestamp = Date.now();
+                    // Create a subfolder for MCP screenshots
+                    const folderName = `mcp-screenshots-${timestamp}`;
+                    const fileName = `${folderName}/screenshot.html`;
+                    const summary = extractHtmlSummary(htmlContent);
+                    const sizeInfo = `HTML muy grande (${Math.round(htmlSize/1024)}KB).`;
+                    
+                    try {
+                      await writeGroupFile(groupId, fileName, htmlContent);
+                      log(groupId, 'mcp-tool', 'HTML saved to folder', folderName);
+                      resultToShow = `HTML guardado en carpeta: ${folderName}/screenshot.html\n\n${summary}\n\nLee el archivo HTML completo desde la carpeta Files para dar una respuesta completa y detallada sobre el contenido de la página. NO hables de browser rendering ni del tamaño del archivo - explica qué es y qué contiene la página web basándote en el HTML guardado.`;
+                    } catch (saveError) {
+                      log(groupId, 'mcp-tool', 'Failed to save HTML', String(saveError));
+                      resultToShow = `${sizeInfo}\n\n${summary}\n(Nota: No se pudo guardar el archivo)`;
+                    }
+                  } else {
+                    // Small HTML - save to file
+                    const timestamp = Date.now();
+                    const folderName = `mcp-screenshots-${timestamp}`;
+                    const fileName = `${folderName}/screenshot.html`;
+                    try {
+                      await writeGroupFile(groupId, fileName, htmlContent);
+                      log(groupId, 'mcp-tool', 'HTML saved to folder', folderName);
+                      const summary = extractHtmlSummary(htmlContent);
+                      resultToShow = `HTML guardado en carpeta: ${folderName}/screenshot.html\n\n${summary}\n\nLee el archivo desde Files para dar una respuesta detallada. NO menciones browser rendering - solo explica el contenido de la página.`;
+                    } catch (saveError) {
+                      resultToShow = `Contenido de la página:\n\n${htmlContent.slice(0, 5000)}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
+                    }
+                  }
+                }
+                
+                post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
+                post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: resultToShow } });
+                currentMessages.push({ role: 'user', content: `MCP Tool result: ${resultToShow}` });
+              } catch (cfError: any) {
+                const errorText = `Error CF Browser: ${cfError.message}`;
+                log(groupId, 'mcp-tool', `CF Error`, errorText);
+                post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
+                post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: errorText } });
+                currentMessages.push({ role: 'user', content: `MCP Tool error: ${errorText}` });
+              }
+              continue;
+            }
+
+            try {
+              // Call MCP tool via mcporter Worker API
+              // Note: The worker doesn't actually execute Puppeteer - it just returns metadata
+              // For actual browser automation, we'd need a different architecture
+              const mcpWorkerUrl = 'https://sybek-mcporter-worker.developerjeremylive.workers.dev';
+              const mcpResponse = await fetch(`${mcpWorkerUrl}/call`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  server: serverName,
+                  tool: toolName,
+                  args: mcpArgs,
+                }),
+                signal: AbortSignal.timeout(60000), // Longer timeout for mcporter
+              });
+
+              if (!mcpResponse.ok) {
+                throw new Error(`HTTP ${mcpResponse.status}: ${mcpResponse.statusText}`);
+              }
+
+              const mcpResult = await mcpResponse.json();
+              
+              if (mcpResult.error) {
+                throw new Error(mcpResult.error);
+              }
+
+              const resultText = mcpResult.result || JSON.stringify(mcpResult);
+              log(groupId, 'mcp-tool', `Result: ${serverName}/${toolName}`, resultText.slice(0, 200));
+              post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
+              post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: resultText } });
+              currentMessages.push({ role: 'user', content: `MCP Tool result (${serverName}/${toolName}): ${resultText}` });
+            } catch (mcpError: any) {
+              const errorText = `Error calling MCP tool: ${mcpError.message}`;
+              log(groupId, 'mcp-tool', `Error: ${serverName}/${toolName}`, errorText);
+              post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
+              post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: errorText } });
+              currentMessages.push({ role: 'user', content: `MCP Tool error: ${errorText}` });
+            }
           }
         }
         
         // Make another API call with tool results to get final response
-        post({ type: 'typing', payload: { groupId } });
-        
-        const finalRequestBody = {
-          messages: currentMessages,
-          model,
-          max_tokens: maxTokens,
-        };
-        
-        const finalRes = await fetch(CHAT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(finalRequestBody),
-        });
-        
-        const finalResult = await finalRes.json();
-        log(groupId, 'info', 'Final API result', JSON.stringify(finalResult).slice(0, 200));
-        let finalResponseContent = '';
-        
-        if (finalResult.response) {
-          finalResponseContent = typeof finalResult.response === 'string' ? finalResult.response : JSON.stringify(finalResult.response);
-        } else if (finalResult.result?.response) {
-          finalResponseContent = typeof finalResult.result.response === 'string' ? finalResult.result.response : JSON.stringify(finalResult.result.response);
-        } else {
-          finalResponseContent = JSON.stringify(finalResult).slice(0, 500);
-        }
-        
-        let cleaned = finalResponseContent.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
-        // If cleaned is empty, try extracting content from inside <internal> tags
-        if (!cleaned) {
-          const internalMatch = finalResponseContent.match(/<internal>([\s\S]*?)<\/internal>/);
-          if (internalMatch && internalMatch[1]) {
-            cleaned = internalMatch[1].trim();
+        if (toolCalls.length > 0 || mcpToolCalls.length > 0) {
+          post({ type: 'typing', payload: { groupId } });
+          
+          const finalRequestBody = {
+            messages: currentMessages,
+            model,
+            max_tokens: maxTokens,
+          };
+          
+          const finalRes = await fetch(CHAT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(finalRequestBody),
+          });
+          
+          const finalResult = await finalRes.json();
+          log(groupId, 'info', 'Final API result', JSON.stringify(finalResult).slice(0, 200));
+          let finalResponseContent = '';
+          
+          if (finalResult.response) {
+            finalResponseContent = typeof finalResult.response === 'string' ? finalResult.response : JSON.stringify(finalResult.response);
+          } else if (finalResult.result?.response) {
+            finalResponseContent = typeof finalResult.result.response === 'string' ? finalResult.result.response : JSON.stringify(finalResult.result.response);
+          } else {
+            finalResponseContent = JSON.stringify(finalResult).slice(0, 500);
           }
+          
+          let cleaned = finalResponseContent.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();
+          // If cleaned is empty, try extracting content from inside <internal> tags
+          if (!cleaned) {
+            const internalMatch = finalResponseContent.match(/<internal>([\s\S]*?)<\/internal>/);
+            if (internalMatch && internalMatch[1]) {
+              cleaned = internalMatch[1].trim();
+            }
+          }
+          // If still empty, show raw response for debugging
+          if (!cleaned) {
+            cleaned = finalResponseContent.trim() || '(sin respuesta - response vacía)';
+          }
+          post({ type: 'response', payload: { groupId, text: cleaned } });
+          return;
         }
-        // If still empty, show raw response for debugging
-        if (!cleaned) {
-          cleaned = finalResponseContent.trim() || '(sin respuesta - response vacía)';
-        }
-        post({ type: 'response', payload: { groupId, text: cleaned } });
-        return;
       } else {
         // Final response - extract content from <internal> tags if response is empty
         let cleaned = finalText.replace(/<internal>[\s\S]*?<\/internal>/g, '').trim();

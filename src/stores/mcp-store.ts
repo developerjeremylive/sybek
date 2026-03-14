@@ -40,6 +40,127 @@ export const PUBLIC_MCP_SERVERS: Omit<MCPServer, 'id' | 'createdAt'>[] = [
     description: '🌐 Automatización del navegador (browser.tools)',
     icon: '🌐',
   },
+  {
+    name: 'Cloudflare Browser Rendering',
+    url: 'cf-browser-rendering',
+    type: 'http',
+    enabled: false,
+    description: '☁️ REST API para screenshots, HTML, PDF, crawling con Cloudflare',
+    icon: '☁️',
+  },
+];
+
+// Cloudflare Browser Rendering Worker URL
+const CF_BROWSER_WORKER_URL = 'https://sybek-mcporter-worker.developerjeremylive.workers.dev';
+
+// Cloudflare Browser Rendering Tools
+export const CF_BROWSER_TOOLS = [
+  {
+    name: 'cf_screenshot',
+    description: 'Captura una screenshot de una página web',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página a capturar' },
+        options: { type: 'object', description: 'Opciones: format, fullPage, quality' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_html',
+    description: 'Obtiene el HTML de una página web',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_markdown',
+    description: 'Extrae el contenido en Markdown de una página web',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_pdf',
+    description: 'Renderiza una página web como PDF',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página' },
+        options: { type: 'object', description: 'Opciones: format, landscape, printBackground' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_links',
+    description: 'Obtiene todos los enlaces de una página web',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_json',
+    description: 'Extrae datos estructurados usando IA (JSON)',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página' },
+        prompt: { type: 'string', description: 'Prompt para extracción' },
+        response_format: { type: 'object', description: 'JSON schema' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_crawl',
+    description: 'Inicia un trabajo de crawl (asíncrono)',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL inicial para crawling' },
+        limit: { type: 'number', description: 'Máximo de páginas' },
+        depth: { type: 'number', description: 'Profundidad máxima' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_crawl_status',
+    description: 'Obtiene el estado/resultados de un trabajo de crawl',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', description: 'ID del trabajo de crawl' },
+        limit: { type: 'number', description: 'Límite de resultados' },
+      },
+      required: ['jobId'],
+    },
+  },
+  {
+    name: 'cf_crawl_cancel',
+    description: 'Cancela un trabajo de crawl en progreso',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', description: 'ID del trabajo de crawl' },
+      },
+      required: ['jobId'],
+    },
+  },
 ];
 
 interface MCPState {
@@ -141,6 +262,17 @@ export const useMCPStore = create<MCPState>()(
       fetchServerTools: async (server: MCPServer): Promise<MCPTool[]> => {
         console.log('[MCP] fetchServerTools called for', server.name, 'URL:', server.url);
         
+        // Cloudflare Browser Rendering - return built-in tools
+        if (server.url === 'cf-browser-rendering') {
+          return CF_BROWSER_TOOLS.map((tool) => ({
+            name: tool.name,
+            description: tool.description,
+            inputSchema: tool.inputSchema,
+            serverId: server.id,
+            serverName: server.name,
+          }));
+        }
+        
         if (server.url.startsWith('mcporter:')) {
           const serverName = server.url.replace('mcporter:', '');
           const url = `${WORKER_URL}/${serverName}/tools`;
@@ -183,6 +315,15 @@ export const useMCPStore = create<MCPState>()(
       },
 
       installAndAddServer: async (pubServer) => {
+        // Cloudflare Browser Rendering doesn't need installation - just add it
+        if (pubServer.url === 'cf-browser-rendering') {
+          get().addServer({
+            ...pubServer,
+            enabled: false,
+          });
+          return;
+        }
+        
         const serverName = pubServer.url.replace('mcporter:', '');
         set({ isInstalling: true, installationError: null });
         
