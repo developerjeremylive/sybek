@@ -58,7 +58,10 @@ interface MCPState {
   getToolsForServer: (serverId: string) => MCPTool[];
 }
 
-// Default MCP servers - Only Puppeteer for now
+// Cloudflare Browser Rendering Worker URL - configurable
+const CF_BROWSER_WORKER_URL = 'https://sybek-mcporter-worker.b7a628f29ce7b9e4d28128bf5b4442b6.workers.dev';
+
+// Default MCP servers - Puppeteer + Cloudflare Browser Rendering
 export const PUBLIC_MCP_SERVERS: Omit<MCPServer, 'id' | 'createdAt'>[] = [
   {
     name: 'Puppeteer',
@@ -67,6 +70,126 @@ export const PUBLIC_MCP_SERVERS: Omit<MCPServer, 'id' | 'createdAt'>[] = [
     enabled: false,
     description: '🌐 Automatización del navegador (browser.tools)',
     icon: '🌐',
+  },
+  {
+    name: 'Cloudflare Browser Rendering',
+    url: 'cf-browser-rendering',
+    type: 'http',
+    enabled: false,
+    description: '☁️ REST API para screenshots, HTML, PDF, crawling con Cloudflare',
+    icon: '☁️',
+  },
+];
+
+// Cloudflare Browser Rendering Tools - these are called directly via REST API
+export const CF_BROWSER_TOOLS = [
+  {
+    name: 'cf_screenshot',
+    description: 'Captura una screenshot de una página web',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página a capturar' },
+        options: { type: 'object', description: 'Opciones: format (png/jpeg), fullPage, quality' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_html',
+    description: 'Obtiene el HTML de una página web',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página' },
+        options: { type: 'object', description: 'Opciones: js (bool), skipImages (bool)' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_markdown',
+    description: 'Extrae el contenido en Markdown de una página web',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_pdf',
+    description: 'Renderiza una página web como PDF',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página' },
+        options: { type: 'object', description: 'Opciones: format, landscape, printBackground, margin' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_links',
+    description: 'Obtiene todos los enlaces de una página web',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_json',
+    description: 'Extrae datos estructurados usando IA (JSON)',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la página' },
+        prompt: { type: 'string', description: 'Prompt para extracción' },
+        response_format: { type: 'object', description: 'JSON schema para el formato de respuesta' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_crawl',
+    description: 'Inicia un trabajo de crawl (asíncrono)',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL inicial para crawling' },
+        limit: { type: 'number', description: 'Máximo de páginas (default 10)' },
+        depth: { type: 'number', description: 'Profundidad máxima (default 2)' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'cf_crawl_status',
+    description: 'Obtiene el estado/resultados de un trabajo de crawl',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', description: 'ID del trabajo de crawl' },
+        limit: { type: 'number', description: 'Límite de resultados' },
+        status: { type: 'string', description: 'Filtrar por status: queued, completed, errored' },
+      },
+      required: ['jobId'],
+    },
+  },
+  {
+    name: 'cf_crawl_cancel',
+    description: 'Cancela un trabajo de crawl en progreso',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', description: 'ID del trabajo de crawl a cancelar' },
+      },
+      required: ['jobId'],
+    },
   },
 ];
 
@@ -163,6 +286,18 @@ export const useMCPStore = create<MCPState>()(
 
       fetchServerTools: async (server: MCPServer): Promise<MCPTool[]> => {
         console.log(`[MCP] Fetching tools from ${server.name} via mcporter`);
+        
+        // If it's a Cloudflare Browser Rendering server
+        if (server.url === 'cf-browser-rendering') {
+          console.log(`[MCP] Returning CF Browser Rendering tools:`, CF_BROWSER_TOOLS.length);
+          return CF_BROWSER_TOOLS.map((tool) => ({
+            name: tool.name,
+            description: tool.description,
+            inputSchema: tool.inputSchema,
+            serverId: server.id,
+            serverName: server.name,
+          }));
+        }
         
         // If it's a mcporter server, use the API
         if (server.url.startsWith('mcporter:')) {
