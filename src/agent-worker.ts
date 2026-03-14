@@ -999,12 +999,16 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                     try {
                       await writeGroupFile(groupId, fileName, htmlContent);
                       log(groupId, 'mcp-tool', 'HTML saved to file', fileName);
-                      resultToShow = `${sizeInfo}\n\n${summary}\n\nArchivo guardado en: ${fileName}\n\n Puedes analizar el archivo completo en la pestaña Files.`;
+                      resultToShow = `${sizeInfo}\n\n${summary}\n\nArchivo guardado en: ${fileName}\n\nIMPORTANTE: Usa ESTA información (título, secciones, contenido) para responder la pregunta del usuario. No hables de Cloudflare ni del tamaño - explica el CONTENIDO de la página basada en la información extraída.`;
                     } catch (saveError) {
                       log(groupId, 'mcp-tool', 'Failed to save HTML', String(saveError));
                       resultToShow = `${sizeInfo}\n\n${summary}\n(Nota: No se pudo guardar el archivo)`;
                     }
                   }
+                  }
+                } else {
+                  // Small HTML - include directly but with instructions
+                  resultToShow = `Contenido de la página:\n\n${cfResult.html?.slice(0, 5000) || 'Sin contenido'}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
                 }
                 
                 post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
