@@ -1001,7 +1001,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                       resultToShow = `HTML guardado: ${fileName}\n\n${summary}\n\nLee el archivo desde la carpeta del chat en Files para dar una respuesta detallada. NO menciones browser rendering - solo explica el contenido.`;
                     } catch (saveError) {
                       log(groupId, 'mcp-tool', 'Failed to save HTML', String(saveError));
-                      resultToShow = `${sizeInfo}\n\n${summary}\n(Nota: No se pudo guardar el archivo)`;
+                      resultToShow = `${summary}\n(Nota: No se pudo guardar el archivo)`;
                     }
                   } else {
                     // Small HTML - save to chat folder
