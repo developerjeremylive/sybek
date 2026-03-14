@@ -991,14 +991,16 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   // If HTML is larger than 10KB, save to file
                   if (htmlSize > 10000) {
                     const timestamp = Date.now();
-                    // Save directly in chat folder (no subfolder)
+                    // Save directly in chat folder (the groupId is the chat folder name)
                     const fileName = `screenshot-${timestamp}.html`;
                     const summary = extractHtmlSummary(htmlContent);
                     
+                    log(groupId, 'mcp-tool', 'Saving HTML to chat folder', `groupId=${groupId}, file=${fileName}`);
+                    
                     try {
                       await writeGroupFile(groupId, fileName, htmlContent);
-                      log(groupId, 'mcp-tool', 'HTML saved to chat folder', fileName);
-                      resultToShow = `HTML guardado: ${fileName}\n\n${summary}\n\nLee el archivo desde la carpeta del chat en Files para dar una respuesta detallada. NO menciones browser rendering - solo explica el contenido.`;
+                      log(groupId, 'mcp-tool', 'HTML saved successfully', fileName);
+                      resultToShow = `HTML guardado en carpeta del chat: ${fileName}\n\n${summary}\n\nLee el archivo en la pestaña Files > ${groupId} para ver el contenido completo. NO menciones browser rendering - solo explica el contenido de la página.`;
                     } catch (saveError) {
                       log(groupId, 'mcp-tool', 'Failed to save HTML', String(saveError));
                       resultToShow = `${summary}\n(Nota: No se pudo guardar el archivo)`;
@@ -1007,11 +1009,12 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                     // Small HTML - save to chat folder
                     const timestamp = Date.now();
                     const fileName = `screenshot-${timestamp}.html`;
+                    log(groupId, 'mcp-tool', 'Saving small HTML', `groupId=${groupId}`);
                     try {
                       await writeGroupFile(groupId, fileName, htmlContent);
-                      log(groupId, 'mcp-tool', 'HTML saved to chat folder', fileName);
+                      log(groupId, 'mcp-tool', 'HTML saved', fileName);
                       const summary = extractHtmlSummary(htmlContent);
-                      resultToShow = `HTML guardado: ${fileName}\n\n${summary}\n\nLee el archivo desde la carpeta del chat en Files.`;
+                      resultToShow = `HTML guardado en carpeta del chat: ${fileName}\n\n${summary}\n\nVer archivo en Files > ${groupId}`;
                     } catch (saveError) {
                       resultToShow = `Contenido de la página:\n\n${htmlContent.slice(0, 5000)}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
                     }
