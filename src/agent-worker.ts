@@ -1004,11 +1004,10 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                       log(groupId, 'mcp-tool', 'Failed to save HTML', String(saveError));
                       resultToShow = `${sizeInfo}\n\n${summary}\n(Nota: No se pudo guardar el archivo)`;
                     }
+                  } else {
+                    // Small HTML - include directly but with instructions
+                    resultToShow = `Contenido de la página:\n\n${htmlContent.slice(0, 5000)}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
                   }
-                  }
-                } else {
-                  // Small HTML - include directly but with instructions
-                  resultToShow = `Contenido de la página:\n\n${cfResult.html?.slice(0, 5000) || 'Sin contenido'}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
                 }
                 
                 post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
