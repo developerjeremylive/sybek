@@ -1007,14 +1007,6 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                     await writeGroupFile(chatFolder, fileName, htmlContent);
                     log(chatFolder, 'mcp-tool', 'MCP HTML saved successfully', fileName);
                     
-                    // Verify file was saved
-                    try {
-                      const files = await listGroupFiles(chatFolder, '.');
-                      log(chatFolder, 'mcp-tool', 'Files in chat folder', files.join(', '));
-                    } catch (listErr) {
-                      log(chatFolder, 'mcp-tool', 'Could not list files', String(listErr));
-                    }
-                    
                     if (htmlSize > 10000) {
                       resultToShow = `HTML guardado en carpeta del chat (${chatFolder}): ${fileName}\n\n${summary}\n\nLee el archivo en Files > ${chatFolder} para ver el contenido completo. NO menciones browser rendering - solo explica el contenido de la página en detalle.`;
                     } else {
