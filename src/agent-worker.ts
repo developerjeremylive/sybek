@@ -29,10 +29,40 @@ self.onmessage = async (event: MessageEvent<WorkerInbound>) => {
   }
 };
 
-// Helper to extract title from HTML
-function extractTitle(html: string): string | null {
-  const match = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-  return match ? match[1].trim() : null;
+// Helper to extract summary info from HTML
+function extractHtmlSummary(html: string): string {
+  const parts: string[] = [];
+  
+  // Extract title
+  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  if (titleMatch) parts.push(`Título: ${titleMatch[1].trim()}`);
+  
+  // Extract meta description
+  const descMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i) 
+                || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i);
+  if (descMatch) parts.push(`Descripción: ${descMatch[1].trim().slice(0, 200)}`);
+  
+  // Extract main h1 headings
+  const h1Matches = html.match(/<h1[^>]*>([^<]+)<\/h1>/gi);
+  if (h1Matches) {
+    const h1Texts = h1Matches.map(m => m.replace(/<[^>]+>/g, '').trim()).slice(0, 3);
+    parts.push(`Encabezados H1: ${h1Texts.join(', ')}`);
+  }
+  
+  // Extract h2 headings
+  const h2Matches = html.match(/<h2[^>]*>([^<]+)<\/h2>/gi);
+  if (h2Matches) {
+    const h2Texts = h2Matches.map(m => m.replace(/<[^>]+>/g, '').trim()).slice(0, 5);
+    parts.push(`Secciones: ${h2Texts.join(', ')}`);
+  }
+  
+  // Extract main content text (first paragraph after body or main)
+  const pMatch = html.match(/<p[^>]*>([^<]{50,})<\/p>/i);
+  if (pMatch) {
+    parts.push(`Contenido: ${pMatch[1].replace(/<[^>]+>/g, '').trim().slice(0, 300)}...`);
+  }
+  
+  return parts.join('\n');
 }
 
 // ---------------------------------------------------------------------------
@@ -963,16 +993,20 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                     const timestamp = Date.now();
                     const fileName = `mcp-screenshots/screenshot-${timestamp}.html`;
                     const domain = new URL(mcpArgs.url).hostname;
-                    const summary = `HTML muy grande (${Math.round(htmlSize/1024)}KB) guardado en archivo. Title: ${extractTitle(htmlContent) || 'N/A'}.`;
+                    const summary = extractHtmlSummary(htmlContent);
+                    const sizeInfo = `HTML muy grande (${Math.round(htmlSize/1024)}KB) guardado en archivo.`;
                     
                     try {
                       await writeGroupFile(groupId, fileName, htmlContent);
                       log(groupId, 'mcp-tool', 'HTML saved to file', fileName);
-                      resultToShow = summary + `\n\nArchivo guardado en: ${fileName}`;
+                      resultToShow = `${sizeInfo}\n\n${summary}\n\nArchivo guardado en: ${fileName}\n\nIMPORTANTE: Usa ESTA información (título, secciones, contenido) para responder la pregunta del usuario. No hables de Cloudflare ni del tamaño - explica el CONTENIDO de la página basada en la información extraída.`;
                     } catch (saveError) {
                       log(groupId, 'mcp-tool', 'Failed to save HTML', String(saveError));
-                      resultToShow = summary + '\n(Nota: No se pudo guardar el archivo)';
+                      resultToShow = `${sizeInfo}\n\n${summary}\n(Nota: No se pudo guardar el archivo)`;
                     }
+                  } else {
+                    // Small HTML - include directly but with instructions
+                    resultToShow = `Contenido de la página:\n\n${htmlContent.slice(0, 5000)}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
                   }
                 }
                 
