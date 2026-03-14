@@ -394,6 +394,17 @@ export function setContextFolders(folders: string[]): void {
   contextFolders = folders;
 }
 
+// Add a folder to context automatically
+function addFolderToContext(folder: string): void {
+  if (!contextFolders.includes(folder)) {
+    contextFolders = [...contextFolders, folder];
+    // Also save to localStorage so it persists
+    try {
+      localStorage.setItem('contextFolders', JSON.stringify(contextFolders));
+    } catch {}
+  }
+}
+
 // Generate a unique session folder based on timestamp
 function getSessionFolder(): string {
   if (!currentSessionFolder) {
@@ -988,33 +999,52 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   const htmlContent = cfResult.html;
                   const htmlSize = htmlContent.length;
                   
-                  // If HTML is larger than 10KB, save to file
+                  // Use the chat folder (currentSessionFolder) for saving
+                  const chatFolder = currentSessionFolder || groupId;
+                  
+                  // If HTML is larger than 10KB, save to file directly in chat folder
                   if (htmlSize > 10000) {
                     const timestamp = Date.now();
-                    // Create a subfolder for MCP screenshots
-                    const folderName = `mcp-screenshots-${timestamp}`;
-                    const fileName = `${folderName}/screenshot.html`;
+                    // Extract domain from URL for filename
+                    let domain = 'page';
+                    try {
+                      const url = new URL(mcpArgs.url);
+                      domain = url.hostname.replace(/\./g, '-');
+                    } catch {}
+                    const fileName = `mcp-${domain}-${timestamp}.html`;
                     const summary = extractHtmlSummary(htmlContent);
                     const sizeInfo = `HTML muy grande (${Math.round(htmlSize/1024)}KB).`;
                     
                     try {
-                      await writeGroupFile(groupId, fileName, htmlContent);
-                      log(groupId, 'mcp-tool', 'HTML saved to folder', folderName);
-                      resultToShow = `HTML guardado en carpeta: ${folderName}/screenshot.html\n\n${summary}\n\nLee el archivo HTML completo desde la carpeta Files para dar una respuesta completa y detallada sobre el contenido de la página. NO hables de browser rendering ni del tamaño del archivo - explica qué es y qué contiene la página web basándote en el HTML guardado.`;
+                      await writeGroupFile(chatFolder, fileName, htmlContent);
+                      log(chatFolder, 'mcp-tool', 'HTML saved to chat folder', fileName);
+                      
+                      // Add folder to context automatically
+                      addFolderToContext(chatFolder);
+                      
+                      resultToShow = `HTML guardado en carpeta del chat (${chatFolder}): ${fileName}\n\n${summary}\n\nLa carpeta ${chatFolder} ha sido agregada al contexto. Lee el archivo para dar una respuesta detallada sobre el contenido de la página.`;
                     } catch (saveError) {
-                      log(groupId, 'mcp-tool', 'Failed to save HTML', String(saveError));
+                      log(chatFolder, 'mcp-tool', 'Failed to save HTML', String(saveError));
                       resultToShow = `${sizeInfo}\n\n${summary}\n(Nota: No se pudo guardar el archivo)`;
                     }
                   } else {
-                    // Small HTML - save to file
+                    // Small HTML - save to chat folder
                     const timestamp = Date.now();
-                    const folderName = `mcp-screenshots-${timestamp}`;
-                    const fileName = `${folderName}/screenshot.html`;
+                    let domain = 'page';
                     try {
-                      await writeGroupFile(groupId, fileName, htmlContent);
-                      log(groupId, 'mcp-tool', 'HTML saved to folder', folderName);
+                      const url = new URL(mcpArgs.url);
+                      domain = url.hostname.replace(/\./g, '-');
+                    } catch {}
+                    const fileName = `mcp-${domain}-${timestamp}.html`;
+                    try {
+                      await writeGroupFile(chatFolder, fileName, htmlContent);
+                      log(chatFolder, 'mcp-tool', 'HTML saved to chat folder', fileName);
+                      
+                      // Add folder to context automatically
+                      addFolderToContext(chatFolder);
+                      
                       const summary = extractHtmlSummary(htmlContent);
-                      resultToShow = `HTML guardado en carpeta: ${folderName}/screenshot.html\n\n${summary}\n\nLee el archivo desde Files para dar una respuesta detallada. NO menciones browser rendering - solo explica el contenido de la página.`;
+                      resultToShow = `HTML guardado en ${chatFolder}: ${fileName}\n\n${summary}\n\nCarpeta agregada al contexto.`;
                     } catch (saveError) {
                       resultToShow = `Contenido de la página:\n\n${htmlContent.slice(0, 5000)}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
                     }
