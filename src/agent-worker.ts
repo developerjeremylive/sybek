@@ -29,6 +29,12 @@ self.onmessage = async (event: MessageEvent<WorkerInbound>) => {
   }
 };
 
+// Helper to extract title from HTML
+function extractTitle(html: string): string | null {
+  const match = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  return match ? match[1].trim() : null;
+}
+
 // ---------------------------------------------------------------------------
 // Tool definitions for the AI
 // ---------------------------------------------------------------------------
@@ -945,10 +951,34 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                 }
                 
                 const cfResult = await cfResponse.json();
-                const resultText = JSON.stringify(cfResult, null, 2);
+                
+                // For cf_html, check if response is too large and save to file
+                let resultToShow = JSON.stringify(cfResult, null, 2);
+                if (toolName === 'cf_html' && cfResult.success && cfResult.html) {
+                  const htmlContent = cfResult.html;
+                  const htmlSize = htmlContent.length;
+                  
+                  // If HTML is larger than 10KB, save to file
+                  if (htmlSize > 10000) {
+                    const timestamp = Date.now();
+                    const fileName = `mcp-screenshots/screenshot-${timestamp}.html`;
+                    const domain = new URL(mcpArgs.url).hostname;
+                    const summary = `HTML muy grande (${Math.round(htmlSize/1024)}KB) guardado en archivo. Title: ${extractTitle(htmlContent) || 'N/A'}.`;
+                    
+                    try {
+                      await writeGroupFile(groupId, fileName, htmlContent);
+                      log(groupId, 'mcp-tool', 'HTML saved to file', fileName);
+                      resultToShow = summary + `\n\nArchivo guardado en: ${fileName}`;
+                    } catch (saveError) {
+                      log(groupId, 'mcp-tool', 'Failed to save HTML', String(saveError));
+                      resultToShow = summary + '\n(Nota: No se pudo guardar el archivo)';
+                    }
+                  }
+                }
+                
                 post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
-                post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: resultText } });
-                currentMessages.push({ role: 'user', content: `MCP Tool result: ${resultText}` });
+                post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: resultToShow } });
+                currentMessages.push({ role: 'user', content: `MCP Tool result: ${resultToShow}` });
               } catch (cfError: any) {
                 const errorText = `Error CF Browser: ${cfError.message}`;
                 log(groupId, 'mcp-tool', `CF Error`, errorText);
