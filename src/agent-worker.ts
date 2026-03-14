@@ -606,7 +606,19 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       if (serverNames.length > 0) {
         toolDescriptions.push('\n**HERRAMIENTAS MCP - FORMATO OBLIGATORIO:**');
         toolDescriptions.push(`Servidores disponibles: ${serverNames.join(', ')}`);
-        toolDescriptions.push('**USA ESTE FORMATO EXACTO - NO OTRO:**');
+        
+        // Add specific examples for Cloudflare Browser Rendering
+        const cfTools = activeMcpTools.filter(t => t.serverName.toLowerCase().includes('cloudflare'));
+        if (cfTools.length > 0) {
+          toolDescriptions.push('\n**EJEMPLOS Cloudflare Browser Rendering:**');
+          toolDescriptions.push('- [mcp] cloudflare | cf_html | {"url": "https://example.com"} [/mcp]');
+          toolDescriptions.push('- [mcp] cloudflare | cf_screenshot | {"url": "https://example.com"} [/mcp]');
+          toolDescriptions.push('- [mcp] cloudflare | cf_markdown | {"url": "https://example.com"} [/mcp]');
+          toolDescriptions.push('- [mcp] cloudflare | cf_json | {"url": "https://example.com", "prompt": "extrae el título"} [/mcp]');
+          toolDescriptions.push('\n**Tools disponibles:** ' + cfTools.map(t => t.name).join(', '));
+        }
+        
+        toolDescriptions.push('\n**USA ESTE FORMATO EXACTO - NO OTRO:**');
         toolDescriptions.push(`[mcp] ${serverNames[0]} | nombre_de_tool | {"param": "valor"} [/mcp]`);
         toolDescriptions.push('**ERROR COMÚN: No pongas solo el nombre de la herramienta después de [mcp]**');
         toolDescriptions.push('**CORRECTO:** [mcp] Puppeteer | puppeteer_navigate | {"url": "youtube.com"} [/mcp]');
@@ -742,12 +754,28 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       const mcpToolCalls: Array<{serverName: string, toolName: string, arguments: Record<string, any>}> = [];
       log(groupId, 'info', 'MCP Debug', `activeMcpTools: ${activeMcpTools.length}`);
       if (activeMcpTools.length > 0) {
-        const mcpRegex = /\[mcp\]\s*(\w+)\s*\|\s*(\w+)\s*\|\s*(\{[^}]*\})\s*\[\/mcp\]/g;
+        // Updated regex to handle spaces and special chars in server names
+        const mcpRegex = /\[mcp\]\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(\{[^}]*\})\s*\[\/mcp\]/g;
         let mcpMatch;
         while ((mcpMatch = mcpRegex.exec(responseContent)) !== null) {
-          const serverName = mcpMatch[1];
-          const toolName = mcpMatch[2];
+          let serverName = mcpMatch[1].trim();
+          const toolName = mcpMatch[2].trim();
           const argsStr = mcpMatch[3];
+          
+          // Normalize server name - try to match against active MCP servers
+          const normalizedServerName = serverName.toLowerCase().replace(/\s+/g, '');
+          const cfMatch = normalizedServerName.includes('cloudflare') || normalizedServerName === 'cf';
+          
+          if (cfMatch) {
+            // Map "cloudflare", "cf", etc. to the CF Browser Rendering server
+            const cfServer = mcpServers.find(s => 
+              s.name.toLowerCase().includes('cloudflare') || s.url === 'cf-browser-rendering'
+            );
+            if (cfServer) {
+              serverName = cfServer.name;
+            }
+          }
+          
           try {
             const args = JSON.parse(argsStr);
             mcpToolCalls.push({ serverName, toolName, arguments: args });
