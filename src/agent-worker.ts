@@ -9,6 +9,9 @@ import { ulid } from './ulid.js';
 // MCP endpoint for AI chat - use Cloudflare Worker proxy
 const CHAT_URL = 'https://kilocode-proxy-live.developerjeremylive.workers.dev/api/ai';
 
+// Cloudflare Browser Rendering Worker URL
+const CF_BROWSER_WORKER_URL = 'https://sybek-mcporter-worker.b7a628f29ce7b9e4d28128bf5b4442b6.workers.dev';
+
 const OPFS_ROOT = 'openbrowserclaw';
 
 self.onmessage = async (event: MessageEvent<WorkerInbound>) => {
@@ -830,6 +833,89 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
               post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
               post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: errorResult } });
               currentMessages.push({ role: 'user', content: `MCP Tool error: ${errorResult}` });
+              continue;
+            }
+
+            // Special handling for Cloudflare Browser Rendering MCP
+            if (serverName.toLowerCase().includes('cloudflare') || server.url === 'cf-browser-rendering') {
+              try {
+                log(groupId, 'mcp-tool', `CF Browser: ${toolName}`, 'Calling REST API...');
+                
+                const endpointMap: Record<string, { method: string, path: string }> = {
+                  'cf_screenshot': { method: 'POST', path: '/rest/screenshot' },
+                  'cf_html': { method: 'POST', path: '/rest/html' },
+                  'cf_markdown': { method: 'POST', path: '/rest/markdown' },
+                  'cf_pdf': { method: 'POST', path: '/rest/pdf' },
+                  'cf_links': { method: 'POST', path: '/rest/links' },
+                  'cf_json': { method: 'POST', path: '/rest/json' },
+                  'cf_crawl': { method: 'POST', path: '/rest/crawl' },
+                };
+                
+                // Handle status/cancel
+                if (toolName === 'cf_crawl_status') {
+                  const jobId = mcpArgs.jobId || mcpArgs[0];
+                  const cfResponse = await fetch(`${CF_BROWSER_WORKER_URL}/rest/crawl/${jobId}?limit=${mcpArgs.limit || 10}`, {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(60000),
+                  });
+                  const cfResult = await cfResponse.json();
+                  const resultText = JSON.stringify(cfResult, null, 2);
+                  post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
+                  post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: resultText } });
+                  currentMessages.push({ role: 'user', content: `MCP Tool result: ${resultText}` });
+                  continue;
+                }
+                
+                if (toolName === 'cf_crawl_cancel') {
+                  const jobId = mcpArgs.jobId || mcpArgs[0];
+                  const cfResponse = await fetch(`${CF_BROWSER_WORKER_URL}/rest/crawl/${jobId}`, {
+                    method: 'DELETE',
+                    signal: AbortSignal.timeout(60000),
+                  });
+                  const cfResult = await cfResponse.json();
+                  const resultText = JSON.stringify(cfResult, null, 2);
+                  post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
+                  post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: resultText } });
+                  currentMessages.push({ role: 'user', content: `MCP Tool result: ${resultText}` });
+                  continue;
+                }
+                
+                const endpoint = endpointMap[toolName];
+                if (!endpoint) {
+                  throw new Error(`Unknown CF Browser tool: ${toolName}`);
+                }
+                
+                const requestBody: Record<string, unknown> = {};
+                if (mcpArgs.url) requestBody.url = mcpArgs.url;
+                if (mcpArgs.options) requestBody.options = mcpArgs.options;
+                if (mcpArgs.prompt) requestBody.prompt = mcpArgs.prompt;
+                if (mcpArgs.response_format) requestBody.response_format = mcpArgs.response_format;
+                if (mcpArgs.limit) requestBody.limit = mcpArgs.limit;
+                if (mcpArgs.depth) requestBody.depth = mcpArgs.depth;
+                
+                const cfResponse = await fetch(`${CF_BROWSER_WORKER_URL}${endpoint.path}`, {
+                  method: endpoint.method,
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(requestBody),
+                  signal: AbortSignal.timeout(60000),
+                });
+                
+                if (!cfResponse.ok) {
+                  const error = await cfResponse.json();
+                  throw new Error(error.error || `HTTP ${cfResponse.status}`);
+                }
+                
+                const cfResult = await cfResponse.json();
+                const resultText = JSON.stringify(cfResult, null, 2);
+                post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
+                post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: resultText } });
+                currentMessages.push({ role: 'user', content: `MCP Tool result: ${resultText}` });
+              } catch (cfError: any) {
+                const errorText = `Error CF Browser: ${cfError.message}`;
+                post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
+                post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: errorText } });
+                currentMessages.push({ role: 'user', content: `MCP Tool error: ${errorText}` });
+              }
               continue;
             }
 
