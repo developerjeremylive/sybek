@@ -35,31 +35,102 @@ function extractHtmlSummary(html: string): string {
   
   // Extract title
   const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-  if (titleMatch) parts.push(`Título: ${titleMatch[1].trim()}`);
+  if (titleMatch) parts.push(`TÍTULO: ${titleMatch[1].trim()}`);
   
   // Extract meta description
   const descMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i) 
                 || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i);
-  if (descMatch) parts.push(`Descripción: ${descMatch[1].trim().slice(0, 200)}`);
+  if (descMatch) parts.push(`\nDESCRIPCIÓN: ${descMatch[1].trim()}`);
   
-  // Extract main h1 headings
-  const h1Matches = html.match(/<h1[^>]*>([^<]+)<\/h1>/gi);
-  if (h1Matches) {
-    const h1Texts = h1Matches.map(m => m.replace(/<[^>]+>/g, '').trim()).slice(0, 3);
-    parts.push(`Encabezados H1: ${h1Texts.join(', ')}`);
+  // Extract ALL headings (h1-h6)
+  const allHeadings: string[] = [];
+  for (let i = 1; i <= 6; i++) {
+    const matches = html.match(new RegExp(`<h${i}[^>]*>([^<]+)<\\/h${i}>`, 'gi'));
+    if (matches) {
+      const texts = matches.map(m => m.replace(/<[^>]+>/g, '').trim());
+      allHeadings.push(...texts);
+    }
+  }
+  if (allHeadings.length > 0) {
+    parts.push(`\nENCABEZADOS (${allHeadings.length}): ${allHeadings.join(' | ')}`);
   }
   
-  // Extract h2 headings
-  const h2Matches = html.match(/<h2[^>]*>([^<]+)<\/h2>/gi);
-  if (h2Matches) {
-    const h2Texts = h2Matches.map(m => m.replace(/<[^>]+>/g, '').trim()).slice(0, 5);
-    parts.push(`Secciones: ${h2Texts.join(', ')}`);
+  // Extract ALL paragraphs (not just the first one)
+  const pMatches = html.match(/<p[^>]*>([^<]+)<\/p>/gi);
+  if (pMatches) {
+    const pTexts = pMatches.map(m => m.replace(/<[^>]+>/g, '').trim()).filter(t => t.length > 20);
+    if (pTexts.length > 0) {
+      parts.push(`\nPÁRRAFOS (${pTexts.length} encontrados):`);
+      pTexts.slice(0, 10).forEach((p, i) => {
+        parts.push(`  ${i + 1}. ${p.slice(0, 500)}`);
+      });
+      if (pTexts.length > 10) {
+        parts.push(`  ... y ${pTexts.length - 10} más`);
+      }
+    }
   }
   
-  // Extract main content text (first paragraph after body or main)
-  const pMatch = html.match(/<p[^>]*>([^<]{50,})<\/p>/i);
-  if (pMatch) {
-    parts.push(`Contenido: ${pMatch[1].replace(/<[^>]+>/g, '').trim().slice(0, 300)}...`);
+  // Extract list items (ul/ol)
+  const liMatches = html.match(/<li[^>]*>([^<]+)<\/li>/gi);
+  if (liMatches) {
+    const liTexts = liMatches.map(m => m.replace(/<[^>]+>/g, '').trim()).filter(t => t.length > 2);
+    if (liTexts.length > 0) {
+      parts.push(`\nELEMENTOS DE LISTA (${liTexts.length}):`);
+      liTexts.slice(0, 20).forEach((li, i) => {
+        parts.push(`  • ${li.slice(0, 200)}`);
+      });
+      if (liTexts.length > 20) {
+        parts.push(`  ... y ${liTexts.length - 20} más`);
+      }
+    }
+  }
+  
+  // Extract links
+  const linkMatches = html.match(/<a[^>]+href=["']([^"']+)["'][^>]*>([^<]*)<\/a>/gi);
+  if (linkMatches) {
+    const links = linkMatches.map(m => {
+      const hrefMatch = m.match(/href=["']([^"']+)["']/);
+      const textMatch = m.match(/>([^<]+)</);
+      return hrefMatch ? `${textMatch ? textMatch[1] : 'Sin texto'} -> ${hrefMatch[1]}` : null;
+    }).filter(Boolean).slice(0, 15);
+    if (links.length > 0) {
+      parts.push(`\nENLACES (${links.length}): ${links.join(' | ')}`);
+    }
+  }
+  
+  // Extract contact info (email, phone)
+  const emailMatch = html.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
+  if (emailMatch) {
+    parts.push(`\nEMAILS: ${[...new Set(emailMatch)].join(', ')}`);
+  }
+  const phoneMatch = html.match(/(\+?[\d\s\-().]{10,})/g);
+  if (phoneMatch) {
+    const phones = phoneMatch.filter(p => p.replace(/\D/g, '').length >= 10).slice(0, 5);
+    if (phones.length > 0) {
+      parts.push(`\nTELÉFONOS: ${phones.join(', ')}`);
+    }
+  }
+  
+  // Extract social media links
+  const socialDomains = ['linkedin.com', 'github.com', 'twitter.com', 'facebook.com', 'instagram.com', 'youtube.com'];
+  const socialLinks = linkMatches?.filter((l: string) => socialDomains.some(d => l.toLowerCase().includes(d))).slice(0, 10);
+  if (socialLinks && socialLinks.length > 0) {
+    parts.push(`\nREDES SOCIALES: ${socialLinks.join(' | ')}`);
+  }
+  
+  // Extract image alt texts
+  const imgMatches = html.match(/<img[^>]+alt=["']([^"']+)["']/gi);
+  if (imgMatches) {
+    const altTexts = imgMatches.map(m => m.match(/alt=["']([^"']+)["']/)?.[1]).filter(Boolean).slice(0, 10);
+    if (altTexts.length > 0) {
+      parts.push(`\nIMÁGENES: ${altTexts.join(', ')}`);
+    }
+  }
+  
+  // Extract skills (common patterns)
+  const skillsMatch = html.match(/(?:skills|habilidades|technologies|technologies|stack)[\s:]+([^<]{10,200})/i);
+  if (skillsMatch) {
+    parts.push(`\nHABILIDADES/TECH: ${skillsMatch[1].trim()}`);
   }
   
   return parts.join('\n');
@@ -1022,7 +1093,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                       // Add folder to context automatically
                       addFolderToContext(saveFolder);
                       
-                      resultToShow = `HTML guardado en carpeta del chat (${saveFolder}): ${fileName}\n\n${summary}\n\nLa carpeta ${saveFolder} ha sido agregada al contexto. Lee el archivo desde Files para dar una respuesta detallada sobre el contenido de la página.`;
+                      resultToShow = `HTML GUARDADO EN ARCHIVO: ${fileName}\n\n${summary}\n\nLa carpeta "${saveFolder}" ha sido agregada al contexto del chat. El archivo HTML completo está disponible en Files > ${saveFolder} > ${fileName}. Lee el archivo completo para dar una respuesta más detallada sobre TODO el contenido de la página.`;
                     } catch (saveError) {
                       log(saveFolder, 'mcp-tool', 'Failed to save HTML', String(saveError));
                       resultToShow = `${sizeInfo}\n\n${summary}\n(Nota: No se pudo guardar el archivo)`;
@@ -1044,7 +1115,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                       addFolderToContext(saveFolder);
                       
                       const summary = extractHtmlSummary(htmlContent);
-                      resultToShow = `HTML guardado en ${saveFolder}: ${fileName}\n\n${summary}\n\nCarpeta agregada al contexto.`;
+                      resultToShow = `HTML GUARDADO EN ARCHIVO: ${fileName}\n\n${summary}\n\nLa carpeta "${saveFolder}" ha sido agregada al contexto del chat. El archivo HTML completo está disponible en Files > ${saveFolder} > ${fileName}. Lee el archivo completo para dar una respuesta más detallada sobre TODO el contenido de la página.`;
                     } catch (saveError) {
                       resultToShow = `Contenido de la página:\n\n${htmlContent.slice(0, 5000)}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
                     }
