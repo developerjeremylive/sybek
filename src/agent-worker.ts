@@ -5,7 +5,6 @@
 import type { WorkerInbound, WorkerOutbound, InvokePayload, CompactPayload, ConversationMessage } from './types.js';
 import { DEFAULT_GROUP_ID, DEFAULT_MODEL } from './config.js';
 import { ulid } from './ulid.js';
-import { writeGroupFile, readGroupFile } from './storage.js';
 
 // MCP endpoint for AI chat - use Cloudflare Worker proxy
 const CHAT_URL = 'https://kilocode-proxy-live.developerjeremylive.workers.dev/api/ai';
