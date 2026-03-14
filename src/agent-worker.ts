@@ -10,7 +10,7 @@ import { ulid } from './ulid.js';
 const CHAT_URL = 'https://kilocode-proxy-live.developerjeremylive.workers.dev/api/ai';
 
 // Cloudflare Browser Rendering Worker URL
-const CF_BROWSER_WORKER_URL = 'https://sybek-mcporter-worker.b7a628f29ce7b9e4d28128bf5b4442b6.workers.dev';
+const CF_BROWSER_WORKER_URL = 'https://sybek-mcporter-worker.developerjeremylive.workers.dev';
 
 const OPFS_ROOT = 'openbrowserclaw';
 
@@ -914,12 +914,21 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                 }
                 
                 const requestBody: Record<string, unknown> = {};
-                if (mcpArgs.url) requestBody.url = mcpArgs.url;
+                if (mcpArgs.url) {
+                  // Normalize URL - add https:// if missing
+                  let url = mcpArgs.url;
+                  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'https://' + url;
+                  }
+                  requestBody.url = url;
+                }
                 if (mcpArgs.options) requestBody.options = mcpArgs.options;
                 if (mcpArgs.prompt) requestBody.prompt = mcpArgs.prompt;
                 if (mcpArgs.response_format) requestBody.response_format = mcpArgs.response_format;
                 if (mcpArgs.limit) requestBody.limit = mcpArgs.limit;
                 if (mcpArgs.depth) requestBody.depth = mcpArgs.depth;
+                
+                log(groupId, 'mcp-tool', `CF Request`, `${CF_BROWSER_WORKER_URL}${endpoint.path} -> ${JSON.stringify(requestBody)}`);
                 
                 const cfResponse = await fetch(`${CF_BROWSER_WORKER_URL}${endpoint.path}`, {
                   method: endpoint.method,
@@ -927,6 +936,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   body: JSON.stringify(requestBody),
                   signal: AbortSignal.timeout(60000),
                 });
+                
+                log(groupId, 'mcp-tool', `CF Response`, `status=${cfResponse.status}`);
                 
                 if (!cfResponse.ok) {
                   const error = await cfResponse.json();
@@ -940,6 +951,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                 currentMessages.push({ role: 'user', content: `MCP Tool result: ${resultText}` });
               } catch (cfError: any) {
                 const errorText = `Error CF Browser: ${cfError.message}`;
+                log(groupId, 'mcp-tool', `CF Error`, errorText);
                 post({ type: 'tool-activity', payload: { groupId, tool: `${serverName}/${toolName}`, status: 'done' } });
                 post({ type: 'tool-result', payload: { groupId, tool: `${serverName}/${toolName}`, result: errorText } });
                 currentMessages.push({ role: 'user', content: `MCP Tool error: ${errorText}` });

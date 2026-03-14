@@ -51,7 +51,7 @@ export const PUBLIC_MCP_SERVERS: Omit<MCPServer, 'id' | 'createdAt'>[] = [
 ];
 
 // Cloudflare Browser Rendering Worker URL
-const CF_BROWSER_WORKER_URL = 'https://sybek-mcporter-worker.b7a628f29ce7b9e4d28128bf5b4442b6.workers.dev';
+const CF_BROWSER_WORKER_URL = 'https://sybek-mcporter-worker.developerjeremylive.workers.dev';
 
 // Cloudflare Browser Rendering Tools
 export const CF_BROWSER_TOOLS = [
