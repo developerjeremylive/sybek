@@ -1000,7 +1000,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                     try {
                       await writeGroupFile(groupId, fileName, htmlContent);
                       log(groupId, 'mcp-tool', 'HTML saved to folder', folderName);
-                      resultToShow = `${sizeInfo}\n\n${summary}\n\nCarpeta creada: ${folderName}/\nArchivo: ${folderName}/screenshot.html\n\nIMPORTANTE: Tienes el HTML completo en la carpeta "${folderName}" en la pestaña Files. USA esa información para dar una explicación detallada y completa del contenido de la página web.`;
+                      resultToShow = `HTML guardado en carpeta: ${folderName}/screenshot.html\n\n${summary}\n\nLee el archivo HTML completo desde la carpeta Files para dar una respuesta completa y detallada sobre el contenido de la página. NO hables de browser rendering ni del tamaño del archivo - explica qué es y qué contiene la página web basándote en el HTML guardado.`;
                     } catch (saveError) {
                       log(groupId, 'mcp-tool', 'Failed to save HTML', String(saveError));
                       resultToShow = `${sizeInfo}\n\n${summary}\n(Nota: No se pudo guardar el archivo)`;
@@ -1014,7 +1014,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                       await writeGroupFile(groupId, fileName, htmlContent);
                       log(groupId, 'mcp-tool', 'HTML saved to folder', folderName);
                       const summary = extractHtmlSummary(htmlContent);
-                      resultToShow = `${summary}\n\nCarpeta: ${folderName}/\nArchivo: ${folderName}/screenshot.html\n\nTienes el HTML en la carpeta Files para más detalles.`;
+                      resultToShow = `HTML guardado en carpeta: ${folderName}/screenshot.html\n\n${summary}\n\nLee el archivo desde Files para dar una respuesta detallada. NO menciones browser rendering - solo explica el contenido de la página.`;
                     } catch (saveError) {
                       resultToShow = `Contenido de la página:\n\n${htmlContent.slice(0, 5000)}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
                     }
