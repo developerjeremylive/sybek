@@ -1103,37 +1103,34 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                 if (toolName === 'cf_html' && cfResult.success && cfResult.html) {
                   const htmlContent = cfResult.html;
                   const htmlSize = htmlContent.length;
-                  const timestamp = Date.now();
                   
                   // Determine the saveFolder - prioritize sessionFolder from payload
                   let saveFolder = sessionFolder || currentSessionFolder;
                   
                   // If still empty, generate a new folder with timestamp based on URL domain
                   if (!saveFolder || saveFolder === '') {
+                    const now = Date.now();
                     let domain = 'page';
                     try {
                       const url = new URL(mcpArgs.url);
                       domain = url.hostname.replace(/\./g, '-');
                     } catch {}
-                    saveFolder = `chat-${domain}-${Date.now()}`;
+                    saveFolder = `chat-${domain}-${now}`;
                   }
                   
                   // FORCE save to storage IMMEDIATELY before any file operation
                   try {
-// Save sessionFolder via message to main thread
-                  saveSessionFolderToStorage(saveFolder);
-                  
-                  // Also try localStorage/sessionStorage as fallback (might work in some contexts)
-                  try {
-                    localStorage.setItem('currentSessionFolder', saveFolder);
-                    sessionStorage.setItem('currentSessionFolder', saveFolder);
-                  } catch {}
+                    saveSessionFolderToStorage(saveFolder);
+                    try {
+                      localStorage.setItem('currentSessionFolder', saveFolder);
+                      sessionStorage.setItem('currentSessionFolder', saveFolder);
+                    } catch {}
                   } catch (e) {
                     console.log('[agent-worker] Failed to save sessionFolder:', e);
                   }
-                  // If HTML is larger than 10KB, save in br:main with subfolder
+                  
+                  // Generate filename with timestamp
                   const timestamp = Date.now();
-                  // Extract domain for filename
                   let domain = 'page';
                   try {
                     const url = new URL(mcpArgs.url);
