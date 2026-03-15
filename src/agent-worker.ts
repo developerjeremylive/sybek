@@ -275,7 +275,12 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
     switch (name) {
       case 'read_file': {
         const content = await readGroupFile(DEFAULT_GROUP_ID, input.path);
-        return `File ${input.path}:\n${content}`;
+        // Truncate content to avoid exceeding model context limits (max ~5000 chars)
+        const maxLen = 5000;
+        const truncated = content.length > maxLen 
+          ? content.slice(0, maxLen) + `\n\n... (truncated ${content.length - maxLen} chars)`
+          : content;
+        return `File ${input.path}:\n${truncated}`;
       }
       case 'write_file': {
         // Always write to br:main for context files
