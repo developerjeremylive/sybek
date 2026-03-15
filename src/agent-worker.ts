@@ -1092,11 +1092,27 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   const htmlContent = cfResult.html;
                   const htmlSize = htmlContent.length;
                   
-                  // Use sessionFolder from payload, or currentSessionFolder, or groupId
-                  // Ensure we have a valid folder name
-                  const rawSaveFolder = sessionFolder || currentSessionFolder || groupId;
-                  // If still empty or invalid, generate a new folder name
-                  const saveFolder = rawSaveFolder && rawSaveFolder !== '' ? rawSaveFolder : `chat-${Date.now()}`;
+                  // Determine the saveFolder - prioritize sessionFolder from payload
+                  let saveFolder = sessionFolder || currentSessionFolder;
+                  
+                  // If still empty, generate a new folder with timestamp based on URL domain
+                  if (!saveFolder || saveFolder === '') {
+                    let domain = 'page';
+                    try {
+                      const url = new URL(mcpArgs.url);
+                      domain = url.hostname.replace(/\./g, '-');
+                    } catch {}
+                    saveFolder = `chat-${domain}-${Date.now()}`;
+                  }
+                  
+                  // FORCE save to storage IMMEDIATELY before any file operation
+                  try {
+                    localStorage.setItem('currentSessionFolder', saveFolder);
+                    sessionStorage.setItem('currentSessionFolder', saveFolder);
+                    console.log('[agent-worker] Saved sessionFolder to storage:', saveFolder);
+                  } catch (e) {
+                    console.log('[agent-worker] Failed to save sessionFolder:', e);
+                  }
                   log(groupId, 'mcp-tool', 'DEBUG saveFolder', `sessionFolder="${sessionFolder}", currentSessionFolder="${currentSessionFolder}", groupId="${groupId}" -> saveFolder="${saveFolder}"`);
                   
                   // If HTML is larger than 10KB, save directly in chat folder (no subfolder)
