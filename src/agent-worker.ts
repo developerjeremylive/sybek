@@ -575,6 +575,7 @@ async function writeGroupFile(groupId: string, filePath: string, content: string
 }
 
 async function listGroupFiles(groupId: string, dirPath: string = '.'): Promise<string[]> {
+  console.log('[listGroupFiles] START', { groupId, dirPath });
   const dir = await getGroupDir(groupId);
   
   let current = dir;
@@ -589,6 +590,7 @@ async function listGroupFiles(groupId: string, dirPath: string = '.'): Promise<s
   for await (const [name, handle] of current.entries()) {
     entries.push(handle.kind === 'directory' ? `${name}/` : name);
   }
+  console.log('[listGroupFiles] DONE', { groupId, dirPath, entries });
   return entries.sort();
 }
 
