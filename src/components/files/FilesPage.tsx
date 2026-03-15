@@ -137,17 +137,21 @@ export function FilesPage() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Get sessionFolder - always read fresh
-  const sessionFolder = (typeof window !== 'undefined' && localStorage.getItem('currentSessionFolder')) || '';
+  let sessionFolder = (typeof window !== 'undefined' && localStorage.getItem('currentSessionFolder')) || '';
   
-  // If path is empty but we have a sessionFolder, use it as the path
-  const effectivePath = path.length === 0 && sessionFolder ? [sessionFolder] : path;
+  // If no sessionFolder but we have a path, use first path segment
+  const folderFromPath = path.length > 0 ? path[0] : '';
   
-  // Use first path segment as groupId (or sessionFolder as fallback)
-  const folderFromPath = effectivePath.length > 0 ? effectivePath[0] : '';
+  // If still no sessionFolder, try to find a chat-* folder in storage or use a default
+  if (!sessionFolder && !folderFromPath) {
+    // Try to get from sessionStorage (set by chat page)
+    sessionFolder = (typeof window !== 'undefined' && sessionStorage.getItem('currentSessionFolder')) || '';
+  }
+  
   const groupId = sessionFolder || folderFromPath || DEFAULT_GROUP_ID;
-  const currentDir = effectivePath.length > 1 ? effectivePath.slice(1).join('/') : '.';
+  const currentDir = path.length > 1 ? path.slice(1).join('/') : '.';
   
-  console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'effectivePath:', effectivePath);
+  console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'folderFromPath:', folderFromPath);
 
   // Listen for localStorage changes AND custom events to refresh files
   useEffect(() => {
