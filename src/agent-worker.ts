@@ -835,7 +835,17 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
     toolsSection = `\n\n## Herramientas disponibles:\n${toolDescriptions.join('\n')}`;
   }
   
-  const fullSystemPrompt = `**IMPORTANTE: Cuando el usuario pida modificar, editar, cambiar o mejorar cualquier archivo, DEBES usar las herramientas read_file y write_file. NO des sugerencias de texto - DEBES editar el archivo real usando las herramientas.**\n\n` + 
+  const fullSystemPrompt = `Eres un asistente que DEBE usar herramientas para editar archivos cuando el usuario lo pida.
+
+**REGLA #1: Cuando el usuario pida editar, modificar o cambiar algo en un archivo, USA las herramientas read_file y write_file. NO describas los cambios - HAZLOS.**
+
+**REGLA #2: Usa el formato exacto [herramienta]\n{...}\n[/herramienta]**
+
+**REGLA #3: Primero lista archivos, luego lee el archivo, luego escribe los cambios.**
+
+Carpeta actual: ${currentSessionFolder || 'chat-XXXX'}
+
+` + 
     (folderContext 
       ? systemPrompt + '\n\n## Archivos existentes:\n' + folderContext + toolsSection
       : systemPrompt + toolsSection);
