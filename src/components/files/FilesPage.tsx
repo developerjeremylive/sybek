@@ -136,10 +136,15 @@ export function FilesPage() {
   const [contextFolders, setContextFolders] = useState<Set<string>>(new Set());
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Get sessionFolder dynamically - recalculates on every refreshKey change
+  const getSessionFolder = () => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('currentSessionFolder') || '';
+  };
+  
   // Use sessionFolder from localStorage OR first path segment as groupId
-  const sessionFolder = localStorage.getItem('currentSessionFolder');
-  // If user navigated into a folder (path has items), use that as groupId
   const folderFromPath = path.length > 0 ? path[0] : '';
+  const sessionFolder = getSessionFolder();
   const groupId = sessionFolder || folderFromPath || DEFAULT_GROUP_ID;
   const currentDir = path.length > 1 ? path.slice(1).join('/') : '.';
 
