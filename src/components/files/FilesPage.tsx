@@ -165,7 +165,7 @@ export function FilesPage() {
   if (!groupId) {
     console.warn('[FilesPage] groupId is empty, no sessionFolder or contextFolders set!');
   }
-  const currentDir = path.length > 1 ? path.slice(1).join('/') : '.';
+  const currentDir = path.length > 0 ? path.join('/') : '.';
   
   console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'contextFolders:', contextFoldersList, 'folderFromPath:', folderFromPath);
 
@@ -280,16 +280,19 @@ export function FilesPage() {
   });
 
   const loadEntries = useCallback(async () => {
+    console.log('[FilesPage] loadEntries called:', { groupId, currentDir, path });
     setLoading(true);
     setError(null);
     try {
       const raw = await listGroupFiles(groupId, currentDir);
+      console.log('[FilesPage] loadEntries got files:', raw);
       const parsed: FileEntry[] = raw.map((name) => ({
         name: name.replace(/\/$/, ''),
         isDir: name.endsWith('/'),
       }));
       setEntries(parsed);
     } catch (err) {
+      console.error('[FilesPage] loadEntries error:', err);
       if ((err as Error)?.name === 'NotFoundError') {
         setEntries([]);
       } else {
@@ -304,10 +307,11 @@ export function FilesPage() {
     loadEntries();
     setPreviewFile(null);
     setPreviewContent(null);
-  }, [loadEntries, refreshKey]);
+  }, [loadEntries, refreshKey, path]);
 
   async function handlePreview(name: string) {
     setPreviewFile(name);
+    console.log('[FilesPage] handlePreview called:', { name, currentPath: path, groupId });
     try {
       const filePath = path.length > 0 ? `${path.join('/')}/${name}` : name;
       console.log('[FilesPage] handlePreview reading:', { groupId, filePath, path });
@@ -413,11 +417,28 @@ export function FilesPage() {
                   <tr
                     key={entry.name}
                     className={`hover cursor-pointer ${previewFile === entry.name ? 'active' : ''} ${isPinned ? 'bg-primary/10' : ''} ${isContext ? 'bg-success/10' : ''}`}
-                    onClick={() =>
-                      entry.isDir
-                        ? setPath([...path, entry.name])
-                        : handlePreview(entry.name)
-                    }
+                    onClick={() => {
+                      console.log('[FilesPage] Clicking:', entry.name, 'isDir:', entry.isDir, 'current path:', path);
+                      if (entry.isDir) {
+                        // Folder: navigate into it
+                        setPath(prev => {
+                          // If already at the end, don't add again
+                          if (prev.length > 0 && prev[prev.length - 1] === entry.name) {
+                            return prev;
+                          }
+                          // If folder already in path but not at end, truncate to that point
+                          const idx = prev.indexOf(entry.name);
+                          if (idx >= 0) {
+                            return prev.slice(0, idx + 1);
+                          }
+                          // Add new folder
+                          return [...prev, entry.name];
+                        });
+                      } else {
+                        // File: preview it
+                        handlePreview(entry.name);
+                      }
+                    }}
                   >
                     {/* Checkbox for context */}
                     {entry.isDir && (
