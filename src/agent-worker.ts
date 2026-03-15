@@ -835,9 +835,10 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
     toolsSection = `\n\n## Herramientas disponibles:\n${toolDescriptions.join('\n')}`;
   }
   
-  const fullSystemPrompt = folderContext 
-    ? systemPrompt + '\n\n## Archivos existentes:\n' + folderContext + toolsSection
-    : systemPrompt + toolsSection;
+  const fullSystemPrompt = `**IMPORTANTE: Cuando el usuario pida modificar, editar, cambiar o mejorar cualquier archivo, DEBES usar las herramientas read_file y write_file. NO des sugerencias de texto - DEBES editar el archivo real usando las herramientas.**\n\n` + 
+    (folderContext 
+      ? systemPrompt + '\n\n## Archivos existentes:\n' + folderContext + toolsSection
+      : systemPrompt + toolsSection);
 
   post({ type: 'typing', payload: { groupId } });
   log(groupId, 'info', 'Starting', `Model: ${model}, Folder: ${currentSessionFolder}`);
