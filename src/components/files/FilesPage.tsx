@@ -134,9 +134,75 @@ export function FilesPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [pinnedFolders, setPinnedFolders] = useState<Set<string>>(new Set());
   const [contextFolders, setContextFolders] = useState<Set<string>>(new Set());
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const groupId = DEFAULT_GROUP_ID;
+  // Get sessionFolder - helper function
+  const getSessionFolder = () => (typeof window !== 'undefined' && (localStorage.getItem('currentSessionFolder') || sessionStorage.getItem('currentSessionFolder'))) || '';
+  
+  // Get context folders from localStorage (set by Chat Context)
+  const getContextFolders = (): string[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem('contextFolders');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  };
+  
+  // Get sessionFolder - always read fresh
+  let sessionFolder = getSessionFolder();
+  
+  // Get context folders
+  const contextFoldersList = getContextFolders();
+  
+  // If no sessionFolder but we have context folders, use the first one
+  const folderFromPath = path.length > 0 ? path[0] : '';
+  
+  // Priority: sessionFolder > first contextFolder > path > empty
+  let groupId = sessionFolder || (contextFoldersList.length > 0 ? contextFoldersList[0] : folderFromPath);
+  // If still empty, warn in console
+  if (!groupId) {
+    console.warn('[FilesPage] groupId is empty, no sessionFolder or contextFolders set!');
+  }
   const currentDir = path.length > 0 ? path.join('/') : '.';
+  
+  console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'contextFolders:', contextFoldersList, 'folderFromPath:', folderFromPath);
+
+  // Listen for localStorage changes AND custom events to refresh files
+  useEffect(() => {
+    let lastFolder = getSessionFolder();
+    
+    const handleRefresh = () => {
+      const newFolder = getSessionFolder();
+      console.log('[FilesPage] Event refresh, sessionFolder:', newFolder);
+      if (newFolder !== lastFolder) {
+        lastFolder = newFolder;
+      }
+      setRefreshKey(k => k + 1);
+    };
+    
+    // Listen for storage events (from other tabs)
+    window.addEventListener('storage', handleRefresh);
+    // Listen for custom refresh events (from same tab)
+    window.addEventListener('obc-files-refresh', handleRefresh);
+    
+    // Poll every 2 seconds for changes
+    const interval = setInterval(() => {
+      const folder = getSessionFolder();
+      if (folder !== lastFolder) {
+        console.log('[FilesPage] Poll detected new folder:', folder);
+        lastFolder = folder;
+        setRefreshKey(k => k + 1);
+      }
+    }, 2000);
+    
+    return () => {
+      window.removeEventListener('storage', handleRefresh);
+      window.removeEventListener('obc-files-refresh', handleRefresh);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Toggle pin for a folder
   function togglePin(folderName: string) {
@@ -214,16 +280,19 @@ export function FilesPage() {
   });
 
   const loadEntries = useCallback(async () => {
+    console.log('[FilesPage] loadEntries called:', { groupId, currentDir, path });
     setLoading(true);
     setError(null);
     try {
       const raw = await listGroupFiles(groupId, currentDir);
+      console.log('[FilesPage] loadEntries got files:', raw);
       const parsed: FileEntry[] = raw.map((name) => ({
         name: name.replace(/\/$/, ''),
         isDir: name.endsWith('/'),
       }));
       setEntries(parsed);
     } catch (err) {
+      console.error('[FilesPage] loadEntries error:', err);
       if ((err as Error)?.name === 'NotFoundError') {
         setEntries([]);
       } else {
@@ -232,19 +301,22 @@ export function FilesPage() {
     } finally {
       setLoading(false);
     }
-  }, [groupId, currentDir]);
+  }, [groupId, currentDir, refreshKey]);
 
   useEffect(() => {
     loadEntries();
     setPreviewFile(null);
     setPreviewContent(null);
-  }, [loadEntries]);
+  }, [loadEntries, refreshKey, path]);
 
   async function handlePreview(name: string) {
     setPreviewFile(name);
+    console.log('[FilesPage] handlePreview called:', { name, currentPath: path, groupId });
     try {
       const filePath = path.length > 0 ? `${path.join('/')}/${name}` : name;
+      console.log('[FilesPage] handlePreview reading:', { groupId, filePath, path });
       const content = await readGroupFile(groupId, filePath);
+      console.log('[FilesPage] handlePreview read content length:', content.length);
       
       // If HTML, combine with CSS and JS files
       if (name.endsWith('.html') || name.endsWith('.htm')) {
@@ -253,8 +325,9 @@ export function FilesPage() {
       } else {
         setPreviewContent(content);
       }
-    } catch {
-      setPreviewContent('[Unable to read file]');
+    } catch (err) {
+      console.error('[FilesPage] handlePreview error:', err);
+      setPreviewContent('[Unable to read file: ' + String(err) + ']');
     }
   }
 
@@ -344,11 +417,28 @@ export function FilesPage() {
                   <tr
                     key={entry.name}
                     className={`hover cursor-pointer ${previewFile === entry.name ? 'active' : ''} ${isPinned ? 'bg-primary/10' : ''} ${isContext ? 'bg-success/10' : ''}`}
-                    onClick={() =>
-                      entry.isDir
-                        ? setPath([...path, entry.name])
-                        : handlePreview(entry.name)
-                    }
+                    onClick={() => {
+                      console.log('[FilesPage] Clicking:', entry.name, 'isDir:', entry.isDir, 'current path:', path);
+                      if (entry.isDir) {
+                        // Folder: navigate into it
+                        setPath(prev => {
+                          // If already at the end, don't add again
+                          if (prev.length > 0 && prev[prev.length - 1] === entry.name) {
+                            return prev;
+                          }
+                          // If folder already in path but not at end, truncate to that point
+                          const idx = prev.indexOf(entry.name);
+                          if (idx >= 0) {
+                            return prev.slice(0, idx + 1);
+                          }
+                          // Add new folder
+                          return [...prev, entry.name];
+                        });
+                      } else {
+                        // File: preview it
+                        handlePreview(entry.name);
+                      }
+                    }}
                   >
                     {/* Checkbox for context */}
                     {entry.isDir && (
