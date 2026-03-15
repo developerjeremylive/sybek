@@ -418,22 +418,27 @@ export function FilesPage() {
                     key={entry.name}
                     className={`hover cursor-pointer ${previewFile === entry.name ? 'active' : ''} ${isPinned ? 'bg-primary/10' : ''} ${isContext ? 'bg-success/10' : ''}`}
                     onClick={() => {
-                      console.log('[FilesPage] Clicking folder:', entry.name, 'current path:', path);
-                      // Always add folder to path on click (first click works)
-                      setPath(prev => {
-                        // If already at the end, don't add again
-                        if (prev.length > 0 && prev[prev.length - 1] === entry.name) {
-                          return prev;
-                        }
-                        // If folder already in path but not at end, truncate to that point
-                        const idx = prev.indexOf(entry.name);
-                        if (idx >= 0) {
-                          return prev.slice(0, idx + 1);
-                        }
-                        // Add new folder
-                        return [...prev, entry.name];
-                      });
-                    } : handlePreview(entry.name)}
+                      console.log('[FilesPage] Clicking:', entry.name, 'isDir:', entry.isDir, 'current path:', path);
+                      if (entry.isDir) {
+                        // Folder: navigate into it
+                        setPath(prev => {
+                          // If already at the end, don't add again
+                          if (prev.length > 0 && prev[prev.length - 1] === entry.name) {
+                            return prev;
+                          }
+                          // If folder already in path but not at end, truncate to that point
+                          const idx = prev.indexOf(entry.name);
+                          if (idx >= 0) {
+                            return prev.slice(0, idx + 1);
+                          }
+                          // Add new folder
+                          return [...prev, entry.name];
+                        });
+                      } else {
+                        // File: preview it
+                        handlePreview(entry.name);
+                      }
+                    }}
                   >
                     {/* Checkbox for context */}
                     {entry.isDir && (
