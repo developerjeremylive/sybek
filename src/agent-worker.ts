@@ -615,8 +615,10 @@ async function autoSaveCodeFiles(groupId: string, aiResponse: string): Promise<s
     existingFiles = await listGroupFiles(groupId, targetFolder);
   } catch {}
   
-  // Check if MCP already saved an mcp-*.html file - skip auto-saving HTML if so
-  const mcpHtmlExists = existingFiles.some(f => f.startsWith('mcp-') && f.endsWith('.html'));
+  // Skip ALL auto-saving if folder already has files (likely from MCP tools)
+  if (existingFiles.length > 0) {
+    return savedFiles;
+  }
   
   // Extract code blocks from response
   const codeBlockRegex = /```(?:html|css|javascript|js|typescript)?\n([\s\S]*?)```/g;
@@ -629,11 +631,6 @@ async function autoSaveCodeFiles(groupId: string, aiResponse: string): Promise<s
     // Determine file type
     let fileName = 'code.txt';
     if (code.includes('<!DOCTYPE html') || code.includes('<html') || code.includes('<header') || code.includes('<body') || code.includes('<footer') || code.includes('<section')) {
-      // Skip if MCP already saved HTML to this folder
-      if (mcpHtmlExists) {
-        log(groupId, 'info', 'Skipped HTML code block', 'MCP already saved HTML');
-        continue;
-      }
       fileName = 'index.html';
     } else if (code.includes('{') && code.includes(';') && (code.includes('color:') || code.includes('margin:') || code.includes('padding:') || code.includes('display:') || code.includes('@media')) ) {
       fileName = 'styles.css';
@@ -656,23 +653,7 @@ async function autoSaveCodeFiles(groupId: string, aiResponse: string): Promise<s
   const htmlMatches = content.match(htmlRegex) || [];
   
   // Skip auto-saving index.html if MCP already saved an mcp-*.html file
-  
-  for (const html of htmlMatches) {
-    if (html.length < 100) continue;
-    // Skip if MCP already saved HTML to this folder
-    if (mcpHtmlExists) {
-      log(groupId, 'info', 'Skipped HTML auto-save', 'MCP already saved HTML');
-      continue;
-    }
-    try {
-      const filePath = `${targetFolder}/index.html`;
-      await writeGroupFile(groupId, filePath, html);
-      if (!savedFiles.includes(filePath)) {
-        savedFiles.push(filePath);
-        log(groupId, 'file-saved', 'Saved HTML', filePath);
-      }
-    } catch {}
-  }
+  // (handled by early return above if existingFiles.length > 0)
   
   return savedFiles;
 }
