@@ -465,6 +465,10 @@ let currentSessionFolder = '';
 // Load session folder from localStorage (will be set from main thread)
 export function setSessionFolder(folder: string): void {
   currentSessionFolder = folder;
+  // Save to localStorage so FilesPage can read it
+  try {
+    localStorage.setItem('currentSessionFolder', folder);
+  } catch {}
 }
 
 // Load context folders from localStorage (will be set from main thread)
@@ -492,6 +496,10 @@ function getSessionFolder(): string {
     const dateStr = now.toISOString().split('T')[0];
     const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
     currentSessionFolder = `chat-${dateStr}-${timeStr}`;
+    // Save to localStorage so FilesPage can read it
+    try {
+      localStorage.setItem('currentSessionFolder', currentSessionFolder);
+    } catch {}
   }
   return currentSessionFolder;
 }
@@ -680,6 +688,13 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
     currentSessionFolder = sessionFolder;
   } else if (!currentSessionFolder) {
     getSessionFolder();
+  }
+  
+  // Save sessionFolder to localStorage so FilesPage can read it
+  if (currentSessionFolder) {
+    try {
+      localStorage.setItem('currentSessionFolder', currentSessionFolder);
+    } catch {}
   }
   
   // Set context folders from payload
