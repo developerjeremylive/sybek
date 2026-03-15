@@ -732,20 +732,21 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
     
     // Native tools - these are built-in and work directly, NO need for MCP format!
     if (activeTools.length > 0) {
-      toolDescriptions.push('\n### Herramientas NATIVAS (disponibles inmediatamente - NO uses formato MCP):');
+      toolDescriptions.push('\n### HERRAMIENTAS OBLIGATORIAS para archivos:');
+      toolDescriptions.push('** Cuando el usuario pida leer, editar, modificar o guardar archivos, DEBES usar estas herramientas EXACTAMENTE como se indica below. NO muestres código directamente - USA LAS HERRAMIENTAS. **');
       activeTools.forEach((id: string) => {
         const tool = TOOLS.find(t => t.name === id);
         if (!tool) return;
         const params = Object.entries(tool.input_schema.properties || {})
           .map(([k, v]) => `${k}: ${(v as any).description || k}`)
           .join(', ');
-        toolDescriptions.push(`- ${tool.name}(${params}): ${tool.description} [NATIVO]`);
+        toolDescriptions.push(`- ${tool.name}(${params}): ${tool.description}`);
       });
-      toolDescriptions.push('\n**EJEMPLOS de uso - Herramientas NATIVAS:**\n' +
-        '- Para LEER un archivo: [herramienta] read_file | {"path": "chat-2026-03-15-01-57-11/mcp-jeremylive-netlify-app-1773561439992.html"} [/herramienta]\n' +
-        '- Para ESCRIBIR/EDITAR un archivo: [herramienta] write_file | {"path": "chat-2026-03-15-01-57-11/mcp-jeremylive-netlify-app-1773561439992.html", "content": "<!DOCTYPE html>...contenido modificado..."} [/herramienta]\n' +
-        '- Para LISTAR archivos: [herramienta] list_files | {"path": "chat-2026-03-15-01-57-11"} [/herramienta]\n' +
-        '\n**IMPORTANTE:** Cuando el usuario pida modificar un archivo, primero usa read_file para leerlo, luego modifica el contenido y usa write_file para guardar.');
+      toolDescriptions.push('\n### FORMATO OBLIGATORIO para usar herramientas de archivos:');
+      toolDescriptions.push('** NO puedes mostrar código directamente. DEBES usar este formato exacto: **\n' +
+        '[read_file]\n{"path": "chat-XXXX/mi-archivo.html"}\n[/read_file]\n\n' +
+        '[write_file]\n{"path": "chat-XXXX/mi-archivo.html", "content": "<!DOCTYPE html>...código completo..."}\n[/write_file]\n\n' +
+        '[list_files]\n{"path": "chat-XXXX"}\n[/list_files]');
     }
     
     // MCP tools - only use if servers are actually running and accessible
@@ -881,18 +882,31 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
 
       // Extract tool calls from text response if none from function calling
       if (toolCalls.length === 0 && activeTools.length > 0) {
-        // Try format: [toolname] tool_name | {"args"} [/toolname]
-        const toolCallRegex = /\[(\w+)\]\s*(\w+)\s*\|\s*(\{[^}]*\})\s*\[\/\1\]/g;
+        // Try format: [toolname]\n{"args"}\n[/toolname]
+        const toolCallRegex = /\[(\w+)\]\s*\n(\{[^}]*\})\s*\n\[\/\1\]/g;
         let match;
         while ((match = toolCallRegex.exec(responseContent)) !== null) {
-          const toolName = match[2];
-          const argsStr = match[3];
+          const toolName = match[1];
+          const argsStr = match[2];
           try {
             const toolInput = JSON.parse(argsStr);
             toolCalls.push({ name: toolName, arguments: toolInput });
             log(groupId, 'info', 'Extracted tool from text', `${toolName}: ${argsStr}`);
           } catch {
             // Invalid JSON, skip
+          }
+        }
+        
+        // Also try old format: [toolname] tool_name | {"args"} [/toolname]
+        if (toolCalls.length === 0) {
+          const oldRegex = /\[(\w+)\]\s*(\w+)\s*\|\s*(\{[^}]*\})\s*\[\/\1\]/g;
+          while ((match = oldRegex.exec(responseContent)) !== null) {
+            const toolName = match[2];
+            const argsStr = match[3];
+            try {
+              const toolInput = JSON.parse(argsStr);
+              toolCalls.push({ name: toolName, arguments: toolInput });
+            } catch {}
           }
         }
         // Also try format: [TOOL_CALL] tool_name | {"args"} [/TOOL_CALL]
