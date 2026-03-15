@@ -433,7 +433,7 @@ export function FilesPage() {
                         // Add new folder
                         return [...prev, entry.name];
                       });
-                    } : handlePreview(entry.name)
+                    } : handlePreview(entry.name)}
                   >
                     {/* Checkbox for context */}
                     {entry.isDir && (
