@@ -732,9 +732,12 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
     
     // Native tools - these are built-in and work directly, NO need for MCP format!
     if (activeTools.length > 0) {
+      // Get the chat folder for file operations
+      const chatFolder = currentSessionFolder || (contextFolders.length > 0 ? contextFolders[0] : 'TU_CARPETA_AQUI');
+      
       toolDescriptions.push('\n### HERRAMIENTAS OBLIGATORIAS para archivos:');
       toolDescriptions.push('** Cuando el usuario pida leer, editar, modificar o guardar archivos, DEBES usar estas herramientas EXACTAMENTE como se indica. NO muestres código directamente - USA LAS HERRAMIENTAS. **');
-      toolDescriptions.push('** IMPORTANTE: El path debe incluir la carpeta del chat (ej: "chat-2026-03-15-01-57-11/mi-archivo.html") **');
+      toolDescriptions.push(`** IMPORTANTE: La carpeta actual del chat es "${chatFolder}". USA ESTA CARPETA para todos los archivos. **`);
       activeTools.forEach((id: string) => {
         const tool = TOOLS.find(t => t.name === id);
         if (!tool) return;
@@ -744,11 +747,11 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         toolDescriptions.push(`- ${tool.name}(${params}): ${tool.description}`);
       });
       toolDescriptions.push('\n### FORMATO OBLIGATORIO para usar herramientas de archivos:');
-      toolDescriptions.push('** NO puedes mostrar código directamente. DEBES usar este formato exacto: **\n' +
-        '[read_file]\n{"path": "chat-2026-03-15-01-57-11/mcp-jeremylive-netlify-app-1773561439992.html"}\n[/read_file]\n\n' +
-        '[write_file]\n{"path": "chat-2026-03-15-01-57-11/mcp-jeremylive-netlify-app-1773561439992.html", "content": "<!DOCTYPE html>...código completo..."}\n[/write_file]\n\n' +
-        '[list_files]\n{"path": "chat-2026-03-15-01-57-11"}\n[/list_files]\n\n' +
-        '**NOTA: Siempre incluye "chat-2026-03-15-01-57-11/" antes del nombre del archivo.**');
+      toolDescriptions.push(`** NO puedes mostrar código directamente. DEBES usar este formato exacto (usa "${chatFolder}" como carpeta): **\n` +
+        `[read_file]\n{"path": "${chatFolder}/NOMBRE_DEL_ARCHIVO.html"}\n[/read_file]\n\n` +
+        `[write_file]\n{"path": "${chatFolder}/NOMBRE_DEL_ARCHIVO.html", "content": "<!DOCTYPE html>...código completo..."}\n[/write_file]\n\n` +
+        `[list_files]\n{"path": "${chatFolder}"}\n[/list_files]\n\n` +
+        `**NOTA: SIEMPRE precede el nombre del archivo con "${chatFolder}/" **`);
     }
     
     // MCP tools - only use if servers are actually running and accessible
