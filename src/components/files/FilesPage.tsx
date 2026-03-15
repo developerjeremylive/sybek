@@ -160,7 +160,11 @@ export function FilesPage() {
   const folderFromPath = path.length > 0 ? path[0] : '';
   
   // Priority: sessionFolder > first contextFolder > path > empty
-  const groupId = sessionFolder || (contextFoldersList.length > 0 ? contextFoldersList[0] : folderFromPath);
+  let groupId = sessionFolder || (contextFoldersList.length > 0 ? contextFoldersList[0] : folderFromPath);
+  // If still empty, warn in console
+  if (!groupId) {
+    console.warn('[FilesPage] groupId is empty, no sessionFolder or contextFolders set!');
+  }
   const currentDir = path.length > 1 ? path.slice(1).join('/') : '.';
   
   console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'contextFolders:', contextFoldersList, 'folderFromPath:', folderFromPath);
