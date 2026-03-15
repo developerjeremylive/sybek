@@ -600,16 +600,25 @@ export class Orchestrator {
 
       case 'refresh-files': {
         // Dispatch event to refresh FilesPage after file save
-        const folder = (msg.payload as { folder?: string }).folder;
-        console.log('[Orchestrator] refresh-files event, folder:', folder);
-        if (folder) {
-          // Also set the session folder so FilesPage reads from the correct groupId
-          localStorage.setItem('currentSessionFolder', folder);
-          sessionStorage.setItem('currentSessionFolder', folder);
-          console.log('[Orchestrator] Set currentSessionFolder to:', folder);
-        }
+        // Note: don't change currentSessionFolder - FilesPage should stay where it is
         window.dispatchEvent(new CustomEvent('obc-files-refresh'));
         console.log('[Orchestrator] Dispatched obc-files-refresh event');
+        break;
+      }
+
+      case 'update-chat-context': {
+        // Update the Chat Context indicator with the new folder
+        const folder = (msg.payload as { folder?: string }).folder;
+        console.log('[Orchestrator] update-chat-context, folder:', folder);
+        if (folder) {
+          // Add to context folders if not already there
+          const existing = JSON.parse(localStorage.getItem('contextFolders') || '[]');
+          if (!existing.includes(folder)) {
+            const updated = [...existing, folder];
+            localStorage.setItem('contextFolders', JSON.stringify(updated));
+            console.log('[Orchestrator] Added to contextFolders:', updated);
+          }
+        }
         break;
       }
 

@@ -1159,6 +1159,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                       log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
                       // Notify FilesPage to refresh - stay in br:main
                       notifyFilesRefresh(saveGroupId);
+                      notifyChatContext(saveFolder);
                     } catch (e) {
                       log(saveFolder, 'mcp-tool', 'List error', String(e));
                     }
@@ -1314,6 +1315,11 @@ function saveSessionFolderToStorage(folder: string): void {
 function notifyFilesRefresh(folder?: string): void {
   // Send message to main thread to refresh FilesPage
   post({ type: 'refresh-files', payload: { folder: folder || '' } });
+}
+
+function notifyChatContext(folder: string): void {
+  // Send message to update Chat Context with the new folder
+  post({ type: 'update-chat-context', payload: { folder } });
 }
 
 function log(groupId: string, kind: 'api-call' | 'tool-call' | 'tool-result' | 'text' | 'info' | 'file-saved' | 'file-error' | 'mcp-tool', label: string, detail: string): void {
