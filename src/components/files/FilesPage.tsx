@@ -139,7 +139,9 @@ export function FilesPage() {
   // Get sessionFolder dynamically - recalculates on every refreshKey change
   const getSessionFolder = () => {
     if (typeof window === 'undefined') return '';
-    return localStorage.getItem('currentSessionFolder') || '';
+    const folder = localStorage.getItem('currentSessionFolder') || '';
+    console.log('[FilesPage] getSessionFolder:', folder);
+    return folder;
   };
   
   // Use sessionFolder from localStorage OR first path segment as groupId
@@ -147,6 +149,8 @@ export function FilesPage() {
   const sessionFolder = getSessionFolder();
   const groupId = sessionFolder || folderFromPath || DEFAULT_GROUP_ID;
   const currentDir = path.length > 1 ? path.slice(1).join('/') : '.';
+  
+  console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'folderFromPath:', folderFromPath);
 
   // Listen for localStorage changes AND custom events to refresh files
   useEffect(() => {
