@@ -308,6 +308,7 @@ export function FilesPage() {
 
   async function handlePreview(name: string) {
     setPreviewFile(name);
+    console.log('[FilesPage] handlePreview called:', { name, currentPath: path, groupId });
     try {
       const filePath = path.length > 0 ? `${path.join('/')}/${name}` : name;
       console.log('[FilesPage] handlePreview reading:', { groupId, filePath, path });
