@@ -118,7 +118,8 @@ export type WorkerOutbound =
   | { type: 'token-usage'; payload: TokenUsage }
   | { type: 'task-created'; payload: { task: Task } }
   | { type: 'tool-result'; payload: { groupId: string; tool: string; result: string } }
-  | { type: 'api-response'; payload: { groupId: string; response: string } };
+  | { type: 'api-response'; payload: { groupId: string; response: string } }
+  | { type: 'save-session-folder'; payload: { folder: string } };
 
 /** Token usage info from the API */
 export interface TokenUsage {

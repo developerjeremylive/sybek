@@ -589,6 +589,15 @@ export class Orchestrator {
         break;
       }
 
+      case 'save-session-folder': {
+        const { folder } = msg.payload;
+        localStorage.setItem('currentSessionFolder', folder);
+        sessionStorage.setItem('currentSessionFolder', folder);
+        // Dispatch event to refresh FilesPage
+        window.dispatchEvent(new CustomEvent('obc-files-refresh'));
+        break;
+      }
+
       case 'tool-result': {
         this.events.emit('tool-result', msg.payload);
         break;

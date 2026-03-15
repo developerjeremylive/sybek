@@ -1107,9 +1107,14 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   
                   // FORCE save to storage IMMEDIATELY before any file operation
                   try {
+// Save sessionFolder via message to main thread
+                  saveSessionFolderToStorage(saveFolder);
+                  
+                  // Also try localStorage/sessionStorage as fallback (might work in some contexts)
+                  try {
                     localStorage.setItem('currentSessionFolder', saveFolder);
                     sessionStorage.setItem('currentSessionFolder', saveFolder);
-                    console.log('[agent-worker] Saved sessionFolder to storage:', saveFolder);
+                  } catch {}
                   } catch (e) {
                     console.log('[agent-worker] Failed to save sessionFolder:', e);
                   }
@@ -1326,6 +1331,11 @@ async function handleCompact(payload: CompactPayload): Promise<void> {
 
 function post(msg: WorkerOutbound): void {
   self.postMessage(msg);
+}
+
+function saveSessionFolderToStorage(folder: string): void {
+  // Send message to main thread to save sessionFolder
+  post({ type: 'save-session-folder', payload: { folder } });
 }
 
 function log(groupId: string, kind: 'api-call' | 'tool-call' | 'tool-result' | 'text' | 'info' | 'file-saved' | 'file-error' | 'mcp-tool', label: string, detail: string): void {
