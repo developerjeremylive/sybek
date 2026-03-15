@@ -557,6 +557,7 @@ async function readGroupFile(groupId: string, filePath: string): Promise<string>
 }
 
 async function writeGroupFile(groupId: string, filePath: string, content: string): Promise<void> {
+  console.log('[writeGroupFile] START', { groupId, filePath, contentLength: content.length });
   const dir = await getGroupDir(groupId);
   const { dirs, filename } = parsePath(filePath);
   
@@ -565,10 +566,12 @@ async function writeGroupFile(groupId: string, filePath: string, content: string
     current = await current.getDirectoryHandle(seg, { create: true });
   }
   
+  console.log('[writeGroupFile] About to create file', { filename });
   const fileHandle = await current.getFileHandle(filename, { create: true });
   const writable = await fileHandle.createWritable();
   await writable.write(content);
   await writable.close();
+  console.log('[writeGroupFile] DONE', { groupId, filePath });
 }
 
 async function listGroupFiles(groupId: string, dirPath: string = '.'): Promise<string[]> {
