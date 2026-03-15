@@ -790,11 +790,24 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         toolDescriptions.push(`- ${tool.name}(${params}): ${tool.description}`);
       });
       toolDescriptions.push('\n### FORMATO OBLIGATORIO para usar herramientas de archivos:');
-      toolDescriptions.push(`**PASOS PARA MODIFICAR ARCHIVOS (importante - usa search/replace para eficiencia):**\n1. Primero usa [list_files] para ver los archivos\n2. Luego usa [read_file] con parámetro "pattern" para buscar líneas específicas\n3. Finalmente usa [write_file] con "search" y "replace" para cambiar SOLO lo necesario\n\n**NO escribas el archivo completo - usa search/replace para eficiencia.**\n` +
-        `[list_files]\n{"path": "${chatFolder}"}\n[/list_files]\n\n` +
-        `[read_file]\n{"path": "${chatFolder}/archivo.html", "pattern": "body"}\n[/read_file]\n\n` +
-        `[write_file]\n{"path": "${chatFolder}/archivo.html", "search": "background-color: white;", "replace": "background-color: gray;"}\n[/write_file]\n\n` +
-        `**También puedes usar startLine/endLine para leer líneas específicas.**`);
+      toolDescriptions.push(`**COMO EDITAR ARCHIVOS:**
+
+1. [list_files]{"path": "${chatFolder}"}[/list_files]
+2. [read_file]{"path": "${chatFolder}/archivo.html", "pattern": "body"}[/read_file]  
+3. [write_file]{"path": "${chatFolder}/archivo.html", "search": "white", "replace": "gray"}[/write_file]
+
+**EJEMPLO COMPLETO:**
+[list_files]
+{"path": "${chatFolder}"}
+[/list_files]
+
+[read_file]
+{"path": "${chatFolder}/mi-archivo.html", "pattern": "body"}
+[/read_file]
+
+[write_file]
+{"path": "${chatFolder}/mi-archivo.html", "search": "background-color: white;", "replace": "background-color: gray;"}
+[/write_file]`);
     }
     
     // MCP tools - only use if servers are actually running and accessible
