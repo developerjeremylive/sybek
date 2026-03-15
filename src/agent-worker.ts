@@ -890,19 +890,44 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       if (toolCalls.length === 0 && activeTools.length > 0) {
         log(groupId, 'info', 'Extracting tools from response', `activeTools: ${activeTools.join(', ')}`);
         
-        // Try format: [toolname]\n{"args"}\n[/toolname] OR [toolname] {"args"} [/toolname]
-        const toolCallRegex = /\[(\w+)\]\s*(\{[^}]*\})\s*\[\/\1\]/g;
-        let match;
-        while ((match = toolCallRegex.exec(responseContent)) !== null) {
-          const toolName = match[1];
-          const argsStr = match[2];
-          try {
-            const toolInput = JSON.parse(argsStr);
-            toolCalls.push({ name: toolName, arguments: toolInput });
-            log(groupId, 'info', 'Extracted tool from text', `${toolName}: ${argsStr}`);
-          } catch (e) {
-            log(groupId, 'info', 'Failed to parse tool args', `${argsStr}: ${e}`);
+        // Try different formats
+        const formats = [
+          // Format: [toolname]\n{"args"}\n[/toolname] or [toolname]{"args"}[/toolname]
+          /\[(\w+)\]\s*(\{[^}]*\})\s*\[\/\1\]/g,
+          // Format: [toolname] {"args"} [/toolname]
+          /\[(\w+)\]\s*\{[^}]*\}\s*\[\/\w+\]/g,
+          // Simple: [write_file] content [/write_file]
+          /\[(\w+)\]([\s\S]*?)\[\/\1\]/g,
+        ];
+        
+        for (const toolCallRegex of formats) {
+          let match;
+          while ((match = toolCallRegex.exec(responseContent)) !== null) {
+            const toolName = match[1];
+            // Check if this is an active tool
+            if (!activeTools.includes(toolName)) continue;
+            
+            const argsStr = match[2];
+            try {
+              // Try to parse as JSON
+              const toolInput = JSON.parse(argsStr);
+              toolCalls.push({ name: toolName, arguments: toolInput });
+              log(groupId, 'info', 'Extracted tool (JSON)', `${toolName}: ${argsStr.slice(0, 100)}`);
+            } catch {
+              // If not JSON, try to extract path and content manually
+              const pathMatch = argsStr.match(/"path"\s*:\s*"([^"]+)"/);
+              const contentMatch = argsStr.match(/"content"\s*:\s*"([\s\S]*?)"(?:\s*,|\s*})/);
+              if (pathMatch) {
+                const toolInput: any = { path: pathMatch[1] };
+                if (contentMatch) {
+                  toolInput.content = contentMatch[1];
+                }
+                toolCalls.push({ name: toolName, arguments: toolInput });
+                log(groupId, 'info', 'Extracted tool (manual)', `${toolName}: ${pathMatch[1]}`);
+              }
+            }
           }
+          if (toolCalls.length > 0) break;
         }
         
         log(groupId, 'info', 'Tool extraction result', `Found ${toolCalls.length} tools`);
