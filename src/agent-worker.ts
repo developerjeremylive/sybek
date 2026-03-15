@@ -733,7 +733,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
     // Native tools - these are built-in and work directly, NO need for MCP format!
     if (activeTools.length > 0) {
       // Get the chat folder for file operations
-      const chatFolder = currentSessionFolder || (contextFolders.length > 0 ? contextFolders[0] : 'TU_CARPETA_AQUI');
+      const chatFolder = currentSessionFolder || ((contextFolders || []).length > 0 ? contextFolders[0] : 'TU_CARPETA_AQUI');
       
       toolDescriptions.push('\n### HERRAMIENTAS OBLIGATORIAS para archivos:');
       toolDescriptions.push('** Cuando el usuario pida leer, editar, modificar o guardar archivos, DEBES usar estas herramientas EXACTAMENTE como se indica. NO muestres código directamente - USA LAS HERRAMIENTAS. **');
