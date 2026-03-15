@@ -136,21 +136,18 @@ export function FilesPage() {
   const [contextFolders, setContextFolders] = useState<Set<string>>(new Set());
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Get sessionFolder dynamically - recalculates on every refreshKey change
-  const getSessionFolder = () => {
-    if (typeof window === 'undefined') return '';
-    const folder = localStorage.getItem('currentSessionFolder') || '';
-    console.log('[FilesPage] getSessionFolder:', folder);
-    return folder;
-  };
+  // Get sessionFolder - always read fresh
+  const sessionFolder = (typeof window !== 'undefined' && localStorage.getItem('currentSessionFolder')) || '';
   
-  // Use sessionFolder from localStorage OR first path segment as groupId
-  const folderFromPath = path.length > 0 ? path[0] : '';
-  const sessionFolder = getSessionFolder();
+  // If path is empty but we have a sessionFolder, use it as the path
+  const effectivePath = path.length === 0 && sessionFolder ? [sessionFolder] : path;
+  
+  // Use first path segment as groupId (or sessionFolder as fallback)
+  const folderFromPath = effectivePath.length > 0 ? effectivePath[0] : '';
   const groupId = sessionFolder || folderFromPath || DEFAULT_GROUP_ID;
-  const currentDir = path.length > 1 ? path.slice(1).join('/') : '.';
+  const currentDir = effectivePath.length > 1 ? effectivePath.slice(1).join('/') : '.';
   
-  console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'folderFromPath:', folderFromPath);
+  console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'effectivePath:', effectivePath);
 
   // Listen for localStorage changes AND custom events to refresh files
   useEffect(() => {
