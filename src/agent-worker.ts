@@ -597,28 +597,22 @@ async function autoSaveCodeFiles(groupId: string, aiResponse: string): Promise<s
   const savedFiles: string[] = [];
   const content = aiResponse;
   
-  // Use context folders if available, otherwise use session folder
-  let targetFolders = [...contextFolders];
-  if (currentSessionFolder && !targetFolders.includes(currentSessionFolder)) {
-    targetFolders = [currentSessionFolder, ...targetFolders];
+  // Use session folder if available, otherwise use context folders
+  const foldersToCheck = currentSessionFolder ? [currentSessionFolder] : [...contextFolders];
+  
+  // Check ALL folders for existing files
+  for (const folder of foldersToCheck) {
+    try {
+      const existingFiles = await listGroupFiles(groupId, folder);
+      // If any folder has files, skip auto-save entirely
+      if (existingFiles.length > 0) {
+        log(groupId, 'info', 'Auto-save skipped', `Folder "${folder}" already has files`);
+        return savedFiles;
+      }
+    } catch {}
   }
   
-  if (targetFolders.length === 0) {
-    targetFolders = [getSessionFolder()];
-  }
-  
-  const targetFolder = targetFolders[0];
-  
-  // Check what files already exist
-  let existingFiles: string[] = [];
-  try {
-    existingFiles = await listGroupFiles(groupId, targetFolder);
-  } catch {}
-  
-  // Skip ALL auto-saving if folder already has files (likely from MCP tools)
-  if (existingFiles.length > 0) {
-    return savedFiles;
-  }
+  const targetFolder = foldersToCheck[0] || getSessionFolder();
   
   // Extract code blocks from response
   const codeBlockRegex = /```(?:html|css|javascript|js|typescript)?\n([\s\S]*?)```/g;
