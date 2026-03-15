@@ -1096,8 +1096,19 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                     const sizeInfo = `HTML muy grande (${Math.round(htmlSize/1024)}KB).`;
                     
                     try {
+                      // Debug: log the folder being used
+                      log(groupId, 'mcp-tool', 'DEBUG', `saveFolder="${saveFolder}", currentSessionFolder="${currentSessionFolder}"`);
+                      
                       await writeGroupFile(saveFolder, fileName, htmlContent);
                       log(saveFolder, 'mcp-tool', 'HTML saved to chat folder', fileName);
+                      
+                      // Verify file was saved by listing files
+                      try {
+                        const files = await listGroupFiles(saveFolder, '.');
+                        log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
+                      } catch (e) {
+                        log(saveFolder, 'mcp-tool', 'List error', String(e));
+                      }
                       
                       // Add folder to context automatically
                       addFolderToContext(saveFolder);
@@ -1117,8 +1128,19 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                     } catch {}
                     const fileName = `mcp-${domain}-${timestamp}.html`;
                     try {
+                      // Debug: log the folder being used
+                      log(groupId, 'mcp-tool', 'DEBUG sm HTML', `saveFolder="${saveFolder}", currentSessionFolder="${currentSessionFolder}"`);
+                      
                       await writeGroupFile(saveFolder, fileName, htmlContent);
                       log(saveFolder, 'mcp-tool', 'HTML saved to chat folder', fileName);
+                      
+                      // Verify file was saved by listing files
+                      try {
+                        const files = await listGroupFiles(saveFolder, '.');
+                        log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
+                      } catch (e) {
+                        log(saveFolder, 'mcp-tool', 'List error', String(e));
+                      }
                       
                       // Add folder to context automatically
                       addFolderToContext(saveFolder);
