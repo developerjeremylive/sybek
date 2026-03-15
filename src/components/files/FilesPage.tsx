@@ -145,13 +145,13 @@ export function FilesPage() {
   // If no sessionFolder but we have a path, use first path segment
   const folderFromPath = path.length > 0 ? path[0] : '';
   
-  // If still no sessionFolder, try to find a chat-* folder in storage or use a default
-  if (!sessionFolder && !folderFromPath) {
-    // Try to get from sessionStorage (set by chat page)
+  // If still no sessionFolder, try to get from sessionStorage again
+  if (!sessionFolder) {
     sessionFolder = (typeof window !== 'undefined' && sessionStorage.getItem('currentSessionFolder')) || '';
   }
   
-  const groupId = sessionFolder || folderFromPath || DEFAULT_GROUP_ID;
+  // NEVER default to br:main - only use sessionFolder or folderFromPath
+  const groupId = sessionFolder || folderFromPath;
   const currentDir = path.length > 1 ? path.slice(1).join('/') : '.';
   
   console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'folderFromPath:', folderFromPath);
