@@ -1070,7 +1070,10 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   const htmlSize = htmlContent.length;
                   
                   // Use sessionFolder from payload, or currentSessionFolder, or groupId
-                  const saveFolder = sessionFolder || currentSessionFolder || groupId;
+                  // Ensure we have a valid folder name
+                  const rawSaveFolder = sessionFolder || currentSessionFolder || groupId;
+                  // If still empty or invalid, generate a new folder name
+                  const saveFolder = rawSaveFolder && rawSaveFolder !== '' ? rawSaveFolder : `chat-${Date.now()}`;
                   log(groupId, 'mcp-tool', 'DEBUG saveFolder', `sessionFolder="${sessionFolder}", currentSessionFolder="${currentSessionFolder}", groupId="${groupId}" -> saveFolder="${saveFolder}"`);
                   
                   // If HTML is larger than 10KB, save directly in chat folder (no subfolder)
