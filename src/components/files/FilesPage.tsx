@@ -136,10 +136,12 @@ export function FilesPage() {
   const [contextFolders, setContextFolders] = useState<Set<string>>(new Set());
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Use sessionFolder from localStorage if available, otherwise fall back to DEFAULT_GROUP_ID
+  // Use sessionFolder from localStorage OR first path segment as groupId
   const sessionFolder = localStorage.getItem('currentSessionFolder');
-  const groupId = sessionFolder || DEFAULT_GROUP_ID;
-  const currentDir = path.length > 0 ? path.join('/') : '.';
+  // If user navigated into a folder (path has items), use that as groupId
+  const folderFromPath = path.length > 0 ? path[0] : '';
+  const groupId = sessionFolder || folderFromPath || DEFAULT_GROUP_ID;
+  const currentDir = path.length > 1 ? path.slice(1).join('/') : '.';
 
   // Listen for localStorage changes AND custom events to refresh files
   useEffect(() => {
