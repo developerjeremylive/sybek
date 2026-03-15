@@ -741,7 +741,11 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
           .join(', ');
         toolDescriptions.push(`- ${tool.name}(${params}): ${tool.description} [NATIVO]`);
       });
-      toolDescriptions.push('\n**IMPORTANTE - Herramientas NATIVAS:** Usa este formato EXACTO:\n[herramienta] nombre | {"param": "valor"} [/herramienta]\nEjemplos:\n- [herramienta] get_current_time | {"timezone": "America/Mexico_City"} [/herramienta]\n- [herramienta] get_weather | {"city": "Leon"} [/herramienta]\n- [herramienta] hackernews | {"limit": 5} [/herramienta]');
+      toolDescriptions.push('\n**EJEMPLOS de uso - Herramientas NATIVAS:**\n' +
+        '- Para LEER un archivo: [herramienta] read_file | {"path": "chat-2026-03-15-01-57-11/mcp-jeremylive-netlify-app-1773561439992.html"} [/herramienta]\n' +
+        '- Para ESCRIBIR/EDITAR un archivo: [herramienta] write_file | {"path": "chat-2026-03-15-01-57-11/mcp-jeremylive-netlify-app-1773561439992.html", "content": "<!DOCTYPE html>...contenido modificado..."} [/herramienta]\n' +
+        '- Para LISTAR archivos: [herramienta] list_files | {"path": "chat-2026-03-15-01-57-11"} [/herramienta]\n' +
+        '\n**IMPORTANTE:** Cuando el usuario pida modificar un archivo, primero usa read_file para leerlo, luego modifica el contenido y usa write_file para guardar.');
     }
     
     // MCP tools - only use if servers are actually running and accessible
