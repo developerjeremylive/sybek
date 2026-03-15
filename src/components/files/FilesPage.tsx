@@ -310,7 +310,9 @@ export function FilesPage() {
     setPreviewFile(name);
     try {
       const filePath = path.length > 0 ? `${path.join('/')}/${name}` : name;
+      console.log('[FilesPage] handlePreview reading:', { groupId, filePath, path });
       const content = await readGroupFile(groupId, filePath);
+      console.log('[FilesPage] handlePreview read content length:', content.length);
       
       // If HTML, combine with CSS and JS files
       if (name.endsWith('.html') || name.endsWith('.htm')) {
@@ -319,8 +321,9 @@ export function FilesPage() {
       } else {
         setPreviewContent(content);
       }
-    } catch {
-      setPreviewContent('[Unable to read file]');
+    } catch (err) {
+      console.error('[FilesPage] handlePreview error:', err);
+      setPreviewContent('[Unable to read file: ' + String(err) + ']');
     }
   }
 
