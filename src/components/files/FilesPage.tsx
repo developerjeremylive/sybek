@@ -156,14 +156,11 @@ export function FilesPage() {
   // Get context folders
   const contextFoldersList = getContextFolders();
   
-  // If no sessionFolder but we have context folders, use the first one
-  const folderFromPath = path.length > 0 ? path[0] : '';
-  
-  // Priority: path > br:main (FilesPage should show br:main by default, not sessionFolder)
-  let groupId = folderFromPath || DEFAULT_GROUP_ID;
+  // FilesPage always reads from br:main - navigate into subfolders using currentDir
+  let groupId = DEFAULT_GROUP_ID;
   const currentDir = path.length > 0 ? path.join('/') : '.';
   
-  console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'contextFolders:', contextFoldersList, 'folderFromPath:', folderFromPath);
+  console.log('[FilesPage] groupId:', groupId, 'currentDir:', currentDir, 'path:', path, 'sessionFolder:', sessionFolder);
 
   // Listen for localStorage changes AND custom events to refresh files
   useEffect(() => {
