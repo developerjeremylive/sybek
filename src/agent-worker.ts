@@ -568,16 +568,27 @@ async function readGroupFile(groupId: string, filePath: string): Promise<string>
 
 async function writeGroupFile(groupId: string, filePath: string, content: string): Promise<void> {
   console.log('[writeGroupFile] START', { groupId, filePath, contentLength: content.length });
-  const dir = await getGroupDir(groupId);
+  const root = await navigator.storage.getDirectory();
+  const safeId = groupId.replace(/:/g, '-');
+  console.log('[writeGroupFile] Creating directory structure:', 'openbrowserclaw', 'groups', safeId);
+  
+  // Create the full path step by step
+  let current = await root.getDirectoryHandle('openbrowserclaw', { create: true });
+  console.log('[writeGroupFile] Got/created openbrowserclaw');
+  current = await current.getDirectoryHandle('groups', { create: true });
+  console.log('[writeGroupFile] Got/created groups');
+  current = await current.getDirectoryHandle(safeId, { create: true });
+  console.log('[writeGroupFile] Got/created group dir:', safeId);
+  
   const { dirs, filename } = parsePath(filePath);
   
-  let current = dir;
+  let fileDir = current;
   for (const seg of dirs) {
-    current = await current.getDirectoryHandle(seg, { create: true });
+    fileDir = await fileDir.getDirectoryHandle(seg, { create: true });
   }
   
-  console.log('[writeGroupFile] About to create file', { filename });
-  const fileHandle = await current.getFileHandle(filename, { create: true });
+  console.log('[writeGroupFile] About to create file', { filename, inDir: dirs.length > 0 ? dirs : 'root' });
+  const fileHandle = await fileDir.getFileHandle(filename, { create: true });
   const writable = await fileHandle.createWritable();
   await writable.write(content);
   await writable.close();
@@ -683,11 +694,12 @@ interface MCPTool {
 async function handleInvoke(payload: InvokePayload): Promise<void> {
   const { groupId = DEFAULT_GROUP_ID, messages, systemPrompt, model = DEFAULT_MODEL, maxTokens = 4096, sessionFolder, contextFolders, fileContext, tools, mcpTools, mcpServers = [] } = payload;
 
-  // Use first context folder as working folder if available, otherwise use sessionFolder
-  if (contextFolders && contextFolders.length > 0) {
-    currentSessionFolder = contextFolders[0];
-  } else if (sessionFolder) {
+  // Use sessionFolder first (from payload), then contextFolders, then existing currentSessionFolder
+  // Priority: sessionFolder > contextFolders[0] > currentSessionFolder
+  if (sessionFolder) {
     currentSessionFolder = sessionFolder;
+  } else if (contextFolders && contextFolders.length > 0) {
+    currentSessionFolder = contextFolders[0];
   } else if (!currentSessionFolder) {
     getSessionFolder();
   }
@@ -1097,106 +1109,67 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   
                   // If still empty, generate a new folder with timestamp based on URL domain
                   if (!saveFolder || saveFolder === '') {
+                    const now = Date.now();
                     let domain = 'page';
                     try {
                       const url = new URL(mcpArgs.url);
                       domain = url.hostname.replace(/\./g, '-');
                     } catch {}
-                    saveFolder = `chat-${domain}-${Date.now()}`;
+                    saveFolder = `chat-${domain}-${now}`;
                   }
                   
                   // FORCE save to storage IMMEDIATELY before any file operation
                   try {
-// Save sessionFolder via message to main thread
-                  saveSessionFolderToStorage(saveFolder);
-                  
-                  // Also try localStorage/sessionStorage as fallback (might work in some contexts)
-                  try {
-                    localStorage.setItem('currentSessionFolder', saveFolder);
-                    sessionStorage.setItem('currentSessionFolder', saveFolder);
-                  } catch {}
+                    saveSessionFolderToStorage(saveFolder);
+                    try {
+                      localStorage.setItem('currentSessionFolder', saveFolder);
+                      sessionStorage.setItem('currentSessionFolder', saveFolder);
+                    } catch {}
                   } catch (e) {
                     console.log('[agent-worker] Failed to save sessionFolder:', e);
                   }
-                  log(groupId, 'mcp-tool', 'DEBUG saveFolder', `sessionFolder="${sessionFolder}", currentSessionFolder="${currentSessionFolder}", groupId="${groupId}" -> saveFolder="${saveFolder}"`);
                   
-                  // If HTML is larger than 10KB, save directly in chat folder (no subfolder)
-                  if (htmlSize > 10000) {
-                    const timestamp = Date.now();
-                    // Extract domain for filename
-                    let domain = 'page';
-                    try {
-                      const url = new URL(mcpArgs.url);
-                      domain = url.hostname.replace(/\./g, '-');
-                    } catch {}
-                    const fileName = `mcp-${domain}-${timestamp}.html`;
-                    const summary = extractHtmlSummary(htmlContent);
-                    const sizeInfo = `HTML muy grande (${Math.round(htmlSize/1024)}KB).`;
+                  // Generate filename with timestamp
+                  const timestamp = Date.now();
+                  let domain = 'page';
+                  try {
+                    const url = new URL(mcpArgs.url);
+                    domain = url.hostname.replace(/\./g, '-');
+                  } catch {}
+                  const fileName = `mcp-${domain}-${timestamp}.html`;
+                  
+                  // Save to br:main with saveFolder as subfolder
+                  const saveGroupId = DEFAULT_GROUP_ID;
+                  const saveFilePath = `${saveFolder}/${fileName}`;
+                  const summary = extractHtmlSummary(htmlContent);
+                  const sizeInfo = `HTML grande (${Math.round(htmlSize/1024)}KB).`;
+                  
+                  try {
+                    // Debug: log the folder being used and content
+                    log(groupId, 'mcp-tool', 'DEBUG', `saveGroupId="${saveGroupId}", saveFilePath="${saveFilePath}", htmlSize=${htmlContent.length}`);
+                    console.log('[agent-worker] About to save HTML to:', saveGroupId, '/', saveFilePath, 'content length:', htmlContent.length, 'first 200 chars:', htmlContent.slice(0, 200));
                     
+                    await writeGroupFile(saveGroupId, saveFilePath, htmlContent);
+                    log(saveGroupId, 'mcp-tool', 'HTML saved to chat folder', saveFilePath);
+                    console.log('[agent-worker] HTML saved successfully to:', saveGroupId, '/', saveFilePath);
+                    
+                    // Verify file was saved by listing files
                     try {
-                      // Debug: log the folder being used
-                      log(groupId, 'mcp-tool', 'DEBUG', `saveFolder="${saveFolder}", currentSessionFolder="${currentSessionFolder}"`);
-                      
-                      console.log('[agent-worker] About to save HTML, content length:', htmlContent.length, 'first 200 chars:', htmlContent.slice(0, 200));
-                      
-                      await writeGroupFile(saveFolder, fileName, htmlContent);
-                      log(saveFolder, 'mcp-tool', 'HTML saved to chat folder', fileName);
-                      
-                      // Verify file was saved by listing files
-                      try {
-                        const files = await listGroupFiles(saveFolder, '.');
-                        log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
-                        // Notify FilesPage to refresh (large HTML)
-                        try { 
-                          window.dispatchEvent(new CustomEvent('obc-files-refresh')); 
-                          console.log('[agent-worker] Dispatched obc-files-refresh event');
-                        } catch {}
-                      } catch (e) {
-                        log(saveFolder, 'mcp-tool', 'List error', String(e));
-                      }
-                      
-                      // Add folder to context automatically
-                      addFolderToContext(saveFolder);
-                      
-                      resultToShow = `HTML GUARDADO EN ARCHIVO: ${fileName}\n\n${summary}\n\nLa carpeta "${saveFolder}" ha sido agregada al contexto del chat. El archivo HTML completo está disponible en Files > ${saveFolder} > ${fileName}. Lee el archivo completo para dar una respuesta más detallada sobre TODO el contenido de la página.`;
-                    } catch (saveError) {
-                      log(saveFolder, 'mcp-tool', 'Failed to save HTML', String(saveError));
-                      resultToShow = `${sizeInfo}\n\n${summary}\n(Nota: No se pudo guardar el archivo)`;
+                      const files = await listGroupFiles(saveGroupId, saveFolder);
+                      log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
+                      // Notify FilesPage to refresh - stay in br:main
+                      notifyFilesRefresh(saveGroupId);
+                    } catch (e) {
+                      log(saveFolder, 'mcp-tool', 'List error', String(e));
                     }
-                  } else {
-                    // Small HTML - save directly in chat folder
-                    const timestamp = Date.now();
-                    let domain = 'page';
-                    try {
-                      const url = new URL(mcpArgs.url);
-                      domain = url.hostname.replace(/\./g, '-');
-                    } catch {}
-                    const fileName = `mcp-${domain}-${timestamp}.html`;
-                    try {
-                      // Debug: log the folder being used
-                      log(groupId, 'mcp-tool', 'DEBUG sm HTML', `saveFolder="${saveFolder}", currentSessionFolder="${currentSessionFolder}"`);
-                      
-                      await writeGroupFile(saveFolder, fileName, htmlContent);
-                      log(saveFolder, 'mcp-tool', 'HTML saved to chat folder', fileName);
-                      
-                      // Verify file was saved by listing files
-                      try {
-                        const files = await listGroupFiles(saveFolder, '.');
-                        log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
-                        // Notify FilesPage to refresh (small HTML)
-                        try { window.dispatchEvent(new CustomEvent('obc-files-refresh')); } catch {}
-                      } catch (e) {
-                        log(saveFolder, 'mcp-tool', 'List error', String(e));
-                      }
-                      
-                      // Add folder to context automatically
-                      addFolderToContext(saveFolder);
-                      
-                      const summary = extractHtmlSummary(htmlContent);
-                      resultToShow = `HTML GUARDADO EN ARCHIVO: ${fileName}\n\n${summary}\n\nLa carpeta "${saveFolder}" ha sido agregada al contexto del chat. El archivo HTML completo está disponible en Files > ${saveFolder} > ${fileName}. Lee el archivo completo para dar una respuesta más detallada sobre TODO el contenido de la página.`;
-                    } catch (saveError) {
-                      resultToShow = `Contenido de la página:\n\n${htmlContent.slice(0, 5000)}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
-                    }
+                    
+                    // Add folder to context automatically
+                    addFolderToContext(saveFolder);
+                    
+                    resultToShow = `HTML GUARDADO EN ARCHIVO: ${saveFilePath}\n\n${summary}\n\nLa carpeta "${saveFolder}" ha sido agregada al contexto del chat. El archivo HTML completo está disponible en Files > br:main > ${saveFolder} > ${fileName}. Lee el archivo completo para dar una respuesta más detallada sobre TODO el contenido de la página.`;
+                  } catch (saveError) {
+                    log(saveFolder, 'mcp-tool', 'Failed to save HTML', String(saveError));
+                    resultToShow = `${sizeInfo}\n\n${summary}\n(Nota: No se pudo guardar el archivo)`;
                   }
                 }
                 
@@ -1336,6 +1309,11 @@ function post(msg: WorkerOutbound): void {
 function saveSessionFolderToStorage(folder: string): void {
   // Send message to main thread to save sessionFolder
   post({ type: 'save-session-folder', payload: { folder } });
+}
+
+function notifyFilesRefresh(folder?: string): void {
+  // Send message to main thread to refresh FilesPage
+  post({ type: 'refresh-files', payload: { folder: folder || '' } });
 }
 
 function log(groupId: string, kind: 'api-call' | 'tool-call' | 'tool-result' | 'text' | 'info' | 'file-saved' | 'file-error' | 'mcp-tool', label: string, detail: string): void {

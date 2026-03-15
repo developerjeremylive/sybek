@@ -160,7 +160,11 @@ export function FilesPage() {
   const folderFromPath = path.length > 0 ? path[0] : '';
   
   // Priority: sessionFolder > first contextFolder > path > empty
-  const groupId = sessionFolder || (contextFoldersList.length > 0 ? contextFoldersList[0] : folderFromPath);
+  let groupId = sessionFolder || (contextFoldersList.length > 0 ? contextFoldersList[0] : folderFromPath);
+  // If still empty, warn in console
+  if (!groupId) {
+    console.warn('[FilesPage] groupId is empty, no sessionFolder or contextFolders set!');
+  }
   const currentDir = path.length > 1 ? path.slice(1).join('/') : '.';
   
   console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'contextFolders:', contextFoldersList, 'folderFromPath:', folderFromPath);
@@ -306,7 +310,9 @@ export function FilesPage() {
     setPreviewFile(name);
     try {
       const filePath = path.length > 0 ? `${path.join('/')}/${name}` : name;
+      console.log('[FilesPage] handlePreview reading:', { groupId, filePath, path });
       const content = await readGroupFile(groupId, filePath);
+      console.log('[FilesPage] handlePreview read content length:', content.length);
       
       // If HTML, combine with CSS and JS files
       if (name.endsWith('.html') || name.endsWith('.htm')) {
@@ -315,8 +321,9 @@ export function FilesPage() {
       } else {
         setPreviewContent(content);
       }
-    } catch {
-      setPreviewContent('[Unable to read file]');
+    } catch (err) {
+      console.error('[FilesPage] handlePreview error:', err);
+      setPreviewContent('[Unable to read file: ' + String(err) + ']');
     }
   }
 
