@@ -810,18 +810,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         max_tokens: maxTokens,
       };
       
-      // Add native tools to request for function calling
-      if (activeTools.length > 0) {
-        requestBody.tools = activeTools.map((id: string) => {
-          const tool = TOOLS.find(t => t.name === id);
-          if (!tool) return null;
-          return {
-            name: tool.name,
-            description: tool.description,
-            parameters: tool.input_schema,
-          };
-        }).filter(Boolean);
-      }
+      // Note: Native tools are passed in system prompt, not as function calling
+      // The Llama model doesn't support function calling in the same way
 
       const res = await fetch(CHAT_URL, {
         method: 'POST',
