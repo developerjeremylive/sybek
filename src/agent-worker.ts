@@ -568,20 +568,39 @@ async function readGroupFile(groupId: string, filePath: string): Promise<string>
 
 async function writeGroupFile(groupId: string, filePath: string, content: string): Promise<void> {
   console.log('[writeGroupFile] START', { groupId, filePath, contentLength: content.length });
-  const dir = await getGroupDir(groupId);
+  const root = await navigator.storage.getDirectory();
+  const safeId = groupId.replace(/:/g, '-');
+  console.log('[writeGroupFile] Creating directory structure:', 'openbrowserclaw', 'groups', safeId);
+  
+  // Create the full path step by step
+  let current = await root.getDirectoryHandle('openbrowserclaw', { create: true });
+  console.log('[writeGroupFile] Got/created openbrowserclaw');
+  current = await current.getDirectoryHandle('groups', { create: true });
+  console.log('[writeGroupFile] Got/created groups');
+  current = await current.getDirectoryHandle(safeId, { create: true });
+  console.log('[writeGroupFile] Got/created group dir:', safeId);
+  
   const { dirs, filename } = parsePath(filePath);
   
-  let current = dir;
+  let fileDir = current;
   for (const seg of dirs) {
-    current = await current.getDirectoryHandle(seg, { create: true });
+    fileDir = await fileDir.getDirectoryHandle(seg, { create: true });
   }
   
-  console.log('[writeGroupFile] About to create file', { filename });
-  const fileHandle = await current.getFileHandle(filename, { create: true });
+  console.log('[writeGroupFile] About to create file', { filename, inDir: dirs.length > 0 ? dirs : 'root' });
+  const fileHandle = await fileDir.getFileHandle(filename, { create: true });
   const writable = await fileHandle.createWritable();
   await writable.write(content);
   await writable.close();
   console.log('[writeGroupFile] DONE', { groupId, filePath });
+  
+  // Verify the file exists
+  try {
+    const checkFile = await fileDir.getFile(filename);
+    console.log('[writeGroupFile] Verified file exists:', filename, 'size:', checkFile.size);
+  } catch (e) {
+    console.log('[writeGroupFile] ERROR: Could not verify file exists:', e);
+  }
 }
 
 async function listGroupFiles(groupId: string, dirPath: string = '.'): Promise<string[]> {
