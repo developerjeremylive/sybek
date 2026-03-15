@@ -159,12 +159,8 @@ export function FilesPage() {
   // If no sessionFolder but we have context folders, use the first one
   const folderFromPath = path.length > 0 ? path[0] : '';
   
-  // Priority: sessionFolder > first contextFolder > path > empty
-  let groupId = sessionFolder || (contextFoldersList.length > 0 ? contextFoldersList[0] : folderFromPath);
-  // If still empty, warn in console
-  if (!groupId) {
-    console.warn('[FilesPage] groupId is empty, no sessionFolder or contextFolders set!');
-  }
+  // Priority: path > br:main (FilesPage should show br:main by default, not sessionFolder)
+  let groupId = folderFromPath || DEFAULT_GROUP_ID;
   const currentDir = path.length > 0 ? path.join('/') : '.';
   
   console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'contextFolders:', contextFoldersList, 'folderFromPath:', folderFromPath);
