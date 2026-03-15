@@ -274,16 +274,17 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
   try {
     switch (name) {
       case 'read_file': {
-        const content = await readGroupFile(groupId, input.path);
+        const content = await readGroupFile(DEFAULT_GROUP_ID, input.path);
         return `File ${input.path}:\n${content}`;
       }
       case 'write_file': {
-        await writeGroupFile(groupId, input.path, input.content);
-        log(groupId, 'file-saved', 'Archivo guardado', input.path);
+        // Always write to br:main for context files
+        await writeGroupFile(DEFAULT_GROUP_ID, input.path, input.content);
+        log(DEFAULT_GROUP_ID, 'file-saved', 'Archivo guardado', input.path);
         return `File saved: ${input.path}`;
       }
       case 'list_files': {
-        const files = await listGroupFiles(groupId, input.path || '.');
+        const files = await listGroupFiles(DEFAULT_GROUP_ID, input.path || '.');
         return `Files in ${input.path || '/'}: ${files.join(', ')}`;
       }
       // MCP Tools - call the proxy API

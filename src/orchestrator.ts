@@ -526,8 +526,8 @@ export class Orchestrator {
     const sessionFolder = localStorage.getItem('currentSessionFolder') || '';
     const contextFolders = JSON.parse(localStorage.getItem('contextFolders') || '[]');
     
-    // Build file context from all context folders
-    const fileContext = await buildFileContext(groupId, sessionFolder, contextFolders);
+    // Build file context from all context folders (always use br:main)
+    const fileContext = await buildFileContext(DEFAULT_GROUP_ID, sessionFolder, contextFolders);
     
     this.agentWorker.postMessage({
       type: 'invoke',
