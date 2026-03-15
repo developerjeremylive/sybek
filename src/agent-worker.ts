@@ -1158,8 +1158,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                       try {
                         const files = await listGroupFiles(saveFolder, '.');
                         log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
-                        // Notify FilesPage to refresh (large HTML)
-                        notifyFilesRefresh();
+                        // Notify FilesPage to refresh (large HTML) and switch to the correct folder
+                        notifyFilesRefresh(saveFolder);
                       } catch (e) {
                         log(saveFolder, 'mcp-tool', 'List error', String(e));
                       }
@@ -1192,8 +1192,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                       try {
                         const files = await listGroupFiles(saveFolder, '.');
                         log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
-                        // Notify FilesPage to refresh (small HTML)
-                        notifyFilesRefresh();
+                        // Notify FilesPage to refresh (small HTML) and switch to the correct folder
+                        notifyFilesRefresh(saveFolder);
                       } catch (e) {
                         log(saveFolder, 'mcp-tool', 'List error', String(e));
                       }
@@ -1347,9 +1347,9 @@ function saveSessionFolderToStorage(folder: string): void {
   post({ type: 'save-session-folder', payload: { folder } });
 }
 
-function notifyFilesRefresh(): void {
+function notifyFilesRefresh(folder?: string): void {
   // Send message to main thread to refresh FilesPage
-  post({ type: 'refresh-files', payload: {} });
+  post({ type: 'refresh-files', payload: { folder: folder || '' } });
 }
 
 function log(groupId: string, kind: 'api-call' | 'tool-call' | 'tool-result' | 'text' | 'info' | 'file-saved' | 'file-error' | 'mcp-tool', label: string, detail: string): void {

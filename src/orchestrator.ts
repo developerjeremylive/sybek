@@ -600,6 +600,12 @@ export class Orchestrator {
 
       case 'refresh-files': {
         // Dispatch event to refresh FilesPage after file save
+        const folder = (msg.payload as { folder?: string }).folder;
+        if (folder) {
+          // Also set the session folder so FilesPage reads from the correct groupId
+          localStorage.setItem('currentSessionFolder', folder);
+          sessionStorage.setItem('currentSessionFolder', folder);
+        }
         window.dispatchEvent(new CustomEvent('obc-files-refresh'));
         break;
       }
