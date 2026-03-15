@@ -598,6 +598,12 @@ export class Orchestrator {
         break;
       }
 
+      case 'refresh-files': {
+        // Dispatch event to refresh FilesPage after file save
+        window.dispatchEvent(new CustomEvent('obc-files-refresh'));
+        break;
+      }
+
       case 'tool-result': {
         this.events.emit('tool-result', msg.payload);
         break;

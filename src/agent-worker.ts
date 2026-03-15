@@ -1148,10 +1148,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                         const files = await listGroupFiles(saveFolder, '.');
                         log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
                         // Notify FilesPage to refresh (large HTML)
-                        try { 
-                          window.dispatchEvent(new CustomEvent('obc-files-refresh')); 
-                          console.log('[agent-worker] Dispatched obc-files-refresh event');
-                        } catch {}
+                        notifyFilesRefresh();
                       } catch (e) {
                         log(saveFolder, 'mcp-tool', 'List error', String(e));
                       }
@@ -1185,7 +1182,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                         const files = await listGroupFiles(saveFolder, '.');
                         log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
                         // Notify FilesPage to refresh (small HTML)
-                        try { window.dispatchEvent(new CustomEvent('obc-files-refresh')); } catch {}
+                        notifyFilesRefresh();
                       } catch (e) {
                         log(saveFolder, 'mcp-tool', 'List error', String(e));
                       }
@@ -1337,6 +1334,11 @@ function post(msg: WorkerOutbound): void {
 function saveSessionFolderToStorage(folder: string): void {
   // Send message to main thread to save sessionFolder
   post({ type: 'save-session-folder', payload: { folder } });
+}
+
+function notifyFilesRefresh(): void {
+  // Send message to main thread to refresh FilesPage
+  post({ type: 'refresh-files', payload: {} });
 }
 
 function log(groupId: string, kind: 'api-call' | 'tool-call' | 'tool-result' | 'text' | 'info' | 'file-saved' | 'file-error' | 'mcp-tool', label: string, detail: string): void {
