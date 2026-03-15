@@ -1132,6 +1132,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                       // Debug: log the folder being used
                       log(groupId, 'mcp-tool', 'DEBUG', `saveFolder="${saveFolder}", currentSessionFolder="${currentSessionFolder}"`);
                       
+                      console.log('[agent-worker] About to save HTML, content length:', htmlContent.length, 'first 200 chars:', htmlContent.slice(0, 200));
+                      
                       await writeGroupFile(saveFolder, fileName, htmlContent);
                       log(saveFolder, 'mcp-tool', 'HTML saved to chat folder', fileName);
                       
