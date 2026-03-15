@@ -141,11 +141,19 @@ export function FilesPage() {
   const groupId = sessionFolder || DEFAULT_GROUP_ID;
   const currentDir = path.length > 0 ? path.join('/') : '.';
 
-  // Listen for localStorage changes to refresh files
+  // Listen for localStorage changes AND custom events to refresh files
   useEffect(() => {
-    const handleStorageChange = () => setRefreshKey(k => k + 1);
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    const handleRefresh = () => setRefreshKey(k => k + 1);
+    
+    // Listen for storage events (from other tabs)
+    window.addEventListener('storage', handleRefresh);
+    // Listen for custom refresh events (from same tab)
+    window.addEventListener('obc-files-refresh', handleRefresh);
+    
+    return () => {
+      window.removeEventListener('storage', handleRefresh);
+      window.removeEventListener('obc-files-refresh', handleRefresh);
+    };
   }, []);
 
   // Toggle pin for a folder
@@ -242,13 +250,13 @@ export function FilesPage() {
     } finally {
       setLoading(false);
     }
-  }, [groupId, currentDir]);
+  }, [groupId, currentDir, refreshKey]);
 
   useEffect(() => {
     loadEntries();
     setPreviewFile(null);
     setPreviewContent(null);
-  }, [loadEntries]);
+  }, [loadEntries, refreshKey]);
 
   async function handlePreview(name: string) {
     setPreviewFile(name);

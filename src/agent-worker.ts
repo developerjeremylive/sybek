@@ -1120,6 +1120,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                       try {
                         const files = await listGroupFiles(saveFolder, '.');
                         log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
+                        // Notify FilesPage to refresh (large HTML)
+                        try { window.dispatchEvent(new CustomEvent('obc-files-refresh')); } catch {}
                       } catch (e) {
                         log(saveFolder, 'mcp-tool', 'List error', String(e));
                       }
@@ -1152,6 +1154,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                       try {
                         const files = await listGroupFiles(saveFolder, '.');
                         log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
+                        // Notify FilesPage to refresh (small HTML)
+                        try { window.dispatchEvent(new CustomEvent('obc-files-refresh')); } catch {}
                       } catch (e) {
                         log(saveFolder, 'mcp-tool', 'List error', String(e));
                       }
