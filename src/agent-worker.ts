@@ -593,14 +593,6 @@ async function writeGroupFile(groupId: string, filePath: string, content: string
   await writable.write(content);
   await writable.close();
   console.log('[writeGroupFile] DONE', { groupId, filePath });
-  
-  // Verify the file exists
-  try {
-    const checkFile = await fileDir.getFile(filename);
-    console.log('[writeGroupFile] Verified file exists:', filename, 'size:', checkFile.size);
-  } catch (e) {
-    console.log('[writeGroupFile] ERROR: Could not verify file exists:', e);
-  }
 }
 
 async function listGroupFiles(groupId: string, dirPath: string = '.'): Promise<string[]> {
