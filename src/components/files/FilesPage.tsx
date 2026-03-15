@@ -280,16 +280,19 @@ export function FilesPage() {
   });
 
   const loadEntries = useCallback(async () => {
+    console.log('[FilesPage] loadEntries called:', { groupId, currentDir, path });
     setLoading(true);
     setError(null);
     try {
       const raw = await listGroupFiles(groupId, currentDir);
+      console.log('[FilesPage] loadEntries got files:', raw);
       const parsed: FileEntry[] = raw.map((name) => ({
         name: name.replace(/\/$/, ''),
         isDir: name.endsWith('/'),
       }));
       setEntries(parsed);
     } catch (err) {
+      console.error('[FilesPage] loadEntries error:', err);
       if ((err as Error)?.name === 'NotFoundError') {
         setEntries([]);
       } else {
