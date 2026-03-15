@@ -154,16 +154,36 @@ export function FilesPage() {
 
   // Listen for localStorage changes AND custom events to refresh files
   useEffect(() => {
-    const handleRefresh = () => setRefreshKey(k => k + 1);
+    let lastFolder = getSessionFolder();
+    
+    const handleRefresh = () => {
+      const newFolder = getSessionFolder();
+      console.log('[FilesPage] Event refresh, sessionFolder:', newFolder);
+      if (newFolder !== lastFolder) {
+        lastFolder = newFolder;
+      }
+      setRefreshKey(k => k + 1);
+    };
     
     // Listen for storage events (from other tabs)
     window.addEventListener('storage', handleRefresh);
     // Listen for custom refresh events (from same tab)
     window.addEventListener('obc-files-refresh', handleRefresh);
     
+    // Poll every 2 seconds for changes
+    const interval = setInterval(() => {
+      const folder = getSessionFolder();
+      if (folder !== lastFolder) {
+        console.log('[FilesPage] Poll detected new folder:', folder);
+        lastFolder = folder;
+        setRefreshKey(k => k + 1);
+      }
+    }, 2000);
+    
     return () => {
       window.removeEventListener('storage', handleRefresh);
       window.removeEventListener('obc-files-refresh', handleRefresh);
+      clearInterval(interval);
     };
   }, []);
 

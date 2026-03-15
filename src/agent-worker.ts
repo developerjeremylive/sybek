@@ -1121,7 +1121,10 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                         const files = await listGroupFiles(saveFolder, '.');
                         log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
                         // Notify FilesPage to refresh (large HTML)
-                        try { window.dispatchEvent(new CustomEvent('obc-files-refresh')); } catch {}
+                        try { 
+                          window.dispatchEvent(new CustomEvent('obc-files-refresh')); 
+                          console.log('[agent-worker] Dispatched obc-files-refresh event');
+                        } catch {}
                       } catch (e) {
                         log(saveFolder, 'mcp-tool', 'List error', String(e));
                       }
