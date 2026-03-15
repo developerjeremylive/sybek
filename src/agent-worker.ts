@@ -274,16 +274,17 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
   try {
     switch (name) {
       case 'read_file': {
-        const content = await readGroupFile(groupId, input.path);
+        const content = await readGroupFile(DEFAULT_GROUP_ID, input.path);
         return `File ${input.path}:\n${content}`;
       }
       case 'write_file': {
-        await writeGroupFile(groupId, input.path, input.content);
-        log(groupId, 'file-saved', 'Archivo guardado', input.path);
+        // Always write to br:main for context files
+        await writeGroupFile(DEFAULT_GROUP_ID, input.path, input.content);
+        log(DEFAULT_GROUP_ID, 'file-saved', 'Archivo guardado', input.path);
         return `File saved: ${input.path}`;
       }
       case 'list_files': {
-        const files = await listGroupFiles(groupId, input.path || '.');
+        const files = await listGroupFiles(DEFAULT_GROUP_ID, input.path || '.');
         return `Files in ${input.path || '/'}: ${files.join(', ')}`;
       }
       // MCP Tools - call the proxy API
@@ -731,16 +732,27 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
     
     // Native tools - these are built-in and work directly, NO need for MCP format!
     if (activeTools.length > 0) {
-      toolDescriptions.push('\n### Herramientas NATIVAS (disponibles inmediatamente - NO uses formato MCP):');
+      // Get the chat folder for file operations
+      const folders = contextFolders || [];
+      const chatFolder = currentSessionFolder || (folders.length > 0 ? folders[0] : 'TU_CARPETA_AQUI');
+      
+      toolDescriptions.push('\n### HERRAMIENTAS OBLIGATORIAS para archivos:');
+      toolDescriptions.push('** Cuando el usuario pida leer, editar, modificar o guardar archivos, DEBES usar estas herramientas EXACTAMENTE como se indica. NO muestres código directamente - USA LAS HERRAMIENTAS. **');
+      toolDescriptions.push(`** IMPORTANTE: La carpeta actual del chat es "${chatFolder}". USA ESTA CARPETA para todos los archivos. **`);
       activeTools.forEach((id: string) => {
         const tool = TOOLS.find(t => t.name === id);
         if (!tool) return;
         const params = Object.entries(tool.input_schema.properties || {})
           .map(([k, v]) => `${k}: ${(v as any).description || k}`)
           .join(', ');
-        toolDescriptions.push(`- ${tool.name}(${params}): ${tool.description} [NATIVO]`);
+        toolDescriptions.push(`- ${tool.name}(${params}): ${tool.description}`);
       });
-      toolDescriptions.push('\n**IMPORTANTE - Herramientas NATIVAS:** Usa este formato EXACTO:\n[herramienta] nombre | {"param": "valor"} [/herramienta]\nEjemplos:\n- [herramienta] get_current_time | {"timezone": "America/Mexico_City"} [/herramienta]\n- [herramienta] get_weather | {"city": "Leon"} [/herramienta]\n- [herramienta] hackernews | {"limit": 5} [/herramienta]');
+      toolDescriptions.push('\n### FORMATO OBLIGATORIO para usar herramientas de archivos:');
+      toolDescriptions.push(`**PASOS PARA MODIFICAR ARCHIVOS:**\n1. Primero usa [list_files] para ver los archivos disponibles\n2. Luego usa [read_file] para LEER el contenido actual\n3. Finalmente usa [write_file] para GUARDAR los cambios\n\n**NO puedes escribir directamente - debes seguir estos 3 pasos.**\n` +
+        `[list_files]\n{"path": "${chatFolder}"}\n[/list_files]\n\n` +
+        `[read_file]\n{"path": "${chatFolder}/NOMBRE_DEL_ARCHIVO.html"}\n[/read_file]\n\n` +
+        `[write_file]\n{"path": "${chatFolder}/NOMBRE_DEL_ARCHIVO.html", "content": "CONTENIDO_COMPLETO_MODIFICADO"}\n[/write_file]\n\n` +
+        `**NOTA: SIEMPRE precede el nombre del archivo con "${chatFolder}/" **`);
     }
     
     // MCP tools - only use if servers are actually running and accessible
@@ -808,6 +820,9 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         model,
         max_tokens: maxTokens,
       };
+      
+      // Note: Native tools are passed in system prompt, not as function calling
+      // The Llama model doesn't support function calling in the same way
 
       const res = await fetch(CHAT_URL, {
         method: 'POST',
@@ -873,32 +888,42 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
 
       // Extract tool calls from text response if none from function calling
       if (toolCalls.length === 0 && activeTools.length > 0) {
-        // Try format: [toolname] tool_name | {"args"} [/toolname]
-        const toolCallRegex = /\[(\w+)\]\s*(\w+)\s*\|\s*(\{[^}]*\})\s*\[\/\1\]/g;
+        log(groupId, 'info', 'Extracting tools from response', `activeTools: ${activeTools.join(', ')}`);
+        
+        // Match [toolname] ... [/toolname] with anything in between
+        const toolBlockRegex = /\[(\w+)\]([\s\S]*?)\[\/\1\]/g;
         let match;
-        while ((match = toolCallRegex.exec(responseContent)) !== null) {
-          const toolName = match[2];
-          const argsStr = match[3];
+        while ((match = toolBlockRegex.exec(responseContent)) !== null) {
+          const toolName = match[1];
+          const blockContent = match[2].trim();
+          
+          // Check if this is an active tool
+          if (!activeTools.includes(toolName)) continue;
+          
+          log(groupId, 'info', 'Found tool block', `${toolName}: ${blockContent.slice(0, 100)}`);
+          
+          // Try to parse as JSON
           try {
-            const toolInput = JSON.parse(argsStr);
+            const toolInput = JSON.parse(blockContent);
             toolCalls.push({ name: toolName, arguments: toolInput });
-            log(groupId, 'info', 'Extracted tool from text', `${toolName}: ${argsStr}`);
-          } catch {
-            // Invalid JSON, skip
+            log(groupId, 'info', 'Extracted tool (JSON)', `${toolName}`);
+            continue;
+          } catch {}
+          
+          // Try to extract path and content manually
+          const pathMatch = blockContent.match(/"path"\s*:\s*"([^"]+)"/);
+          const contentMatch = blockContent.match(/"content"\s*:\s*"(.*)"/s);
+          if (pathMatch) {
+            const toolInput: any = { path: pathMatch[1] };
+            if (contentMatch) {
+              toolInput.content = contentMatch[1];
+            }
+            toolCalls.push({ name: toolName, arguments: toolInput });
+            log(groupId, 'info', 'Extracted tool (manual)', `${toolName}: ${pathMatch[1]}`);
           }
         }
-        // Also try format: [TOOL_CALL] tool_name | {"args"} [/TOOL_CALL]
-        if (toolCalls.length === 0) {
-          const altRegex = /\[TOOL_CALL\]\s*(\w+)\s*\|\s*(\{[^}]*\})\s*\[\/TOOL_CALL\]/g;
-          while ((match = altRegex.exec(responseContent)) !== null) {
-            const toolName = match[1];
-            const argsStr = match[2];
-            try {
-              const toolInput = JSON.parse(argsStr);
-              toolCalls.push({ name: toolName, arguments: toolInput });
-            } catch {}
-          }
-        }
+        
+        log(groupId, 'info', 'Tool extraction result', `Found ${toolCalls.length} tools`);
       }
 
       // Extract MCP tool calls from text response
