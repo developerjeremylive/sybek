@@ -134,9 +134,19 @@ export function FilesPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [pinnedFolders, setPinnedFolders] = useState<Set<string>>(new Set());
   const [contextFolders, setContextFolders] = useState<Set<string>>(new Set());
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const groupId = DEFAULT_GROUP_ID;
+  // Use sessionFolder from localStorage if available, otherwise fall back to DEFAULT_GROUP_ID
+  const sessionFolder = localStorage.getItem('currentSessionFolder');
+  const groupId = sessionFolder || DEFAULT_GROUP_ID;
   const currentDir = path.length > 0 ? path.join('/') : '.';
+
+  // Listen for localStorage changes to refresh files
+  useEffect(() => {
+    const handleStorageChange = () => setRefreshKey(k => k + 1);
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Toggle pin for a folder
   function togglePin(folderName: string) {
