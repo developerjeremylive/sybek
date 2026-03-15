@@ -136,8 +136,11 @@ export function FilesPage() {
   const [contextFolders, setContextFolders] = useState<Set<string>>(new Set());
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Get sessionFolder - helper function
+  const getSessionFolder = () => (typeof window !== 'undefined' && (localStorage.getItem('currentSessionFolder') || sessionStorage.getItem('currentSessionFolder'))) || '';
+  
   // Get sessionFolder - always read fresh
-  let sessionFolder = (typeof window !== 'undefined' && localStorage.getItem('currentSessionFolder')) || '';
+  let sessionFolder = getSessionFolder();
   
   // If no sessionFolder but we have a path, use first path segment
   const folderFromPath = path.length > 0 ? path[0] : '';
