@@ -307,7 +307,7 @@ export function FilesPage() {
     loadEntries();
     setPreviewFile(null);
     setPreviewContent(null);
-  }, [loadEntries, refreshKey]);
+  }, [loadEntries, refreshKey, path]);
 
   async function handlePreview(name: string) {
     setPreviewFile(name);
