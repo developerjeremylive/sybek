@@ -139,22 +139,31 @@ export function FilesPage() {
   // Get sessionFolder - helper function
   const getSessionFolder = () => (typeof window !== 'undefined' && (localStorage.getItem('currentSessionFolder') || sessionStorage.getItem('currentSessionFolder'))) || '';
   
+  // Get context folders from localStorage (set by Chat Context)
+  const getContextFolders = (): string[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem('contextFolders');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  };
+  
   // Get sessionFolder - always read fresh
   let sessionFolder = getSessionFolder();
   
-  // If no sessionFolder but we have a path, use first path segment
+  // Get context folders
+  const contextFoldersList = getContextFolders();
+  
+  // If no sessionFolder but we have context folders, use the first one
   const folderFromPath = path.length > 0 ? path[0] : '';
   
-  // If still no sessionFolder, try to get from sessionStorage again
-  if (!sessionFolder) {
-    sessionFolder = (typeof window !== 'undefined' && sessionStorage.getItem('currentSessionFolder')) || '';
-  }
-  
-  // NEVER default to br:main - only use sessionFolder or folderFromPath
-  const groupId = sessionFolder || folderFromPath;
+  // Priority: sessionFolder > first contextFolder > path > empty
+  const groupId = sessionFolder || (contextFoldersList.length > 0 ? contextFoldersList[0] : folderFromPath);
   const currentDir = path.length > 1 ? path.slice(1).join('/') : '.';
   
-  console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'folderFromPath:', folderFromPath);
+  console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'contextFolders:', contextFoldersList, 'folderFromPath:', folderFromPath);
 
   // Listen for localStorage changes AND custom events to refresh files
   useEffect(() => {
