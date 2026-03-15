@@ -120,7 +120,8 @@ export type WorkerOutbound =
   | { type: 'tool-result'; payload: { groupId: string; tool: string; result: string } }
   | { type: 'api-response'; payload: { groupId: string; response: string } }
   | { type: 'save-session-folder'; payload: { folder: string } }
-  | { type: 'refresh-files'; payload: { folder: string } };
+  | { type: 'refresh-files'; payload: { folder: string } }
+  | { type: 'update-chat-context'; payload: { folder: string } };
 
 /** Token usage info from the API */
 export interface TokenUsage {
