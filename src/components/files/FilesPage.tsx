@@ -416,7 +416,7 @@ export function FilesPage() {
                     className={`hover cursor-pointer ${previewFile === entry.name ? 'active' : ''} ${isPinned ? 'bg-primary/10' : ''} ${isContext ? 'bg-success/10' : ''}`}
                     onClick={() =>
                       entry.isDir
-                        ? setPath([...path, entry.name])
+                        ? (console.log('[FilesPage] Clicking folder:', entry.name, 'current path:', path), setPath(prev => prev.includes(entry.name) ? prev : [...prev, entry.name]))
                         : handlePreview(entry.name)
                     }
                   >
