@@ -1389,7 +1389,7 @@ function notifyChatContext(folder: string): void {
   post({ type: 'update-chat-context', payload: { folder } });
 }
 
-function log(groupId: string, kind: 'api-call' | 'tool-call' | 'tool-result' | 'text' | 'info' | 'file-saved' | 'file-error' | 'mcp-tool', label: string, detail: string): void {
+function log(groupId: string, kind: 'api-call' | 'tool-call' | 'tool-result' | 'text' | 'info' | 'file-saved' | 'file-edited' | 'file-error' | 'mcp-tool', label: string, detail: string): void {
   const entry = { groupId, id: ulid(), timestamp: Date.now(), kind, label, detail };
   post({ type: 'thinking-log', payload: entry });
 }
