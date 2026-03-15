@@ -465,6 +465,11 @@ let currentSessionFolder = '';
 // Load session folder from localStorage (will be set from main thread)
 export function setSessionFolder(folder: string): void {
   currentSessionFolder = folder;
+  // Save to localStorage and sessionStorage so FilesPage can read it
+  try {
+    localStorage.setItem('currentSessionFolder', folder);
+    sessionStorage.setItem('currentSessionFolder', folder);
+  } catch {}
 }
 
 // Load context folders from localStorage (will be set from main thread)
@@ -492,6 +497,11 @@ function getSessionFolder(): string {
     const dateStr = now.toISOString().split('T')[0];
     const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
     currentSessionFolder = `chat-${dateStr}-${timeStr}`;
+    // Save to localStorage and sessionStorage so FilesPage can read it
+    try {
+      localStorage.setItem('currentSessionFolder', currentSessionFolder);
+      sessionStorage.setItem('currentSessionFolder', currentSessionFolder);
+    } catch {}
   }
   return currentSessionFolder;
 }
@@ -557,6 +567,7 @@ async function readGroupFile(groupId: string, filePath: string): Promise<string>
 }
 
 async function writeGroupFile(groupId: string, filePath: string, content: string): Promise<void> {
+  console.log('[writeGroupFile] START', { groupId, filePath, contentLength: content.length });
   const dir = await getGroupDir(groupId);
   const { dirs, filename } = parsePath(filePath);
   
@@ -565,13 +576,16 @@ async function writeGroupFile(groupId: string, filePath: string, content: string
     current = await current.getDirectoryHandle(seg, { create: true });
   }
   
+  console.log('[writeGroupFile] About to create file', { filename });
   const fileHandle = await current.getFileHandle(filename, { create: true });
   const writable = await fileHandle.createWritable();
   await writable.write(content);
   await writable.close();
+  console.log('[writeGroupFile] DONE', { groupId, filePath });
 }
 
 async function listGroupFiles(groupId: string, dirPath: string = '.'): Promise<string[]> {
+  console.log('[listGroupFiles] START', { groupId, dirPath });
   const dir = await getGroupDir(groupId);
   
   let current = dir;
@@ -586,6 +600,7 @@ async function listGroupFiles(groupId: string, dirPath: string = '.'): Promise<s
   for await (const [name, handle] of current.entries()) {
     entries.push(handle.kind === 'directory' ? `${name}/` : name);
   }
+  console.log('[listGroupFiles] DONE', { groupId, dirPath, entries });
   return entries.sort();
 }
 
@@ -597,23 +612,22 @@ async function autoSaveCodeFiles(groupId: string, aiResponse: string): Promise<s
   const savedFiles: string[] = [];
   const content = aiResponse;
   
-  // Use context folders if available, otherwise use session folder
-  let targetFolders = [...contextFolders];
-  if (currentSessionFolder && !targetFolders.includes(currentSessionFolder)) {
-    targetFolders = [currentSessionFolder, ...targetFolders];
+  // Use session folder if available, otherwise use context folders
+  const foldersToCheck = currentSessionFolder ? [currentSessionFolder] : [...contextFolders];
+  
+  // Check ALL folders for existing files
+  for (const folder of foldersToCheck) {
+    try {
+      const existingFiles = await listGroupFiles(groupId, folder);
+      // If any folder has files, skip auto-save entirely
+      if (existingFiles.length > 0) {
+        log(groupId, 'info', 'Auto-save skipped', `Folder "${folder}" already has files`);
+        return savedFiles;
+      }
+    } catch {}
   }
   
-  if (targetFolders.length === 0) {
-    targetFolders = [getSessionFolder()];
-  }
-  
-  const targetFolder = targetFolders[0];
-  
-  // Check what files already exist
-  let existingFiles: string[] = [];
-  try {
-    existingFiles = await listGroupFiles(groupId, targetFolder);
-  } catch {}
+  const targetFolder = foldersToCheck[0] || getSessionFolder();
   
   // Extract code blocks from response
   const codeBlockRegex = /```(?:html|css|javascript|js|typescript)?\n([\s\S]*?)```/g;
@@ -647,17 +661,8 @@ async function autoSaveCodeFiles(groupId: string, aiResponse: string): Promise<s
   const htmlRegex = /<!DOCTYPE html>[\s\S]*?<\/html>/gi;
   const htmlMatches = content.match(htmlRegex) || [];
   
-  for (const html of htmlMatches) {
-    if (html.length < 100) continue;
-    try {
-      const filePath = `${targetFolder}/index.html`;
-      await writeGroupFile(groupId, filePath, html);
-      if (!savedFiles.includes(filePath)) {
-        savedFiles.push(filePath);
-        log(groupId, 'file-saved', 'Saved HTML', filePath);
-      }
-    } catch {}
-  }
+  // Skip auto-saving index.html if MCP already saved an mcp-*.html file
+  // (handled by early return above if existingFiles.length > 0)
   
   return savedFiles;
 }
@@ -685,6 +690,14 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
     currentSessionFolder = sessionFolder;
   } else if (!currentSessionFolder) {
     getSessionFolder();
+  }
+  
+  // Save sessionFolder to localStorage and sessionStorage so FilesPage can read it
+  if (currentSessionFolder) {
+    try {
+      localStorage.setItem('currentSessionFolder', currentSessionFolder);
+      sessionStorage.setItem('currentSessionFolder', currentSessionFolder);
+    } catch {}
   }
   
   // Set context folders from payload
@@ -1079,8 +1092,33 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   const htmlContent = cfResult.html;
                   const htmlSize = htmlContent.length;
                   
-                  // Use current session folder for saving
-                  const saveFolder = currentSessionFolder || groupId;
+                  // Determine the saveFolder - prioritize sessionFolder from payload
+                  let saveFolder = sessionFolder || currentSessionFolder;
+                  
+                  // If still empty, generate a new folder with timestamp based on URL domain
+                  if (!saveFolder || saveFolder === '') {
+                    let domain = 'page';
+                    try {
+                      const url = new URL(mcpArgs.url);
+                      domain = url.hostname.replace(/\./g, '-');
+                    } catch {}
+                    saveFolder = `chat-${domain}-${Date.now()}`;
+                  }
+                  
+                  // FORCE save to storage IMMEDIATELY before any file operation
+                  try {
+// Save sessionFolder via message to main thread
+                  saveSessionFolderToStorage(saveFolder);
+                  
+                  // Also try localStorage/sessionStorage as fallback (might work in some contexts)
+                  try {
+                    localStorage.setItem('currentSessionFolder', saveFolder);
+                    sessionStorage.setItem('currentSessionFolder', saveFolder);
+                  } catch {}
+                  } catch (e) {
+                    console.log('[agent-worker] Failed to save sessionFolder:', e);
+                  }
+                  log(groupId, 'mcp-tool', 'DEBUG saveFolder', `sessionFolder="${sessionFolder}", currentSessionFolder="${currentSessionFolder}", groupId="${groupId}" -> saveFolder="${saveFolder}"`);
                   
                   // If HTML is larger than 10KB, save directly in chat folder (no subfolder)
                   if (htmlSize > 10000) {
@@ -1096,8 +1134,26 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                     const sizeInfo = `HTML muy grande (${Math.round(htmlSize/1024)}KB).`;
                     
                     try {
+                      // Debug: log the folder being used
+                      log(groupId, 'mcp-tool', 'DEBUG', `saveFolder="${saveFolder}", currentSessionFolder="${currentSessionFolder}"`);
+                      
+                      console.log('[agent-worker] About to save HTML, content length:', htmlContent.length, 'first 200 chars:', htmlContent.slice(0, 200));
+                      
                       await writeGroupFile(saveFolder, fileName, htmlContent);
                       log(saveFolder, 'mcp-tool', 'HTML saved to chat folder', fileName);
+                      
+                      // Verify file was saved by listing files
+                      try {
+                        const files = await listGroupFiles(saveFolder, '.');
+                        log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
+                        // Notify FilesPage to refresh (large HTML)
+                        try { 
+                          window.dispatchEvent(new CustomEvent('obc-files-refresh')); 
+                          console.log('[agent-worker] Dispatched obc-files-refresh event');
+                        } catch {}
+                      } catch (e) {
+                        log(saveFolder, 'mcp-tool', 'List error', String(e));
+                      }
                       
                       // Add folder to context automatically
                       addFolderToContext(saveFolder);
@@ -1117,8 +1173,21 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                     } catch {}
                     const fileName = `mcp-${domain}-${timestamp}.html`;
                     try {
+                      // Debug: log the folder being used
+                      log(groupId, 'mcp-tool', 'DEBUG sm HTML', `saveFolder="${saveFolder}", currentSessionFolder="${currentSessionFolder}"`);
+                      
                       await writeGroupFile(saveFolder, fileName, htmlContent);
                       log(saveFolder, 'mcp-tool', 'HTML saved to chat folder', fileName);
+                      
+                      // Verify file was saved by listing files
+                      try {
+                        const files = await listGroupFiles(saveFolder, '.');
+                        log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
+                        // Notify FilesPage to refresh (small HTML)
+                        try { window.dispatchEvent(new CustomEvent('obc-files-refresh')); } catch {}
+                      } catch (e) {
+                        log(saveFolder, 'mcp-tool', 'List error', String(e));
+                      }
                       
                       // Add folder to context automatically
                       addFolderToContext(saveFolder);
@@ -1262,6 +1331,11 @@ async function handleCompact(payload: CompactPayload): Promise<void> {
 
 function post(msg: WorkerOutbound): void {
   self.postMessage(msg);
+}
+
+function saveSessionFolderToStorage(folder: string): void {
+  // Send message to main thread to save sessionFolder
+  post({ type: 'save-session-folder', payload: { folder } });
 }
 
 function log(groupId: string, kind: 'api-call' | 'tool-call' | 'tool-result' | 'text' | 'info' | 'file-saved' | 'file-error' | 'mcp-tool', label: string, detail: string): void {

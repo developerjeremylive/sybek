@@ -134,9 +134,71 @@ export function FilesPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [pinnedFolders, setPinnedFolders] = useState<Set<string>>(new Set());
   const [contextFolders, setContextFolders] = useState<Set<string>>(new Set());
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const groupId = DEFAULT_GROUP_ID;
-  const currentDir = path.length > 0 ? path.join('/') : '.';
+  // Get sessionFolder - helper function
+  const getSessionFolder = () => (typeof window !== 'undefined' && (localStorage.getItem('currentSessionFolder') || sessionStorage.getItem('currentSessionFolder'))) || '';
+  
+  // Get context folders from localStorage (set by Chat Context)
+  const getContextFolders = (): string[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem('contextFolders');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  };
+  
+  // Get sessionFolder - always read fresh
+  let sessionFolder = getSessionFolder();
+  
+  // Get context folders
+  const contextFoldersList = getContextFolders();
+  
+  // If no sessionFolder but we have context folders, use the first one
+  const folderFromPath = path.length > 0 ? path[0] : '';
+  
+  // Priority: sessionFolder > first contextFolder > path > empty
+  const groupId = sessionFolder || (contextFoldersList.length > 0 ? contextFoldersList[0] : folderFromPath);
+  const currentDir = path.length > 1 ? path.slice(1).join('/') : '.';
+  
+  console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'contextFolders:', contextFoldersList, 'folderFromPath:', folderFromPath);
+
+  // Listen for localStorage changes AND custom events to refresh files
+  useEffect(() => {
+    let lastFolder = getSessionFolder();
+    
+    const handleRefresh = () => {
+      const newFolder = getSessionFolder();
+      console.log('[FilesPage] Event refresh, sessionFolder:', newFolder);
+      if (newFolder !== lastFolder) {
+        lastFolder = newFolder;
+      }
+      setRefreshKey(k => k + 1);
+    };
+    
+    // Listen for storage events (from other tabs)
+    window.addEventListener('storage', handleRefresh);
+    // Listen for custom refresh events (from same tab)
+    window.addEventListener('obc-files-refresh', handleRefresh);
+    
+    // Poll every 2 seconds for changes
+    const interval = setInterval(() => {
+      const folder = getSessionFolder();
+      if (folder !== lastFolder) {
+        console.log('[FilesPage] Poll detected new folder:', folder);
+        lastFolder = folder;
+        setRefreshKey(k => k + 1);
+      }
+    }, 2000);
+    
+    return () => {
+      window.removeEventListener('storage', handleRefresh);
+      window.removeEventListener('obc-files-refresh', handleRefresh);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Toggle pin for a folder
   function togglePin(folderName: string) {
@@ -232,13 +294,13 @@ export function FilesPage() {
     } finally {
       setLoading(false);
     }
-  }, [groupId, currentDir]);
+  }, [groupId, currentDir, refreshKey]);
 
   useEffect(() => {
     loadEntries();
     setPreviewFile(null);
     setPreviewContent(null);
-  }, [loadEntries]);
+  }, [loadEntries, refreshKey]);
 
   async function handlePreview(name: string) {
     setPreviewFile(name);
