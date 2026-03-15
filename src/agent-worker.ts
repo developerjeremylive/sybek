@@ -902,15 +902,6 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         }
         
         log(groupId, 'info', 'Tool extraction result', `Found ${toolCalls.length} tools`);
-          while ((match = altRegex.exec(responseContent)) !== null) {
-            const toolName = match[1];
-            const argsStr = match[2];
-            try {
-              const toolInput = JSON.parse(argsStr);
-              toolCalls.push({ name: toolName, arguments: toolInput });
-            } catch {}
-          }
-        }
       }
 
       // Extract MCP tool calls from text response
