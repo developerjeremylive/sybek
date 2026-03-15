@@ -1145,9 +1145,9 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   const sizeInfo = `HTML grande (${Math.round(htmlSize/1024)}KB).`;
                   
                   try {
-                    // Debug: log the folder being used
-                    log(groupId, 'mcp-tool', 'DEBUG', `saveGroupId="${saveGroupId}", saveFilePath="${saveFilePath}"`);
-                    console.log('[agent-worker] About to save HTML to:', saveGroupId, '/', saveFilePath);
+                    // Debug: log the folder being used and content
+                    log(groupId, 'mcp-tool', 'DEBUG', `saveGroupId="${saveGroupId}", saveFilePath="${saveFilePath}", htmlSize=${htmlContent.length}`);
+                    console.log('[agent-worker] About to save HTML to:', saveGroupId, '/', saveFilePath, 'content length:', htmlContent.length, 'first 200 chars:', htmlContent.slice(0, 200));
                     
                     await writeGroupFile(saveGroupId, saveFilePath, htmlContent);
                     log(saveGroupId, 'mcp-tool', 'HTML saved to chat folder', saveFilePath);
