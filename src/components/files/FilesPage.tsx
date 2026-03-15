@@ -165,7 +165,7 @@ export function FilesPage() {
   if (!groupId) {
     console.warn('[FilesPage] groupId is empty, no sessionFolder or contextFolders set!');
   }
-  const currentDir = path.length > 1 ? path.slice(1).join('/') : '.';
+  const currentDir = path.length > 0 ? path.join('/') : '.';
   
   console.log('[FilesPage] groupId:', groupId, 'sessionFolder:', sessionFolder, 'contextFolders:', contextFoldersList, 'folderFromPath:', folderFromPath);
 
