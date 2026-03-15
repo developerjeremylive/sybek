@@ -101,6 +101,7 @@ export async function listGroupFiles(
   groupId: string,
   dirPath: string = '.',
 ): Promise<string[]> {
+  console.log('[storage.ts listGroupFiles] START', { groupId, dirPath, OPFS_ROOT });
   const groupDir = await getGroupDir(groupId);
 
   let dir = groupDir;
@@ -115,6 +116,7 @@ export async function listGroupFiles(
   for await (const [name, handle] of dir.entries()) {
     entries.push(handle.kind === 'directory' ? `${name}/` : name);
   }
+  console.log('[storage.ts listGroupFiles] DONE', { groupId, dirPath, entries });
   return entries.sort();
 }
 
