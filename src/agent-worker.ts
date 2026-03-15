@@ -35,31 +35,111 @@ function extractHtmlSummary(html: string): string {
   
   // Extract title
   const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-  if (titleMatch) parts.push(`Título: ${titleMatch[1].trim()}`);
+  if (titleMatch) parts.push(`TÍTULO: ${titleMatch[1].trim()}`);
   
   // Extract meta description
   const descMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i) 
                 || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i);
-  if (descMatch) parts.push(`Descripción: ${descMatch[1].trim().slice(0, 200)}`);
+  if (descMatch) parts.push(`\nDESCRIPCIÓN: ${descMatch[1].trim()}`);
   
-  // Extract main h1 headings
-  const h1Matches = html.match(/<h1[^>]*>([^<]+)<\/h1>/gi);
-  if (h1Matches) {
-    const h1Texts = h1Matches.map(m => m.replace(/<[^>]+>/g, '').trim()).slice(0, 3);
-    parts.push(`Encabezados H1: ${h1Texts.join(', ')}`);
+  // Extract ALL headings (h1-h6)
+  const allHeadings: string[] = [];
+  for (let i = 1; i <= 6; i++) {
+    const matches = html.match(new RegExp(`<h${i}[^>]*>([^<]+)<\\/h${i}>`, 'gi'));
+    if (matches) {
+      const texts = matches.map(m => m.replace(/<[^>]+>/g, '').trim());
+      allHeadings.push(...texts);
+    }
+  }
+  if (allHeadings.length > 0) {
+    parts.push(`\nENCABEZADOS (${allHeadings.length}): ${allHeadings.join(' | ')}`);
   }
   
-  // Extract h2 headings
-  const h2Matches = html.match(/<h2[^>]*>([^<]+)<\/h2>/gi);
-  if (h2Matches) {
-    const h2Texts = h2Matches.map(m => m.replace(/<[^>]+>/g, '').trim()).slice(0, 5);
-    parts.push(`Secciones: ${h2Texts.join(', ')}`);
+  // Extract ALL paragraphs (not just the first one)
+  const pMatches = html.match(/<p[^>]*>([^<]+)<\/p>/gi);
+  if (pMatches) {
+    const pTexts = pMatches.map(m => m.replace(/<[^>]+>/g, '').trim()).filter(t => t.length > 20);
+    if (pTexts.length > 0) {
+      parts.push(`\nPÁRRAFOS (${pTexts.length} encontrados):`);
+      pTexts.slice(0, 10).forEach((p, i) => {
+        parts.push(`  ${i + 1}. ${p.slice(0, 500)}`);
+      });
+      if (pTexts.length > 10) {
+        parts.push(`  ... y ${pTexts.length - 10} más`);
+      }
+    }
   }
   
-  // Extract main content text (first paragraph after body or main)
-  const pMatch = html.match(/<p[^>]*>([^<]{50,})<\/p>/i);
-  if (pMatch) {
-    parts.push(`Contenido: ${pMatch[1].replace(/<[^>]+>/g, '').trim().slice(0, 300)}...`);
+  // Extract list items (ul/ol)
+  const liMatches = html.match(/<li[^>]*>([^<]+)<\/li>/gi);
+  if (liMatches) {
+    const liTexts = liMatches.map(m => m.replace(/<[^>]+>/g, '').trim()).filter(t => t.length > 2);
+    if (liTexts.length > 0) {
+      parts.push(`\nELEMENTOS DE LISTA (${liTexts.length}):`);
+      liTexts.slice(0, 20).forEach((li, i) => {
+        parts.push(`  • ${li.slice(0, 200)}`);
+      });
+      if (liTexts.length > 20) {
+        parts.push(`  ... y ${liTexts.length - 20} más`);
+      }
+    }
+  }
+  
+  // Extract links
+  const linkMatches = html.match(/<a[^>]+href=["']([^"']+)["'][^>]*>([^<]*)<\/a>/gi);
+  if (linkMatches) {
+    const links = linkMatches.map(m => {
+      const hrefMatch = m.match(/href=["']([^"']+)["']/);
+      const textMatch = m.match(/>([^<]+)</);
+      return hrefMatch ? { text: textMatch ? textMatch[1].trim() : 'Sin texto', url: hrefMatch[1] } : null;
+    }).filter(Boolean);
+    
+    if (links.length > 0) {
+      // Show anchor text
+      const linkTexts = links.slice(0, 15).map(l => l!.text);
+      parts.push(`\nENLACES - Texto (${links.length}): ${linkTexts.join(' | ')}`);
+      
+      // Show full URLs separately (only external ones)
+      const externalLinks = links.filter(l => l!.url.startsWith('http')).slice(0, 10).map(l => l!.url);
+      if (externalLinks.length > 0) {
+        parts.push(`\nENLACES - URLs Externas:\n${externalLinks.join('\n')}`);
+      }
+    }
+  }
+  
+  // Extract contact info (email, phone)
+  const emailMatch = html.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
+  if (emailMatch) {
+    parts.push(`\nEMAILS: ${[...new Set(emailMatch)].join(', ')}`);
+  }
+  const phoneMatch = html.match(/(\+?[\d\s\-().]{10,})/g);
+  if (phoneMatch) {
+    const phones = phoneMatch.filter(p => p.replace(/\D/g, '').length >= 10).slice(0, 5);
+    if (phones.length > 0) {
+      parts.push(`\nTELÉFONOS: ${phones.join(', ')}`);
+    }
+  }
+  
+  // Extract social media links
+  const socialDomains = ['linkedin.com', 'github.com', 'twitter.com', 'facebook.com', 'instagram.com', 'youtube.com'];
+  const socialLinks = linkMatches?.filter((l: string) => socialDomains.some(d => l.toLowerCase().includes(d))).slice(0, 10);
+  if (socialLinks && socialLinks.length > 0) {
+    parts.push(`\nREDES SOCIALES: ${socialLinks.join(' | ')}`);
+  }
+  
+  // Extract image alt texts
+  const imgMatches = html.match(/<img[^>]+alt=["']([^"']+)["']/gi);
+  if (imgMatches) {
+    const altTexts = imgMatches.map(m => m.match(/alt=["']([^"']+)["']/)?.[1]).filter(Boolean).slice(0, 10);
+    if (altTexts.length > 0) {
+      parts.push(`\nIMÁGENES: ${altTexts.join(', ')}`);
+    }
+  }
+  
+  // Extract skills (common patterns)
+  const skillsMatch = html.match(/(?:skills|habilidades|technologies|technologies|stack)[\s:]+([^<]{10,200})/i);
+  if (skillsMatch) {
+    parts.push(`\nHABILIDADES/TECH: ${skillsMatch[1].trim()}`);
   }
   
   return parts.join('\n');
@@ -385,6 +465,11 @@ let currentSessionFolder = '';
 // Load session folder from localStorage (will be set from main thread)
 export function setSessionFolder(folder: string): void {
   currentSessionFolder = folder;
+  // Save to localStorage and sessionStorage so FilesPage can read it
+  try {
+    localStorage.setItem('currentSessionFolder', folder);
+    sessionStorage.setItem('currentSessionFolder', folder);
+  } catch {}
 }
 
 // Load context folders from localStorage (will be set from main thread)
@@ -394,6 +479,17 @@ export function setContextFolders(folders: string[]): void {
   contextFolders = folders;
 }
 
+// Add a folder to context automatically when saving MCP HTML
+function addFolderToContext(folder: string): void {
+  if (!contextFolders.includes(folder)) {
+    contextFolders = [...contextFolders, folder];
+    // Save to localStorage so it persists
+    try {
+      localStorage.setItem('contextFolders', JSON.stringify(contextFolders));
+    } catch {}
+  }
+}
+
 // Generate a unique session folder based on timestamp
 function getSessionFolder(): string {
   if (!currentSessionFolder) {
@@ -401,6 +497,11 @@ function getSessionFolder(): string {
     const dateStr = now.toISOString().split('T')[0];
     const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
     currentSessionFolder = `chat-${dateStr}-${timeStr}`;
+    // Save to localStorage and sessionStorage so FilesPage can read it
+    try {
+      localStorage.setItem('currentSessionFolder', currentSessionFolder);
+      sessionStorage.setItem('currentSessionFolder', currentSessionFolder);
+    } catch {}
   }
   return currentSessionFolder;
 }
@@ -466,21 +567,36 @@ async function readGroupFile(groupId: string, filePath: string): Promise<string>
 }
 
 async function writeGroupFile(groupId: string, filePath: string, content: string): Promise<void> {
-  const dir = await getGroupDir(groupId);
+  console.log('[writeGroupFile] START', { groupId, filePath, contentLength: content.length });
+  const root = await navigator.storage.getDirectory();
+  const safeId = groupId.replace(/:/g, '-');
+  console.log('[writeGroupFile] Creating directory structure:', 'openbrowserclaw', 'groups', safeId);
+  
+  // Create the full path step by step
+  let current = await root.getDirectoryHandle('openbrowserclaw', { create: true });
+  console.log('[writeGroupFile] Got/created openbrowserclaw');
+  current = await current.getDirectoryHandle('groups', { create: true });
+  console.log('[writeGroupFile] Got/created groups');
+  current = await current.getDirectoryHandle(safeId, { create: true });
+  console.log('[writeGroupFile] Got/created group dir:', safeId);
+  
   const { dirs, filename } = parsePath(filePath);
   
-  let current = dir;
+  let fileDir = current;
   for (const seg of dirs) {
-    current = await current.getDirectoryHandle(seg, { create: true });
+    fileDir = await fileDir.getDirectoryHandle(seg, { create: true });
   }
   
-  const fileHandle = await current.getFileHandle(filename, { create: true });
+  console.log('[writeGroupFile] About to create file', { filename, inDir: dirs.length > 0 ? dirs : 'root' });
+  const fileHandle = await fileDir.getFileHandle(filename, { create: true });
   const writable = await fileHandle.createWritable();
   await writable.write(content);
   await writable.close();
+  console.log('[writeGroupFile] DONE', { groupId, filePath });
 }
 
 async function listGroupFiles(groupId: string, dirPath: string = '.'): Promise<string[]> {
+  console.log('[listGroupFiles] START', { groupId, dirPath });
   const dir = await getGroupDir(groupId);
   
   let current = dir;
@@ -495,6 +611,7 @@ async function listGroupFiles(groupId: string, dirPath: string = '.'): Promise<s
   for await (const [name, handle] of current.entries()) {
     entries.push(handle.kind === 'directory' ? `${name}/` : name);
   }
+  console.log('[listGroupFiles] DONE', { groupId, dirPath, entries });
   return entries.sort();
 }
 
@@ -506,23 +623,22 @@ async function autoSaveCodeFiles(groupId: string, aiResponse: string): Promise<s
   const savedFiles: string[] = [];
   const content = aiResponse;
   
-  // Use context folders if available, otherwise use session folder
-  let targetFolders = [...contextFolders];
-  if (currentSessionFolder && !targetFolders.includes(currentSessionFolder)) {
-    targetFolders = [currentSessionFolder, ...targetFolders];
+  // Use session folder if available, otherwise use context folders
+  const foldersToCheck = currentSessionFolder ? [currentSessionFolder] : [...contextFolders];
+  
+  // Check ALL folders for existing files
+  for (const folder of foldersToCheck) {
+    try {
+      const existingFiles = await listGroupFiles(groupId, folder);
+      // If any folder has files, skip auto-save entirely
+      if (existingFiles.length > 0) {
+        log(groupId, 'info', 'Auto-save skipped', `Folder "${folder}" already has files`);
+        return savedFiles;
+      }
+    } catch {}
   }
   
-  if (targetFolders.length === 0) {
-    targetFolders = [getSessionFolder()];
-  }
-  
-  const targetFolder = targetFolders[0];
-  
-  // Check what files already exist
-  let existingFiles: string[] = [];
-  try {
-    existingFiles = await listGroupFiles(groupId, targetFolder);
-  } catch {}
+  const targetFolder = foldersToCheck[0] || getSessionFolder();
   
   // Extract code blocks from response
   const codeBlockRegex = /```(?:html|css|javascript|js|typescript)?\n([\s\S]*?)```/g;
@@ -556,17 +672,8 @@ async function autoSaveCodeFiles(groupId: string, aiResponse: string): Promise<s
   const htmlRegex = /<!DOCTYPE html>[\s\S]*?<\/html>/gi;
   const htmlMatches = content.match(htmlRegex) || [];
   
-  for (const html of htmlMatches) {
-    if (html.length < 100) continue;
-    try {
-      const filePath = `${targetFolder}/index.html`;
-      await writeGroupFile(groupId, filePath, html);
-      if (!savedFiles.includes(filePath)) {
-        savedFiles.push(filePath);
-        log(groupId, 'file-saved', 'Saved HTML', filePath);
-      }
-    } catch {}
-  }
+  // Skip auto-saving index.html if MCP already saved an mcp-*.html file
+  // (handled by early return above if existingFiles.length > 0)
   
   return savedFiles;
 }
@@ -587,13 +694,22 @@ interface MCPTool {
 async function handleInvoke(payload: InvokePayload): Promise<void> {
   const { groupId = DEFAULT_GROUP_ID, messages, systemPrompt, model = DEFAULT_MODEL, maxTokens = 4096, sessionFolder, contextFolders, fileContext, tools, mcpTools, mcpServers = [] } = payload;
 
-  // Use first context folder as working folder if available, otherwise use sessionFolder
-  if (contextFolders && contextFolders.length > 0) {
-    currentSessionFolder = contextFolders[0];
-  } else if (sessionFolder) {
+  // Use sessionFolder first (from payload), then contextFolders, then existing currentSessionFolder
+  // Priority: sessionFolder > contextFolders[0] > currentSessionFolder
+  if (sessionFolder) {
     currentSessionFolder = sessionFolder;
+  } else if (contextFolders && contextFolders.length > 0) {
+    currentSessionFolder = contextFolders[0];
   } else if (!currentSessionFolder) {
     getSessionFolder();
+  }
+  
+  // Save sessionFolder to localStorage and sessionStorage so FilesPage can read it
+  if (currentSessionFolder) {
+    try {
+      localStorage.setItem('currentSessionFolder', currentSessionFolder);
+      sessionStorage.setItem('currentSessionFolder', currentSessionFolder);
+    } catch {}
   }
   
   // Set context folders from payload
@@ -988,36 +1104,72 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                   const htmlContent = cfResult.html;
                   const htmlSize = htmlContent.length;
                   
-                  // If HTML is larger than 10KB, save to file
-                  if (htmlSize > 10000) {
-                    const timestamp = Date.now();
-                    // Create a subfolder for MCP screenshots
-                    const folderName = `mcp-screenshots-${timestamp}`;
-                    const fileName = `${folderName}/screenshot.html`;
-                    const summary = extractHtmlSummary(htmlContent);
-                    const sizeInfo = `HTML muy grande (${Math.round(htmlSize/1024)}KB).`;
+                  // Determine the saveFolder - prioritize sessionFolder from payload
+                  let saveFolder = sessionFolder || currentSessionFolder;
+                  
+                  // If still empty, generate a new folder with timestamp based on URL domain
+                  if (!saveFolder || saveFolder === '') {
+                    const now = Date.now();
+                    let domain = 'page';
+                    try {
+                      const url = new URL(mcpArgs.url);
+                      domain = url.hostname.replace(/\./g, '-');
+                    } catch {}
+                    saveFolder = `chat-${domain}-${now}`;
+                  }
+                  
+                  // FORCE save to storage IMMEDIATELY before any file operation
+                  try {
+                    saveSessionFolderToStorage(saveFolder);
+                    try {
+                      localStorage.setItem('currentSessionFolder', saveFolder);
+                      sessionStorage.setItem('currentSessionFolder', saveFolder);
+                    } catch {}
+                  } catch (e) {
+                    console.log('[agent-worker] Failed to save sessionFolder:', e);
+                  }
+                  
+                  // Generate filename with timestamp
+                  const timestamp = Date.now();
+                  let domain = 'page';
+                  try {
+                    const url = new URL(mcpArgs.url);
+                    domain = url.hostname.replace(/\./g, '-');
+                  } catch {}
+                  const fileName = `mcp-${domain}-${timestamp}.html`;
+                  
+                  // Save to br:main with saveFolder as subfolder
+                  const saveGroupId = DEFAULT_GROUP_ID;
+                  const saveFilePath = `${saveFolder}/${fileName}`;
+                  const summary = extractHtmlSummary(htmlContent);
+                  const sizeInfo = `HTML grande (${Math.round(htmlSize/1024)}KB).`;
+                  
+                  try {
+                    // Debug: log the folder being used and content
+                    log(groupId, 'mcp-tool', 'DEBUG', `saveGroupId="${saveGroupId}", saveFilePath="${saveFilePath}", htmlSize=${htmlContent.length}`);
+                    console.log('[agent-worker] About to save HTML to:', saveGroupId, '/', saveFilePath, 'content length:', htmlContent.length, 'first 200 chars:', htmlContent.slice(0, 200));
                     
+                    await writeGroupFile(saveGroupId, saveFilePath, htmlContent);
+                    log(saveGroupId, 'mcp-tool', 'HTML saved to chat folder', saveFilePath);
+                    console.log('[agent-worker] HTML saved successfully to:', saveGroupId, '/', saveFilePath);
+                    
+                    // Verify file was saved by listing files
                     try {
-                      await writeGroupFile(groupId, fileName, htmlContent);
-                      log(groupId, 'mcp-tool', 'HTML saved to folder', folderName);
-                      resultToShow = `HTML guardado en carpeta: ${folderName}/screenshot.html\n\n${summary}\n\nLee el archivo HTML completo desde la carpeta Files para dar una respuesta completa y detallada sobre el contenido de la página. NO hables de browser rendering ni del tamaño del archivo - explica qué es y qué contiene la página web basándote en el HTML guardado.`;
-                    } catch (saveError) {
-                      log(groupId, 'mcp-tool', 'Failed to save HTML', String(saveError));
-                      resultToShow = `${sizeInfo}\n\n${summary}\n(Nota: No se pudo guardar el archivo)`;
+                      const files = await listGroupFiles(saveGroupId, saveFolder);
+                      log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
+                      // Notify FilesPage to refresh - stay in br:main
+                      notifyFilesRefresh(saveGroupId);
+                    } catch (e) {
+                      log(saveFolder, 'mcp-tool', 'List error', String(e));
                     }
-                  } else {
-                    // Small HTML - save to file
-                    const timestamp = Date.now();
-                    const folderName = `mcp-screenshots-${timestamp}`;
-                    const fileName = `${folderName}/screenshot.html`;
-                    try {
-                      await writeGroupFile(groupId, fileName, htmlContent);
-                      log(groupId, 'mcp-tool', 'HTML saved to folder', folderName);
-                      const summary = extractHtmlSummary(htmlContent);
-                      resultToShow = `HTML guardado en carpeta: ${folderName}/screenshot.html\n\n${summary}\n\nLee el archivo desde Files para dar una respuesta detallada. NO menciones browser rendering - solo explica el contenido de la página.`;
-                    } catch (saveError) {
-                      resultToShow = `Contenido de la página:\n\n${htmlContent.slice(0, 5000)}\n\nNota: Si necesitas más detalle, puedo volver a pedir la página completa.`;
-                    }
+                    
+                    // Add folder to context automatically
+                    addFolderToContext(saveFolder);
+                    
+                    resultToShow = `HTML GUARDADO EN ARCHIVO: ${saveFilePath}\n\n${summary}\n\nLa carpeta "${saveFolder}" ha sido agregada al contexto del chat. El archivo HTML completo está disponible en Files > br:main > ${saveFolder} > ${fileName}. Lee el archivo completo para dar una respuesta más detallada sobre TODO el contenido de la página.`;
+                  } catch (saveError) {
+                    log(saveFolder, 'mcp-tool', 'Failed to save HTML', String(saveError));
+                    resultToShow = `${sizeInfo}\n\n${summary}\n(Nota: No se pudo guardar el archivo)`;
                   }
                 }
                 
@@ -1152,6 +1304,16 @@ async function handleCompact(payload: CompactPayload): Promise<void> {
 
 function post(msg: WorkerOutbound): void {
   self.postMessage(msg);
+}
+
+function saveSessionFolderToStorage(folder: string): void {
+  // Send message to main thread to save sessionFolder
+  post({ type: 'save-session-folder', payload: { folder } });
+}
+
+function notifyFilesRefresh(folder?: string): void {
+  // Send message to main thread to refresh FilesPage
+  post({ type: 'refresh-files', payload: { folder: folder || '' } });
 }
 
 function log(groupId: string, kind: 'api-call' | 'tool-call' | 'tool-result' | 'text' | 'info' | 'file-saved' | 'file-error' | 'mcp-tool', label: string, detail: string): void {
