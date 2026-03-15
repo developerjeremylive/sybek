@@ -748,10 +748,10 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         toolDescriptions.push(`- ${tool.name}(${params}): ${tool.description}`);
       });
       toolDescriptions.push('\n### FORMATO OBLIGATORIO para usar herramientas de archivos:');
-      toolDescriptions.push(`** NO puedes mostrar código directamente. DEBES usar este formato exacto (usa "${chatFolder}" como carpeta): **\n` +
-        `[read_file]\n{"path": "${chatFolder}/NOMBRE_DEL_ARCHIVO.html"}\n[/read_file]\n\n` +
-        `[write_file]\n{"path": "${chatFolder}/NOMBRE_DEL_ARCHIVO.html", "content": "<!DOCTYPE html>...código completo..."}\n[/write_file]\n\n` +
+      toolDescriptions.push(`**PASOS PARA MODIFICAR ARCHIVOS:**\n1. Primero usa [list_files] para ver los archivos disponibles\n2. Luego usa [read_file] para LEER el contenido actual\n3. Finalmente usa [write_file] para GUARDAR los cambios\n\n**NO puedes escribir directamente - debes seguir estos 3 pasos.**\n` +
         `[list_files]\n{"path": "${chatFolder}"}\n[/list_files]\n\n` +
+        `[read_file]\n{"path": "${chatFolder}/NOMBRE_DEL_ARCHIVO.html"}\n[/read_file]\n\n` +
+        `[write_file]\n{"path": "${chatFolder}/NOMBRE_DEL_ARCHIVO.html", "content": "CONTENIDO_COMPLETO_MODIFICADO"}\n[/write_file]\n\n` +
         `**NOTA: SIEMPRE precede el nombre del archivo con "${chatFolder}/" **`);
     }
     
