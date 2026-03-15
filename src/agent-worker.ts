@@ -325,7 +325,6 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
         log(DEFAULT_GROUP_ID, 'file-saved', 'Archivo guardado', input.path);
         return `File saved: ${input.path}`;
       }
-      }
       case 'list_files': {
         const files = await listGroupFiles(DEFAULT_GROUP_ID, input.path || '.');
         return `Files in ${input.path || '/'}: ${files.join(', ')}`;
