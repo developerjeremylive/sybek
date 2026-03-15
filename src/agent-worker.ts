@@ -890,44 +890,37 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       if (toolCalls.length === 0 && activeTools.length > 0) {
         log(groupId, 'info', 'Extracting tools from response', `activeTools: ${activeTools.join(', ')}`);
         
-        // Try different formats
-        const formats = [
-          // Format: [toolname]\n{"args"}\n[/toolname] or [toolname]{"args"}[/toolname]
-          /\[(\w+)\]\s*(\{[^}]*\})\s*\[\/\1\]/g,
-          // Format: [toolname] {"args"} [/toolname]
-          /\[(\w+)\]\s*\{[^}]*\}\s*\[\/\w+\]/g,
-          // Simple: [write_file] content [/write_file]
-          /\[(\w+)\]([\s\S]*?)\[\/\1\]/g,
-        ];
-        
-        for (const toolCallRegex of formats) {
-          let match;
-          while ((match = toolCallRegex.exec(responseContent)) !== null) {
-            const toolName = match[1];
-            // Check if this is an active tool
-            if (!activeTools.includes(toolName)) continue;
-            
-            const argsStr = match[2];
-            try {
-              // Try to parse as JSON
-              const toolInput = JSON.parse(argsStr);
-              toolCalls.push({ name: toolName, arguments: toolInput });
-              log(groupId, 'info', 'Extracted tool (JSON)', `${toolName}: ${argsStr.slice(0, 100)}`);
-            } catch {
-              // If not JSON, try to extract path and content manually
-              const pathMatch = argsStr.match(/"path"\s*:\s*"([^"]+)"/);
-              const contentMatch = argsStr.match(/"content"\s*:\s*"([\s\S]*?)"(?:\s*,|\s*})/);
-              if (pathMatch) {
-                const toolInput: any = { path: pathMatch[1] };
-                if (contentMatch) {
-                  toolInput.content = contentMatch[1];
-                }
-                toolCalls.push({ name: toolName, arguments: toolInput });
-                log(groupId, 'info', 'Extracted tool (manual)', `${toolName}: ${pathMatch[1]}`);
-              }
+        // Match [toolname] ... [/toolname] with anything in between
+        const toolBlockRegex = /\[(\w+)\]([\s\S]*?)\[\/\1\]/g;
+        let match;
+        while ((match = toolBlockRegex.exec(responseContent)) !== null) {
+          const toolName = match[1];
+          const blockContent = match[2].trim();
+          
+          // Check if this is an active tool
+          if (!activeTools.includes(toolName)) continue;
+          
+          log(groupId, 'info', 'Found tool block', `${toolName}: ${blockContent.slice(0, 100)}`);
+          
+          // Try to parse as JSON
+          try {
+            const toolInput = JSON.parse(blockContent);
+            toolCalls.push({ name: toolName, arguments: toolInput });
+            log(groupId, 'info', 'Extracted tool (JSON)', `${toolName}`);
+            continue;
+          } catch {}
+          
+          // Try to extract path and content manually
+          const pathMatch = blockContent.match(/"path"\s*:\s*"([^"]+)"/);
+          const contentMatch = blockContent.match(/"content"\s*:\s*"(.*)"/s);
+          if (pathMatch) {
+            const toolInput: any = { path: pathMatch[1] };
+            if (contentMatch) {
+              toolInput.content = contentMatch[1];
             }
+            toolCalls.push({ name: toolName, arguments: toolInput });
+            log(groupId, 'info', 'Extracted tool (manual)', `${toolName}: ${pathMatch[1]}`);
           }
-          if (toolCalls.length > 0) break;
         }
         
         log(groupId, 'info', 'Tool extraction result', `Found ${toolCalls.length} tools`);
