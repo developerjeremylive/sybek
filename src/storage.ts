@@ -58,17 +58,26 @@ export async function readGroupFile(
   groupId: string,
   filePath: string,
 ): Promise<string> {
+  console.log('[storage.ts readGroupFile] START', { groupId, filePath, OPFS_ROOT });
   const groupDir = await getGroupDir(groupId);
   const { dirs, filename } = parsePath(filePath);
+  console.log('[storage.ts readGroupFile] dirs:', dirs, 'filename:', filename);
 
   let dir = groupDir;
   for (const seg of dirs) {
     dir = await dir.getDirectoryHandle(seg);
   }
 
-  const fileHandle = await dir.getFileHandle(filename);
-  const file = await fileHandle.getFile();
-  return file.text();
+  try {
+    const fileHandle = await dir.getFileHandle(filename);
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+    console.log('[storage.ts readGroupFile] DONE', { groupId, filePath, size: file.size });
+    return text;
+  } catch (err) {
+    console.error('[storage.ts readGroupFile] ERROR', { groupId, filePath, error: err });
+    throw err;
+  }
 }
 
 /**
@@ -101,6 +110,7 @@ export async function listGroupFiles(
   groupId: string,
   dirPath: string = '.',
 ): Promise<string[]> {
+  console.log('[storage.ts listGroupFiles] START', { groupId, dirPath, OPFS_ROOT });
   const groupDir = await getGroupDir(groupId);
 
   let dir = groupDir;
@@ -115,6 +125,7 @@ export async function listGroupFiles(
   for await (const [name, handle] of dir.entries()) {
     entries.push(handle.kind === 'directory' ? `${name}/` : name);
   }
+  console.log('[storage.ts listGroupFiles] DONE', { groupId, dirPath, entries });
   return entries.sort();
 }
 

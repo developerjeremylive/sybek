@@ -589,6 +589,30 @@ export class Orchestrator {
         break;
       }
 
+      case 'save-session-folder': {
+        const { folder } = msg.payload;
+        localStorage.setItem('currentSessionFolder', folder);
+        sessionStorage.setItem('currentSessionFolder', folder);
+        // Dispatch event to refresh FilesPage
+        window.dispatchEvent(new CustomEvent('obc-files-refresh'));
+        break;
+      }
+
+      case 'refresh-files': {
+        // Dispatch event to refresh FilesPage after file save
+        const folder = (msg.payload as { folder?: string }).folder;
+        console.log('[Orchestrator] refresh-files event, folder:', folder);
+        if (folder) {
+          // Also set the session folder so FilesPage reads from the correct groupId
+          localStorage.setItem('currentSessionFolder', folder);
+          sessionStorage.setItem('currentSessionFolder', folder);
+          console.log('[Orchestrator] Set currentSessionFolder to:', folder);
+        }
+        window.dispatchEvent(new CustomEvent('obc-files-refresh'));
+        console.log('[Orchestrator] Dispatched obc-files-refresh event');
+        break;
+      }
+
       case 'tool-result': {
         this.events.emit('tool-result', msg.payload);
         break;
