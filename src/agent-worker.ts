@@ -733,7 +733,8 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
     // Native tools - these are built-in and work directly, NO need for MCP format!
     if (activeTools.length > 0) {
       toolDescriptions.push('\n### HERRAMIENTAS OBLIGATORIAS para archivos:');
-      toolDescriptions.push('** Cuando el usuario pida leer, editar, modificar o guardar archivos, DEBES usar estas herramientas EXACTAMENTE como se indica below. NO muestres código directamente - USA LAS HERRAMIENTAS. **');
+      toolDescriptions.push('** Cuando el usuario pida leer, editar, modificar o guardar archivos, DEBES usar estas herramientas EXACTAMENTE como se indica. NO muestres código directamente - USA LAS HERRAMIENTAS. **');
+      toolDescriptions.push('** IMPORTANTE: El path debe incluir la carpeta del chat (ej: "chat-2026-03-15-01-57-11/mi-archivo.html") **');
       activeTools.forEach((id: string) => {
         const tool = TOOLS.find(t => t.name === id);
         if (!tool) return;
@@ -744,9 +745,10 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
       });
       toolDescriptions.push('\n### FORMATO OBLIGATORIO para usar herramientas de archivos:');
       toolDescriptions.push('** NO puedes mostrar código directamente. DEBES usar este formato exacto: **\n' +
-        '[read_file]\n{"path": "chat-XXXX/mi-archivo.html"}\n[/read_file]\n\n' +
-        '[write_file]\n{"path": "chat-XXXX/mi-archivo.html", "content": "<!DOCTYPE html>...código completo..."}\n[/write_file]\n\n' +
-        '[list_files]\n{"path": "chat-XXXX"}\n[/list_files]');
+        '[read_file]\n{"path": "chat-2026-03-15-01-57-11/mcp-jeremylive-netlify-app-1773561439992.html"}\n[/read_file]\n\n' +
+        '[write_file]\n{"path": "chat-2026-03-15-01-57-11/mcp-jeremylive-netlify-app-1773561439992.html", "content": "<!DOCTYPE html>...código completo..."}\n[/write_file]\n\n' +
+        '[list_files]\n{"path": "chat-2026-03-15-01-57-11"}\n[/list_files]\n\n' +
+        '**NOTA: Siempre incluye "chat-2026-03-15-01-57-11/" antes del nombre del archivo.**');
     }
     
     // MCP tools - only use if servers are actually running and accessible
@@ -882,8 +884,10 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
 
       // Extract tool calls from text response if none from function calling
       if (toolCalls.length === 0 && activeTools.length > 0) {
-        // Try format: [toolname]\n{"args"}\n[/toolname]
-        const toolCallRegex = /\[(\w+)\]\s*\n(\{[^}]*\})\s*\n\[\/\1\]/g;
+        log(groupId, 'info', 'Extracting tools from response', `activeTools: ${activeTools.join(', ')}`);
+        
+        // Try format: [toolname]\n{"args"}\n[/toolname] OR [toolname] {"args"} [/toolname]
+        const toolCallRegex = /\[(\w+)\]\s*(\{[^}]*\})\s*\[\/\1\]/g;
         let match;
         while ((match = toolCallRegex.exec(responseContent)) !== null) {
           const toolName = match[1];
@@ -892,26 +896,12 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
             const toolInput = JSON.parse(argsStr);
             toolCalls.push({ name: toolName, arguments: toolInput });
             log(groupId, 'info', 'Extracted tool from text', `${toolName}: ${argsStr}`);
-          } catch {
-            // Invalid JSON, skip
+          } catch (e) {
+            log(groupId, 'info', 'Failed to parse tool args', `${argsStr}: ${e}`);
           }
         }
         
-        // Also try old format: [toolname] tool_name | {"args"} [/toolname]
-        if (toolCalls.length === 0) {
-          const oldRegex = /\[(\w+)\]\s*(\w+)\s*\|\s*(\{[^}]*\})\s*\[\/\1\]/g;
-          while ((match = oldRegex.exec(responseContent)) !== null) {
-            const toolName = match[2];
-            const argsStr = match[3];
-            try {
-              const toolInput = JSON.parse(argsStr);
-              toolCalls.push({ name: toolName, arguments: toolInput });
-            } catch {}
-          }
-        }
-        // Also try format: [TOOL_CALL] tool_name | {"args"} [/TOOL_CALL]
-        if (toolCalls.length === 0) {
-          const altRegex = /\[TOOL_CALL\]\s*(\w+)\s*\|\s*(\{[^}]*\})\s*\[\/TOOL_CALL\]/g;
+        log(groupId, 'info', 'Tool extraction result', `Found ${toolCalls.length} tools`);
           while ((match = altRegex.exec(responseContent)) !== null) {
             const toolName = match[1];
             const argsStr = match[2];
