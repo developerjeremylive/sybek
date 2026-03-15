@@ -152,25 +152,30 @@ function extractHtmlSummary(html: string): string {
 const TOOLS = [
   {
     name: 'read_file',
-    description: 'Read content from a file in the workspace',
+    description: 'Read content from a file in the workspace. Use pattern to search or startLine/endLine for specific lines.',
     input_schema: {
       type: 'object',
       properties: {
-        path: { type: 'string', description: 'File path to read' }
+        path: { type: 'string', description: 'File path to read' },
+        pattern: { type: 'string', description: 'Search for lines containing this text' },
+        startLine: { type: 'number', description: 'Start line number (1-based)' },
+        endLine: { type: 'number', description: 'End line number' }
       },
       required: ['path']
     }
   },
   {
     name: 'write_file', 
-    description: 'Write content to a file in the workspace. Creates or overwrites.',
+    description: 'Write content to a file. Use search/replace to edit only specific lines (more efficient).',
     input_schema: {
       type: 'object',
       properties: {
         path: { type: 'string', description: 'File path to write' },
-        content: { type: 'string', description: 'Content to write' }
+        content: { type: 'string', description: 'Full content to write (overwrites)' },
+        search: { type: 'string', description: 'Text to search for replacement' },
+        replace: { type: 'string', description: 'Text to replace search with' }
       },
-      required: ['path', 'content']
+      required: ['path']
     }
   },
   {
@@ -275,18 +280,51 @@ async function executeTool(name: string, input: any, groupId: string): Promise<s
     switch (name) {
       case 'read_file': {
         const content = await readGroupFile(DEFAULT_GROUP_ID, input.path);
-        // Truncate content to avoid exceeding model context limits (max ~5000 chars)
-        const maxLen = 5000;
+        
+        // If line range specified, only return those lines
+        if (typeof input.startLine === 'number' || typeof input.endLine === 'number') {
+          const lines = content.split('\n');
+          const start = input.startLine || 1;
+          const end = input.endLine || lines.length;
+          const selected = lines.slice(start - 1, end).join('\n');
+          return `File ${input.path} (lines ${start}-${end}):\n${selected}`;
+        }
+        
+        // If pattern specified, find matching lines
+        if (input.pattern) {
+          const lines = content.split('\n');
+          const matching = lines.filter((line, idx) => 
+            line.toLowerCase().includes(input.pattern.toLowerCase())
+          ).map((line, idx) => {
+            const actualLine = lines.indexOf(line);
+            return `Line ${actualLine + 1}: ${line}`;
+          }).join('\n');
+          return `File ${input.path} (matching "${input.pattern}"):\n${matching || '(no matches)'}`;
+        }
+        
+        // Default: truncate to avoid exceeding model context limits
+        const maxLen = 3000;
         const truncated = content.length > maxLen 
           ? content.slice(0, maxLen) + `\n\n... (truncated ${content.length - maxLen} chars)`
           : content;
         return `File ${input.path}:\n${truncated}`;
       }
+      
       case 'write_file': {
-        // Always write to br:main for context files
+        // If search and replace specified, only modify those lines
+        if (input.search && typeof input.replace === 'string') {
+          const currentContent = await readGroupFile(DEFAULT_GROUP_ID, input.path);
+          const newContent = currentContent.split(input.search).join(input.replace);
+          await writeGroupFile(DEFAULT_GROUP_ID, input.path, newContent);
+          log(DEFAULT_GROUP_ID, 'file-edited', 'Archivo editado (partial)', input.path);
+          return `File edited (search/replace): ${input.path}\nSearched: "${input.search.slice(0, 100)}"\nReplaced with: "${input.replace.slice(0, 100)}"`;
+        }
+        
+        // Full overwrite (existing behavior)
         await writeGroupFile(DEFAULT_GROUP_ID, input.path, input.content);
         log(DEFAULT_GROUP_ID, 'file-saved', 'Archivo guardado', input.path);
         return `File saved: ${input.path}`;
+      }
       }
       case 'list_files': {
         const files = await listGroupFiles(DEFAULT_GROUP_ID, input.path || '.');
@@ -753,11 +791,11 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
         toolDescriptions.push(`- ${tool.name}(${params}): ${tool.description}`);
       });
       toolDescriptions.push('\n### FORMATO OBLIGATORIO para usar herramientas de archivos:');
-      toolDescriptions.push(`**PASOS PARA MODIFICAR ARCHIVOS:**\n1. Primero usa [list_files] para ver los archivos disponibles\n2. Luego usa [read_file] para LEER el contenido actual\n3. Finalmente usa [write_file] para GUARDAR los cambios\n\n**NO puedes escribir directamente - debes seguir estos 3 pasos.**\n` +
+      toolDescriptions.push(`**PASOS PARA MODIFICAR ARCHIVOS (importante - usa search/replace para eficiencia):**\n1. Primero usa [list_files] para ver los archivos\n2. Luego usa [read_file] con parámetro "pattern" para buscar líneas específicas\n3. Finalmente usa [write_file] con "search" y "replace" para cambiar SOLO lo necesario\n\n**NO escribas el archivo completo - usa search/replace para eficiencia.**\n` +
         `[list_files]\n{"path": "${chatFolder}"}\n[/list_files]\n\n` +
-        `[read_file]\n{"path": "${chatFolder}/NOMBRE_DEL_ARCHIVO.html"}\n[/read_file]\n\n` +
-        `[write_file]\n{"path": "${chatFolder}/NOMBRE_DEL_ARCHIVO.html", "content": "CONTENIDO_COMPLETO_MODIFICADO"}\n[/write_file]\n\n` +
-        `**NOTA: SIEMPRE precede el nombre del archivo con "${chatFolder}/" **`);
+        `[read_file]\n{"path": "${chatFolder}/archivo.html", "pattern": "body"}\n[/read_file]\n\n` +
+        `[write_file]\n{"path": "${chatFolder}/archivo.html", "search": "background-color: white;", "replace": "background-color: gray;"}\n[/write_file]\n\n` +
+        `**También puedes usar startLine/endLine para leer líneas específicas.**`);
     }
     
     // MCP tools - only use if servers are actually running and accessible
