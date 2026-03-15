@@ -683,11 +683,12 @@ interface MCPTool {
 async function handleInvoke(payload: InvokePayload): Promise<void> {
   const { groupId = DEFAULT_GROUP_ID, messages, systemPrompt, model = DEFAULT_MODEL, maxTokens = 4096, sessionFolder, contextFolders, fileContext, tools, mcpTools, mcpServers = [] } = payload;
 
-  // Use first context folder as working folder if available, otherwise use sessionFolder
-  if (contextFolders && contextFolders.length > 0) {
-    currentSessionFolder = contextFolders[0];
-  } else if (sessionFolder) {
+  // Use sessionFolder first (from payload), then contextFolders, then existing currentSessionFolder
+  // Priority: sessionFolder > contextFolders[0] > currentSessionFolder
+  if (sessionFolder) {
     currentSessionFolder = sessionFolder;
+  } else if (contextFolders && contextFolders.length > 0) {
+    currentSessionFolder = contextFolders[0];
   } else if (!currentSessionFolder) {
     getSessionFolder();
   }
