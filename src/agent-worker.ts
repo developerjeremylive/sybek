@@ -1158,7 +1158,7 @@ async function handleInvoke(payload: InvokePayload): Promise<void> {
                       const files = await listGroupFiles(saveGroupId, saveFolder);
                       log(saveFolder, 'mcp-tool', 'Files in folder', files.join(', '));
                       // Notify FilesPage to refresh - stay in br:main
-                      notifyFilesRefresh(saveGroupId);
+                      notifyFilesRefresh(saveFolder);
                     } catch (e) {
                       log(saveFolder, 'mcp-tool', 'List error', String(e));
                     }
