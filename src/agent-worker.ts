@@ -631,7 +631,7 @@ async function autoSaveCodeFiles(groupId: string, aiResponse: string): Promise<s
     if (code.includes('<!DOCTYPE html') || code.includes('<html') || code.includes('<header') || code.includes('<body') || code.includes('<footer') || code.includes('<section')) {
       // Skip if MCP already saved HTML to this folder
       if (mcpHtmlExists) {
-        log(groupId, 'file-skip', 'Skipped HTML code block', 'MCP already saved HTML');
+        log(groupId, 'info', 'Skipped HTML code block', 'MCP already saved HTML');
         continue;
       }
       fileName = 'index.html';
@@ -661,7 +661,7 @@ async function autoSaveCodeFiles(groupId: string, aiResponse: string): Promise<s
     if (html.length < 100) continue;
     // Skip if MCP already saved HTML to this folder
     if (mcpHtmlExists) {
-      log(groupId, 'file-skip', 'Skipped HTML auto-save', 'MCP already saved HTML');
+      log(groupId, 'info', 'Skipped HTML auto-save', 'MCP already saved HTML');
       continue;
     }
     try {
